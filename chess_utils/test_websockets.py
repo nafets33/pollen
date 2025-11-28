@@ -17,6 +17,8 @@ API_URL = "http://127.0.0.1:8000"  # Your FastAPI server
 API_KEY = os.getenv('fastAPI_key', 'your_api_key_here')
 CLIENT_USER = "stefanstapinski@gmail.com"
 
+
+
 def test_trigger_story_grid_update():
     """
     Test triggering story grid update via WebSocket.
@@ -38,11 +40,10 @@ def test_trigger_story_grid_update():
     )
     
     revrec = qb.get('revrec')
-    QUEEN_KING = qb.get('QUEEN_KING')
-
     # ✅ Modify BEFORE converting to dict
     print("🔧 Modifying SPY current_ask to 89 for testing...")
     if 'SPY' in revrec['storygauge'].index:
+        revrec['storygauge'].at['SPY', 'trinity_w_L'] = .89
         revrec['storygauge'].at['SPY', 'current_ask'] = 89
         revrec['storygauge'].at['SPY', 'ticker_total_budget'] = 89
         print(f"   SPY current_ask set to: {revrec['storygauge'].at['SPY', 'current_ask']}")
@@ -52,39 +53,39 @@ def test_trigger_story_grid_update():
         if not spy_row.empty:
             print(f"   SPY ticker_total_budget set to: {spy_row.iloc[0]['ticker_total_budget']}")
             print(f"   SPY current_ask set to: {spy_row.iloc[0]['current_ask']}")
+    QUEEN_KING = qb.get('QUEEN_KING')
+    from chess_utils.conscience_utils import story_return
+    df_story = story_return(QUEEN_KING, revrec)
+    revrec_for_ws = {'storygauge': df_story.to_dict('records')}
+
     
     print(f"✅ Loaded QUEEN_KING and revrec")
     
     # Convert DataFrames to dicts for JSON serialization
-    revrec_for_ws = {
-        'storygauge': revrec['storygauge'].to_dict('records') if 'storygauge' in revrec else [],
-        'waveview': revrec['waveview'].to_dict('records') if 'waveview' in revrec else [],
-        **{k: v for k, v in revrec.items() if k not in ['storygauge', 'waveview']}
-    }
-    
-    # Verify SPY modification made it into the dict
-    spy_record = next((r for r in revrec_for_ws['storygauge'] if r.get('symbol') == 'SPY'), None)
-    if spy_record:
-        print(f"✅ Verified: SPY current_ask in payload = {spy_record.get('current_ask')}")
+    # revrec_for_ws = {
+    #     'storygauge': revrec['storygauge'].to_dict('records') if 'storygauge' in revrec else [],
+    #     # 'waveview': revrec['waveview'].to_dict('records') if 'waveview' in revrec else [],
+    #     **{k: v for k, v in revrec.items() if k not in ['storygauge']}
+    # }
     
     # Prepare payload
     payload = {
         'client_user': CLIENT_USER,
         'api_key': API_KEY,
-        'QUEEN_KING': QUEEN_KING,
+        # 'QUEEN_KING': QUEEN_KING,
         'revrec': revrec_for_ws,
         'toggle_view_selection': 'queen',
-        'qk_chessboard': None
+        # 'qk_chessboard': None
     }
     
     # ✅ Try the endpoint (note: NO /api/data prefix in URL since router already has it)
     endpoint = f"{API_URL}/api/data/trigger_story_grid_update"
     
-    print(f"\n📤 Sending update trigger to: {endpoint}")
-    print(f"👤 Client User: {CLIENT_USER}")
-    print(f"📊 Storygauge Rows: {len(revrec_for_ws['storygauge'])}")
-    print(f"📊 Waveview Rows: {len(revrec_for_ws['waveview'])}")
-    print(f"⏰ Timestamp: {datetime.now().isoformat()}")
+    # print(f"\n📤 Sending update trigger to: {endpoint}")
+    # print(f"👤 Client User: {CLIENT_USER}")
+    # print(f"📊 Storygauge Rows: {len(revrec_for_ws['storygauge'])}")
+    # print(f"📊 Waveview Rows: {len(revrec_for_ws['waveview'])}")
+    # print(f"⏰ Timestamp: {datetime.now().isoformat()}")
     
     try:
         # Send HTTP POST with PollenJsonEncoder
@@ -180,6 +181,117 @@ def test_continuous_updates(num_updates=5, delay=3):
     print("=" * 80)
 
 
+def check_user_websocket_status(client_user: str = CLIENT_USER):
+    """
+    Check if a specific user has an active WebSocket connection.
+    """
+    print("\n" + "=" * 80)
+    print(f"🔍 Checking WebSocket Status for: {client_user}")
+    print("=" * 80)
+    
+    endpoint = f"{API_URL}/api/data/ws_status/{client_user}"
+    
+    try:
+        response = requests.get(endpoint, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            print(f"\n👤 Client User: {data.get('client_user')}")
+            print(f"🔌 Connected: {'✅ YES' if data.get('connected') else '❌ NO'}")
+            print(f"📊 Active Connections: {data.get('connection_count', 0)}")
+            print(f"⏰ Check Time: {data.get('timestamp', 'N/A')}")
+            
+            all_users = data.get('all_connected_users', [])
+            if all_users:
+                print(f"\n🌐 All Connected Users ({len(all_users)}):")
+                for user in all_users:
+                    print(f"   - {user}")
+            else:
+                print(f"\n⚠️  No users currently connected")
+            
+            print(f"\n📈 Total Connections: {data.get('total_connections', 0)}")
+            
+            # ✅ If not connected, show debug info
+            if not data.get('connected') and data.get('total_connections', 0) > 0:
+                print(f"\n🔍 User not found but connections exist. Checking debug info...")
+                debug_response = requests.get(f"{API_URL}/api/data/debug/active_connections", timeout=5)
+                if debug_response.status_code == 200:
+                    debug_data = debug_response.json()
+                    print(f"\n🐛 DEBUG: Raw Connection Data:")
+                    for conn in debug_data.get('raw_connections', []):
+                        print(f"\n   WebSocket ID: {conn['websocket_id']}")
+                        print(f"   Stored Keys: {conn['keys_in_data']}")
+                        print(f"   Stored Data: {conn['stored_data']}")
+            
+            return data.get('connected', False)
+        else:
+            print(f"❌ HTTP Error: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except requests.exceptions.ConnectionError:
+        print(f"❌ CONNECTION ERROR: Could not connect to {API_URL}")
+        print(f"💡 Make sure FastAPI server is running!")
+        return False
+    except requests.exceptions.Timeout:
+        print(f"⏱️  TIMEOUT: Request took longer than 5 seconds")
+        return False
+    except Exception as e:
+        print(f"❌ Error checking status: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def check_all_websocket_connections():
+    """
+    Check all active WebSocket connections.
+    """
+    print("\n" + "=" * 80)
+    print("🌐 Checking All WebSocket Connections")
+    print("=" * 80)
+    
+    endpoint = f"{API_URL}/api/data/ws_status"
+    
+    try:
+        response = requests.get(endpoint, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            print(f"\n📊 Total Users Connected: {data.get('total_users', 0)}")
+            print(f"🔌 Total Connections: {data.get('total_connections', 0)}")
+            print(f"⏰ Check Time: {data.get('timestamp', 'N/A')}")
+            
+            users = data.get('users', {})
+            if users:
+                print(f"\n👥 Active Connections by User:")
+                for username, count in users.items():
+                    print(f"   {username}: {count} connection(s)")
+            else:
+                print(f"\n⚠️  No active WebSocket connections")
+            
+            return data.get('total_users', 0) > 0
+        else:
+            print(f"❌ HTTP Error: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except requests.exceptions.ConnectionError:
+        print(f"❌ CONNECTION ERROR: Could not connect to {API_URL}")
+        print(f"💡 Make sure FastAPI server is running!")
+        return False
+    except requests.exceptions.Timeout:
+        print(f"⏱️  TIMEOUT: Request took longer than 5 seconds")
+        return False
+    except Exception as e:
+        print(f"❌ Error checking connections: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def check_websocket_connection():
     """
     Check if WebSocket endpoint is available.
@@ -208,11 +320,7 @@ def check_websocket_connection():
         
         ws.close()
         return True
-        
-    except ImportError:
-        print("⚠️  'websocket-client' not installed")
-        print("Install with: pip install websocket-client")
-        return False
+
     except Exception as e:
         print(f"❌ WebSocket connection failed: {e}")
         return False
@@ -227,7 +335,7 @@ if __name__ == "__main__":
     parser.add_argument('--continuous', action='store_true', help='Run continuous updates')
     parser.add_argument('--num', type=int, default=5, help='Number of continuous updates')
     parser.add_argument('--delay', type=int, default=3, help='Delay between updates (seconds)')
-    parser.add_argument('--check-ws', action='store_true', help='Check WebSocket connection')
+    parser.add_argument('--check-ws', default=True, action='store_true', help='Check WebSocket connection')
     
     args = parser.parse_args()
     
@@ -259,10 +367,4 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("🏁 Test Complete")
     print("=" * 80)
-    print("""
-Next Steps:
-1. Check Streamlit app at http://localhost:8501
-2. Look for console messages: "📥 Received X row updates"
-3. Verify grid updated with new data
-4. Check FastAPI logs for WebSocket activity
-    """)
+    check_user_websocket_status(CLIENT_USER)

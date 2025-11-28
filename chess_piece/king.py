@@ -46,7 +46,7 @@ def get_ip_address():
     return ip_address
 
 def return_app_ip(streamlit_ip="http://localhost:8501", ip_address="http://127.0.0.1:8000", ss_state=True):
-    machine_ip = get_ip_address()
+    machine_ip = get_ip_address() #WORKERBEE i think this needs be fixed for prod machine
     if machine_ip == os.environ.get('gcp_ip'):
         # print("IP", ip_address, os.environ.get('gcp_ip'))
         ip_address = "https://api.quantqueen.com"

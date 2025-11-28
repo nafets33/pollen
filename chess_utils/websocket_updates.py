@@ -7,10 +7,10 @@ import logging
 
 async def send_story_grid_update(
     client_user: str,
-    QUEEN_KING: dict,
+    # QUEEN_KING: dict,
     revrec: dict,
     toggle_view_selection: str = 'queen',
-    qk_chessboard: dict = None
+    # qk_chessboard: dict = None
 ) -> bool:
     """
     Generate story grid data and send via WebSocket.
@@ -26,23 +26,25 @@ async def send_story_grid_update(
             toggle_view_selection = str(toggle_view_selection)
         
         # Generate story grid data
-        df = story_return(
-            QUEEN_KING=QUEEN_KING,
-            revrec=revrec,
-            toggle_view_selection=toggle_view_selection,
-            qk_chessboard=qk_chessboard
-        )
-        
-        if df is None:
+        # df = story_return(
+        #     QUEEN_KING=QUEEN_KING,
+        #     revrec=revrec,
+        #     toggle_view_selection=toggle_view_selection,
+        #     qk_chessboard=qk_chessboard
+        # )
+        list_of_dict = revrec.get('storygauge', None)
+
+        if list_of_dict is None:
             logging.error(f"❌ story_return() returned None for {client_user}")
             return False
-        
-        logging.info(f"✅ Generated {len(df)} rows for story grid")
-        
+
+        logging.info(f"✅ Generated {len(list_of_dict)} rows for story grid")
+
         # Convert to row updates format
         row_updates = []
-        for idx, row in df.iterrows():
-            row_dict = row.to_dict()
+        for idx, row_dict in enumerate(list_of_dict):
+            # row_dict = row.to_dict()
+            idx = row_dict.get('symbol', idx)  # Use 'row_id' if available
             
             row_updates.append({
                 'row_id': str(idx),

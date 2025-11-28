@@ -118,10 +118,7 @@ def QB_workerbees(KING, QUEENBEE, qcp_bees_key='workerbees', admin=True, ):
 
         chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEENBEE, qcp_bees_key=qcp_bees_key)
         st.write("duplicates", chess_pieces.get('dups'))
-        view = chess_pieces.get('view')
         all_workers = chess_pieces.get('all_workers')
-        qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
-        current_tickers = qcp_ticker_index.keys()
         star_options = list(stars().keys())
 
         QUEENBEE = ensure_swarm_queen_workerbees(QUEENBEE, qcp_bees_key)

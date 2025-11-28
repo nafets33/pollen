@@ -43,6 +43,10 @@ import {
 } from "ag-grid-community"
 import { deepMap } from "./utils"
 
+const isDev = process.env.NODE_ENV === 'development';
+const log = isDev ? console.log : () => {};
+const warn = isDev ? console.warn : () => {};
+const error = console.error; // Always log errors
 
 type Props = {
   username: string
@@ -62,6 +66,7 @@ type Props = {
 
 let g_rowdata: any[] = []
 let g_newRowData: any = null
+
 
 
 function dateFormatter(isoString: string, formaterString: string): String {
@@ -280,24 +285,32 @@ const AgGrid = (props: Props) => {
     }
   };
 
+// Replace lines 282-408 (the entire WebSocket useEffect)
+
 useEffect(() => {
   if (!kwargs.api_ws) {
     console.warn("⚠️  api_ws is undefined, WebSocket not started.");
     return;
   }
 
-  console.log("🔌 Attempting WebSocket connection to:", kwargs.api_ws);
+  log("🔌 Attempting WebSocket connection to:", kwargs.api_ws);
   
   let ws: WebSocket | null = null;
   let reconnectTimeout: NodeJS.Timeout;
+  let heartbeatInterval: NodeJS.Timeout;
   let isIntentionallyClosed = false;
+  let reconnectAttempts = 0;
+  const MAX_RECONNECT_ATTEMPTS = 10;
+  const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  const RECONNECT_DELAY = 3000; // 3 seconds
 
   const connectWebSocket = () => {
     try {
       ws = new WebSocket(kwargs.api_ws);
 
       ws.onopen = () => {
-        console.log("✅ WebSocket connected!");
+        log("✅ WebSocket connected!");
+        reconnectAttempts = 0;
         
         const handshake = {
           username: username,
@@ -305,90 +318,144 @@ useEffect(() => {
           api_key: api_key,
         };
         
-        console.log("📤 Sending handshake:", handshake);
+        log("📤 Sending handshake:", handshake);
         ws?.send(JSON.stringify(handshake));
+
+        // ✅ Start heartbeat
+        startHeartbeat();
       };
 
-      ws.onmessage = (event) => {
-        console.log("📥 WebSocket message received");
-        try {
-          const data = JSON.parse(event.data);         
-          // Handle connection confirmation
-          if (data.type === 'connection_established') {
-            console.log("✅ Handshake confirmed:", data.message);
-            return;
-          }
-          
-          // Handle array of updates (batch)
-          if (Array.isArray(data)) {
-            console.log(`📥 Received ${data.length} row updates`);
-            
-            const rowsToUpdate: any[] = [];
-            
-            data.forEach(({ row_id, updates }) => {
-              const existingNode = gridRef.current?.api.getRowNode(row_id);
-              if (existingNode && existingNode.data) {
-                const updatedRow = { ...existingNode.data, ...updates };
-                updatedRow[index] = row_id;
-                rowsToUpdate.push(updatedRow);
-              } else {
-                console.log("⚠️  Row not found for update:", row_id);
-              }
-            });
-            
-            // Apply all updates in ONE transaction
-            if (rowsToUpdate.length > 0) {
-              gridRef.current?.api.applyTransaction({
-                update: rowsToUpdate
-              });
-              console.log(`✅ Updated ${rowsToUpdate.length} rows`);
-              
-              // Recalculate subtotals if needed
-              if (subtotal_cols && subtotal_cols.length > 0) {
-                setTimeout(() => calculateSubtotals(), 100);
-              }
-            }
-          }
-          // Handle single row update
-          else if (data.row_id && data.updates) {
-            const { row_id, updates } = data;
-            const existingNode = gridRef.current?.api.getRowNode(row_id);
-            if (existingNode && existingNode.data) {
-              const updatedRow = { ...existingNode.data, ...updates };
-              updatedRow[index] = row_id;
-              gridRef.current?.api.applyTransaction({
-                update: [updatedRow]
-              });
-              console.log(`✅ Updated single row: ${row_id}`);
-            }
-          }
-        } catch (error) {
-          console.error("❌ Error processing WebSocket message:", error);
-        }
-      };
+ws.onmessage = (event) => {
+  log("📥 WebSocket message received");
+  try {
+    const data = JSON.parse(event.data);
+    
+    // ✅ Handle pong response
+    if (data.type === 'pong') {
+      log("💓 Heartbeat acknowledged");
+      return;
+    }
+    
+    // Handle connection confirmation
+    if (data.type === 'connection_established') {
+      log("✅ Handshake confirmed:", data.message);
+      return;
+    }
+    
+    // ✅ Handle array of updates (batch)
+if (Array.isArray(data) && data.length > 0) {
+  // log(`📥 Received ${data.length} row updates`);
+  // log("📦 First update sample:", JSON.stringify(data[0], null, 2));
+  
+  const rowsToUpdate: any[] = [];
+  
+  data.forEach(({ row_id, updates }) => {
+    const existingNode = gridRef.current?.api.getRowNode(row_id);
+    if (existingNode && existingNode.data) {
+      // log(`🔍 Existing data for ${row_id}:`, existingNode.data);
+      // log(`📨 Updates for ${row_id}:`, updates);
+      
+      // ✅ Start with existing data to preserve everything
+      const updatedRow = { ...existingNode.data };
+      
+      // ✅ Apply only the updates from WebSocket
+      Object.keys(updates).forEach(key => {
+        updatedRow[key] = updates[key];
+      });
+      
+      // ✅ Ensure index is preserved
+      updatedRow[index] = row_id;
+      
+      // log(`✅ Final row for ${row_id}:`, updatedRow);
+      rowsToUpdate.push(updatedRow);
+    } else {
+      log("⚠️  Row not found for update:", row_id);
+    }
+  });
+  
+  // Apply all updates in ONE transaction
+  if (rowsToUpdate.length > 0) {
+    gridRef.current?.api.applyTransaction({
+      update: rowsToUpdate
+    });
+    log(`✅ Updated ${rowsToUpdate.length} rows`);
+    
+    // Recalculate subtotals if needed
+    if (subtotal_cols && subtotal_cols.length > 0) {
+      setTimeout(() => calculateSubtotals(), 100);
+    }
+  }
+}
+  } catch (error) {
+    console.error("❌ Error processing WebSocket message:", error);
+  }
+};
 
       ws.onerror = (error) => {
         console.error("❌ WebSocket error:", error);
+        stopHeartbeat();
       };
 
       ws.onclose = (event) => {
-        console.log("🔌 WebSocket closed:", {
+        log("🔌 WebSocket closed:", {
           code: event.code,
           reason: event.reason,
           wasClean: event.wasClean
         });
         
-        // Attempt reconnect if not intentionally closed
-        if (!isIntentionallyClosed && !event.wasClean) {
-          console.log("🔄 Attempting to reconnect in 3 seconds...");
-          reconnectTimeout = setTimeout(() => {
-            console.log("🔄 Reconnecting WebSocket...");
-            connectWebSocket();
-          }, 3000);
+        stopHeartbeat();
+        
+        // ✅ Auto-reconnect
+        if (!isIntentionallyClosed) {
+          if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts++;
+            log(`🔄 Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${RECONNECT_DELAY/1000}s...`);
+            
+            reconnectTimeout = setTimeout(() => {
+              log("🔄 Reconnecting WebSocket...");
+              connectWebSocket();
+            }, RECONNECT_DELAY);
+          } else {
+            console.error("❌ Max reconnection attempts reached. Please refresh the page.");
+            toastr.error("WebSocket connection lost. Please refresh the page.");
+          }
         }
       };
     } catch (error) {
       console.error("❌ Error creating WebSocket:", error);
+      stopHeartbeat();
+    }
+  };
+
+  // ✅ Heartbeat to keep connection alive
+  const startHeartbeat = () => {
+    stopHeartbeat();
+    
+    heartbeatInterval = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        log("💓 Sending heartbeat ping...");
+        try {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        } catch (error) {
+          console.error("❌ Failed to send heartbeat:", error);
+          stopHeartbeat();
+        }
+      } else {
+        console.warn("⚠️  WebSocket not open during heartbeat");
+        stopHeartbeat();
+        
+        if (!isIntentionallyClosed && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          log("🔄 Connection lost, attempting to reconnect...");
+          connectWebSocket();
+        }
+      }
+    }, HEARTBEAT_INTERVAL);
+  };
+
+  const stopHeartbeat = () => {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = undefined as any;
     }
   };
 
@@ -397,8 +464,9 @@ useEffect(() => {
 
   // Cleanup
   return () => {
-    console.log("🧹 Cleaning up WebSocket connection");
+    log("🧹 Cleaning up WebSocket connection");
     isIntentionallyClosed = true;
+    stopHeartbeat();
     clearTimeout(reconnectTimeout);
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.close();
@@ -409,7 +477,7 @@ useEffect(() => {
   const checkLastModified = async (): Promise<boolean> => {
     try {
       if (api_lastmod_key === null) {
-        console.log("api key is null, returning false");
+        log("api key is null, returning false");
         return true;
       }
       if (api_lastmod_key !== null && api_lastmod_key !== undefined) {
@@ -616,7 +684,7 @@ useEffect(() => {
         }
       }
 
-      console.log("fetching data...", api);
+      log("fetching data...", api);
       const res = await axios.post(api, {
         username: username,
         prod: prod,
@@ -744,13 +812,13 @@ useEffect(() => {
 useEffect(() => {
   // ✅ Only poll if WebSocket is NOT available
   if (!api_ws && refresh_sec && refresh_sec > 0) {
-    console.log("📡 Starting polling (no WebSocket available)");
+    log("📡 Starting polling (no WebSocket available)");
     const interval = setInterval(fetchAndSetData, refresh_sec * 1000)
     let timeout: NodeJS.Timeout
     if (refresh_cutoff_sec > 0) {
       timeout = setTimeout(() => {
         clearInterval(interval)
-        console.log("⏹️ Polling stopped (cutoff reached)")
+        log("⏹️ Polling stopped (cutoff reached)")
       }, refresh_cutoff_sec * 1000)
     }
     return () => {
@@ -758,7 +826,7 @@ useEffect(() => {
       if (timeout) clearTimeout(timeout)
     }
   } else if (api_ws) {
-    console.log("🔌 WebSocket active, polling disabled");
+    log("🔌 WebSocket active, polling disabled");
   }
 }, [api_ws, refresh_sec, refresh_cutoff_sec, props, viewId])
 
@@ -787,7 +855,7 @@ useEffect(() => {
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
       try {
-        console.log("websocket api is", api_ws, kwargs.api_ws);
+        log("websocket api is", api_ws, kwargs.api_ws);
         const array = await fetchData();
         if (array === false) return;
 
@@ -855,7 +923,7 @@ const getRowId = useMemo<GetRowIdFunc>(() => {
       if (props.autoUpdate) {
         try {
           const updatedRow = event.data; // The updated row data
-          console.log("Auto-updating row:", updatedRow);
+          log("Auto-updating row:", updatedRow);
 
           // Send the updated row to the API
           const response = await axios.post(api_update, {
@@ -881,7 +949,7 @@ const getRowId = useMemo<GetRowIdFunc>(() => {
         // Store changes for manual update
         if (g_newRowData === null) g_newRowData = {};
         g_newRowData[event.data[index]] = event.data;
-        console.log("Data after change is", g_newRowData);
+        log("Data after change is", g_newRowData);
       }
     },
     [props.autoUpdate, api_update, username, prod, kwargs, index]

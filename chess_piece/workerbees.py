@@ -1403,7 +1403,7 @@ def queen_workerbees(
 
                 if backtesting or reset_only:
                     break
-                if close_worker(WORKERBEE_queens, crypto=False): #WORKERBEE HC UNTIL CRYPTO WORKING
+                if close_worker(WORKERBEE_queens, crypto=crypto): #WORKERBEE HC UNTIL CRYPTO WORKING
                     break
 
         except Exception as errbuz:

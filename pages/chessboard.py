@@ -18,6 +18,7 @@ from pq_auth import signin_main
 from chess_piece.king import return_QUEEN_KING_symbols, master_swarm_QUEENBEE, local__filepaths_misc, print_line_of_error, ReadPickleData, PickleData, return_QUEENs__symbols_data, kingdom__global_vars
 from chess_piece.queen_hive import star_names, kingdom__grace_to_find_a_Queen, pollen_themes, init_qcp_workerbees, generate_chessboards_trading_models, return_queen_controls, shape_chess_board, generate_chess_board, refresh_account_info, init_queenbee, unshape_chess_board, setup_chess_board, add_trading_model, set_chess_pieces_symbols, read_swarm_db, refresh_broker_account_portolfio
 from chess_piece.queen_mind import refresh_chess_board__revrec, init_qcp
+from chess_piece.app_hive import standard_AGgrid
 from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
 # from custom_graph_v1 import st_custom_graph
@@ -406,8 +407,6 @@ def setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed, themes, ne
 
     models = themes
 
-    ticker_allowed = ticker_allowed + crypto_symbols__tickers_avail
-
     try:
         cols = st.columns((1,1,4,1,1,2,2,2))
         if headers == 0:
@@ -514,24 +513,65 @@ def refresh_trading_models_button(QUEEN_KING):
     return True
 
 def align_autopilot_with_revrec(revrec, QUEEN_KING):
-    current_index = QUEEN_KING['king_controls_queen']['ticker_autopilot'].index
+    """Ensure all symbols in revrec have autopilot entries."""
+    ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
+    
+    # Ensure it's a list
+    if not isinstance(ticker_autopilot, list):
+        ticker_autopilot = []
+    
+    # Get existing symbols in autopilot
+    existing_symbols = [item.get('symbol') for item in ticker_autopilot]
+    
+    # Add missing symbols from revrec
     for symbol in revrec.get('storygauge').index:
-        if symbol not in current_index:
-            QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([False, False], index=['buy_autopilot', 'sell_autopilot'])
-
+        if symbol not in existing_symbols:
+            ticker_autopilot.append({
+                'symbol': symbol,
+                'buy_autopilot': False,
+                'sell_autopilot': False
+            })
+    
+    # Save back
+    QUEEN_KING['king_controls_queen']['ticker_autopilot'] = ticker_autopilot
+    
     return QUEEN_KING
 
 
 def switch_autopilot_on_off(QUEEN_KING, x_autopilot='buy_autopilot', onoff=True, save=False):
+    """Switch autopilot on/off for all symbols in chess_board."""
+    ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
+    
+    # Ensure it's a list
+    if not isinstance(ticker_autopilot, list):
+        ticker_autopilot = []
+    
+    # Get all symbols from chess_board
+    all_symbols = []
     for qcp, qcp_data in QUEEN_KING["chess_board"].items():
-        for symbol in qcp_data.get('tickers'):
-            # Ensure symbol exists in the DataFrame's index
-            if symbol not in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
-                # Add a new row for the missing symbol, initializing columns
-                QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = {x_autopilot: False}
-            
-            # Assign the boolean value
-            QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, x_autopilot] = onoff
+        all_symbols.extend(qcp_data.get('tickers', []))
+    
+    # Update or add autopilot entries
+    for symbol in all_symbols:
+        # Find existing entry
+        symbol_entry = next((item for item in ticker_autopilot if item.get('symbol') == symbol), None)
+        
+        if symbol_entry:
+            # Update existing
+            symbol_entry[x_autopilot] = onoff
+        else:
+            # Add new entry
+            new_entry = {
+                'symbol': symbol,
+                'buy_autopilot': False,
+                'sell_autopilot': False
+            }
+            new_entry[x_autopilot] = onoff
+            ticker_autopilot.append(new_entry)
+    
+    # Save back
+    QUEEN_KING['king_controls_queen']['ticker_autopilot'] = ticker_autopilot
+    
     if save:
         if pg_migration:
             PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
@@ -557,7 +597,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
             st.write("No hedge funds found.")
             hedge_fund_names = []
         else:
-            st.write(hedge_funds)
+            st.sidebar.write("hedge fund list", len(hedge_funds))
             hedge_fund_names = list(set(hedge_funds['filer_name'].tolist()))
 
         all_portfolios = ['Queen']
@@ -635,17 +675,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
         
 
         chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEEN_KING, qcp_bees_key=qcp_bees_key)
-        view = chess_pieces.get('view')
         all_workers = chess_pieces.get('all_workers')
         qcp_ticker_index = chess_pieces.get('ticker_qcp_index')
-        current_tickers = qcp_ticker_index.keys()
-
-        
-        ### AUTO PILOT CONTRROLS
-
-        # def AutoPilot(revrec, QUEEN_KING):
-
-
 
         with st.sidebar:
             if st.button("align auto_pilot"):
@@ -673,15 +704,9 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                 else:
                     PickleData(QUEEN_KING.get('source'), QUEEN_KING)
 
-        ### AUTO PILOT CONTRROLS
 
-        # if st.sidebar.toggle("autopilot funcs"):
-        #     AutoPilot(revrec, QUEEN_KING)
-        # with st.expander(name, True): # ChessBoard
-        cb_tab_list = ['Board', 'Star Allocation', 'Board Group', 'Board By Symbol', 'Portfolio Story']
+        cb_tab_list = ['Portfolio Symbol Budget Allocations']
         tabs = st.tabs(cb_tab_list)
-        with tabs[4]:
-            st.write(revrec.get('storygauge'))
         with tabs[0]:
             with st.form(f'ChessBoard_form{admin}'):
                 try:
@@ -691,20 +716,26 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = st.slider("Cash", min_value=-1.0, max_value=1.0, value=cash)
                     
                     headers = 0
+                    clean_empty = []
                     for qcp in all_workers:
-                        for tic in QUEEN_KING[qcp_bees_key][qcp].get('tickers', []):
+                        qcp_tickers = QUEEN_KING[qcp_bees_key][qcp].get('tickers', [])
+                        if len(qcp_tickers) == 0:
+                            clean_empty.append(qcp)
+                            continue
+                        for tic in qcp_tickers:
                             if tic not in ticker_allowed:
                                 print("TICKER NOT ALLOWED", tic)
                                 QUEEN_KING[qcp_bees_key][qcp]['tickers'].remove(tic)
-                        
-                        if len(QUEEN_KING[qcp_bees_key][qcp]['tickers']) == 0:
-                            continue
-                        
+
                         QUEEN_KING=setup_qcp_on_board(QUEEN_KING, qcp_bees_key, qcp, ticker_allowed=ticker_allowed, themes=themes, headers=headers, admin=admin)
                         headers+=1
                     
+                    if clean_empty:
+                        print("CLEAN EMPTY", clean_empty)
+                        for ce in clean_empty:
+                            del QUEEN_KING[qcp_bees_key][ce]
+
                     # RevRec
-                    # print('RevRec')
                     QUEEN_KING['revrec'] = revrec
                     QUEEN_KING['chess_board__revrec'] = revrec
                     if save_as_main_chessboard:
@@ -741,27 +772,14 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                 except Exception as e:
                     print_line_of_error()
 
-                
-            # st.write("# Reallocation")
-            with tabs[1]:
-                reallocate_star_power(QUEEN_KING, trading_model=False, ticker_option_qc=False, trading_model_revrec={}, trading_model_revrec_s={}, showguage=False, func_selection=True, formkey="Reallocate_Star")
-
-
         with st.expander("New Chess Piece", True):
             QUEEN_KING = add_new_qcp__to_chessboard(QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, qcp_bees_key='chess_board')
 
-        with tabs[3]:
-            # WORKERBEE View a Board, compare Boards, Edit Current Board
-            chess_board = QUEEN_KING['chess_board']
-            chessboard_grid(chess_board, client_user, ip_address) #chess_board_id=qcp_bees_key)
-            st.data_editor(chess_board)    
-            df = shape_chess_board(chess_board)
-        with tabs[2]:
-            st.data_editor(df)    
-            # boardagain = upshape_chess_board(df)
 
     except Exception as e:
         print('chessboard ', e, print_line_of_error())
+        st.error("Chessboard Load Error - Please Contact Support")
+        st.write(e)
 
 
 ## WORKERBEE : func to select portfolio and have board allocate
@@ -785,22 +803,21 @@ if __name__ == '__main__':
     admin = st.session_state['admin']
     prod = st.session_state['prod']
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+    if not prod:
+        st.warning("Sandbox Environment")
 
 
 
     reset_theme = False
 
     KING = kingdom__grace_to_find_a_Queen()
-    # st.write(KING['alpaca_symbols_df'])
     qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, api=True, init=True, pg_migration=pg_migration)
     QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')    
     revrec = QUEEN.get('revrec')
-    # st.write(QUEEN_KING['chess_board'])
 
-
-    ticker_allowed = KING['alpaca_symbols_df'].index.tolist()
+    ticker_allowed = KING['alpaca_symbols_df'].index.tolist() + crypto_symbols__tickers_avail
 
     alpaca_acct_info = refresh_account_info(api=api)
     with st.sidebar:
@@ -816,18 +833,22 @@ if __name__ == '__main__':
         if st.button("Return To Trading Engine", use_container_width=True):
             st.switch_page("pollen.py")
     
-    
-    st.write(len(QUEEN_KING['sell_orders']), "sell orders")
-    st.write(len(QUEEN_KING['buy_orders']), "buy_orders orders")
-    st.write(len(QUEEN['queen_orders']), "queen_orders orders")
-
-    if st.button("clear sell orders"):
-        QUEEN_KING['sell_orders'] = []
-        PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+    if st.session_state['admin']:
+        st.header("Admin Controls")
+        st.write(len(QUEEN_KING['sell_orders']), "sell orders")
+        st.write(len(QUEEN_KING['buy_orders']), "buy_orders orders")
+        if st.toggle("Show buy_orders"):
+            st.write(QUEEN_KING['buy_orders'])
         
-    if st.button("clear buy orders"):
-        QUEEN_KING['buy_orders'] = []
-        PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+        st.write(len(QUEEN['queen_orders']), "queen_orders orders")
+
+        if st.button("clear sell orders"):
+            QUEEN_KING['sell_orders'] = []
+            PollenDatabase.upsert_data(QUEEN_KING['table_name'], QUEEN_KING['key'], QUEEN_KING)
+            
+        if st.button("clear buy orders"):
+            QUEEN_KING['buy_orders'] = []
+            PollenDatabase.upsert_data(QUEEN_KING['table_name'], QUEEN_KING['key'], QUEEN_KING)
     
     # if admin:
     if st.button("Reset RevRec"):

@@ -16,6 +16,8 @@ import argparse
 import ast ## WORKERBEE TEMP FIX UNTIL LATER FIX PRICEINFO STORAGE
 from decimal import Decimal, ROUND_DOWN
 import ipdb
+import requests
+import json
 
 
 
@@ -52,6 +54,7 @@ from chess_utils.trigrule_utils import check_trigrule_conditions, get_existing_t
 from chess_piece.queen_mind import refresh_chess_board__revrec, weight_team_keys, kings_order_rules
 from chess_piece.pollen_db import PollenDatabase, PollenJsonEncoder, PollenJsonDecoder
 from chess_utils.robinhood_crypto_utils import CryptoAPITrading
+from chess_utils.conscience_utils import story_return
 
 import copy
 from tqdm import tqdm
@@ -80,7 +83,8 @@ RUNNING_CLOSE_Orders = king_G.get('RUNNING_CLOSE_Orders') # = ['running_close']
 WT = weight_team_keys()
 TRINITY_ = "trinity_"
 reverse_indexes = ['SH', 'PSQ']
-
+API_KEY = os.getenv('fastAPI_key')
+API_URL = os.getenv('fastAPI_url')
 wash_sale_rule = []
 
 # crypto
@@ -98,6 +102,121 @@ exclude_conditions = [
     'B','W','4','7','9','C','G','H','I','M','N',
     'P','Q','R','T','V','Z'
 ] # 'U'
+
+def check_user_websocket_status(client_user, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
+    """
+    Check if a specific user has an active WebSocket connection.
+    """
+    if upsert_to_main_server:
+        API_URL = os.getenv('main_fastAPI_url')
+    endpoint = f"{API_URL}/api/data/ws_status/{client_user}"
+    
+    try:
+        response = requests.get(endpoint, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # print(f"\n👤 Client User: {data.get('client_user')}")
+            print(f"🔌 {data.get('client_user')} Connected: {f'✅ YES' if data.get('connected') else '❌ NO'}")
+            # print(f"📊 Active Connections: {data.get('connection_count', 0)}")
+            # print(f"⏰ Check Time: {data.get('timestamp', 'N/A')}")
+                                    
+            return data.get('connected', False)
+        else:
+            print(f"❌ HTTP Error: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except requests.exceptions.ConnectionError:
+        print(f"❌ CONNECTION ERROR: Could not connect to {API_URL}")
+        print(f"💡 Make sure FastAPI server is running!")
+        return False
+    except requests.exceptions.Timeout:
+        print(f"⏱️  TIMEOUT: Request took longer than 5 seconds")
+        return False
+    except Exception as e:
+        print(f"❌ Error checking status: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def story_grid_update(QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
+    if upsert_to_main_server:
+        API_URL = os.getenv('main_fastAPI_url')
+    endpoint = f"{API_URL}/api/data/trigger_story_grid_update"
+    revrec_copy = copy.deepcopy(revrec)
+    QUEEN_KING_copy = copy.deepcopy(QUEEN_KING)
+    df_story = story_return(QUEEN_KING_copy, revrec_copy)
+    
+    print("BTC/USD", df_story.at['BTC/USD', 'trinity_w_L'])
+    revrec_for_ws = {'storygauge': df_story.to_dict('records')}
+    
+    # Prepare payload
+    payload = {
+        'client_user': client_user,
+        'api_key': API_KEY,
+        'revrec': revrec_for_ws,
+        'toggle_view_selection': 'queen',
+    }
+
+    try:
+        # Send HTTP POST with PollenJsonEncoder
+        response = requests.post(
+            endpoint,
+            data=json.dumps(payload, cls=PollenJsonEncoder),
+            headers={'Content-Type': 'application/json'},
+            timeout=15
+        )
+        
+        # print(f"\n📥 Response Status: {response.status_code}")
+        
+        if response.status_code == 404:
+            print(f"❌ 404 NOT FOUND")
+            print(f"💡 The endpoint might not exist. Check your fastapi_router.py")
+            
+            # Try to get OpenAPI docs tehehee
+            try:
+                docs_response = requests.get(f"{API_URL}/docs")
+                if docs_response.status_code == 200:
+                    print(f"✅ FastAPI docs available at: {API_URL}/docs")
+                    print(f"   Check there for available endpoints")
+            except:
+                pass
+            
+            return False
+        
+        if response.status_code == 200:
+            result = response.json()
+            # print(f"✅ Status: {result.get('status')}")
+            # print(f"💬 Message: {result.get('message')}")
+            if result.get('status') == 'success':
+                print(f"\n🎉 SUCCESS! {client_user} Story grid update sent via WebSocket")
+                return True
+            elif result.get('status') == 'warning':
+                print(f"\n⚠️  WARNING: {result.get('message')}")
+                print(f"💡 Connected users: {result.get('connected_users', [])}")
+                return False
+            else:
+                print(f"\n❌ ERROR: {result.get('message')}")
+                return False
+        else:
+            print(f"❌ HTTP Error: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except requests.exceptions.Timeout:
+        print(f"\n⏱️  TIMEOUT: Request took longer than 15 seconds")
+        return False
+    except requests.exceptions.ConnectionError:
+        print(f"\n❌ CONNECTION ERROR: Could not connect to {API_URL}")
+        print(f"💡 Make sure FastAPI server is running!")
+        return False
+    except Exception as e:
+        print(f"\n❌ ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def init_broker_orders(api, BROKER, start_date=None, end_date=None):
@@ -314,7 +433,7 @@ def get_priceinfo_snapshot(api, ticker, crypto):
             ask = snap.latest_quote.ask_price
             price = snap.latest_trade.price
             if ask == 0 or price == 0:
-                print("ERROR Price OR Ask is 0 Ignore: ", ticker)
+                print("ERROR Price OR Ask is 0 Ignore: ", ticker, snap)
                 return {}
             
             priceinfo_order = {
@@ -438,7 +557,7 @@ def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_tim
             order_vars['borrowed_funds'] = False
         order_vars['qty_order'] = qty_order
         
-        new_queen_order_df = process_order_submission(
+        new_queen_order = process_order_submission(
             order_key=order_key,
             prod=prod,
             broker=broker,
@@ -455,7 +574,7 @@ def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_tim
         # logging.info(f"SUCCESS on BUY for {ticker}")
         msg = (f'EXECUTE BUY ORDER {ticker} {trig} {ticker_time_frame} {round(wave_amo,2):,}')
 
-        return {'executed': True, 'msg': msg, 'new_queen_order_df': new_queen_order_df, 'priceinfo_order': priceinfo_order, 'trigger_buy': trigger_buy}
+        return {'executed': True, 'msg': msg, 'new_queen_order': new_queen_order, 'priceinfo_order': priceinfo_order, 'trigger_buy': trigger_buy}
 
     except Exception as e:
         print_line_of_error(f"ERROR Ex BUY Order..Full Failure {ticker_time_frame} ERROR is {e}")
@@ -544,7 +663,7 @@ def execute_sell_order(broker, prod, api, QUEEN, king_eval_order, ticker, ticker
             order_vars['borrowed_funds'] = False
         
         # Order Vars 
-        new_queen_order_df = process_order_submission(
+        new_queen_order = process_order_submission(
             order_key=QUEEN['db_root'],
             prod=prod,
             broker=broker,
@@ -562,7 +681,7 @@ def execute_sell_order(broker, prod, api, QUEEN, king_eval_order, ticker, ticker
         msg = (f'ExOrder SELL {trig} {ticker_time_frame}')
         print(msg)
 
-        return{'executed': True, 'msg': msg, 'new_queen_order_df': new_queen_order_df, 'priceinfo_order': priceinfo_order}
+        return{'executed': True, 'msg': msg, 'new_queen_order': new_queen_order, 'priceinfo_order': priceinfo_order}
 
     except Exception as e:
         print("Error Ex Order..Full Failure" , ticker_time_frame, e, print_line_of_error())
@@ -761,7 +880,7 @@ def god_save_the_queen(QUEEN, QUEENsHeart=False, charlie_bee=False, save_q=False
         sys.exit()
 
 
-def queenbee(client_user, prod, queens_chess_piece='queen', server=server, loglevel='info'):
+def queenbee(client_user, prod, queens_chess_piece='queen', server=server, loglevel='warning'):
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     if client_user in ['stapinskistefan@gmail.com'] and not prod: #'stefanstapinski@gmail.com', 
         print("TESTING LOCAL SANDBOX SAVE DATA TO SERVER")
@@ -1138,14 +1257,18 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                             # print("buy trigger request Id already received")
                             continue
                         else:
-                            msg = ("APP BUY order gather", app_request['new_queen_order_df']['ticker_time_frame'])
+                            
                             QUEEN[app_requests__bucket].append(app_request['app_requests_id'])
-
+                            if isinstance(app_request['new_queen_order'], dict):
+                                msg = ("APP BUY order gather", app_request['new_queen_order']['ticker_time_frame'])
+                                new_queen_order_df = pd.DataFrame([app_request['new_queen_order']]).set_index("client_order_id", drop=False)
+                                append_queen_order(QUEEN, new_queen_order_df)
+                            else:
+                                msg = ("new queen order not dict error")
                             print(msg)
                             logging.info(msg)
-                            append_queen_order(QUEEN, new_queen_order_df=app_request.get('new_queen_order_df'))
-                                                        
-                            return {'app_flag': True} 
+
+                            return {'app_flag': True}
                 else:
                     return {'app_flag': False}
             
@@ -1537,37 +1660,34 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             return False
 
         def autopilot_check(QUEEN_KING, symbol):
-            auto_pilot_buy = QUEEN_KING['king_controls_queen']['ticker_autopilot']
-            if symbol not in auto_pilot_buy.index:
-                return True
-            if symbol in auto_pilot_buy.index:
-                if auto_pilot_buy.at[symbol, 'buy_autopilot'] != True:
+
+            try:
+                # Get ticker_autopilot as list of dicts
+                ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
+                
+                # Ensure it's a list
+                if not isinstance(ticker_autopilot, list):
+                    return True  # If not configured, allow buying
+                
+                # Find the symbol in the list
+                symbol_autopilot = next((item for item in ticker_autopilot if item.get('symbol') == symbol), None)
+                
+                # If symbol not found in autopilot list, allow buying
+                if not symbol_autopilot:
+                    return True
+                
+                # Check if buy_autopilot is enabled
+                if symbol_autopilot.get('buy_autopilot') != True:
                     # print(symbol, ": buy_autopilot FALSE")
                     return True
+                
+                # buy_autopilot is True, do not block
+                return False
+                
+            except Exception as e:
+                print(f"Error checking autopilot for {symbol}: {e}")
+                return True  # Allow buying on error
 
-            return False
-
-        def refresh_star_check(QUEEN_KING, queen_orders, symbol, ttf):
-            # if 'ticker_refresh_star' in QUEEN_KING['king_controls_queen'].keys():
-            #     refresh_star = QUEEN_KING['king_controls_queen']['ticker_refresh_star'].get(symbol, '1Day_1Year')
-            #     last_buy_datetime = queen_orders[(queen_orders['symbol'] == symbol) & (queen_orders['side']=='buy')]
-            #     if len(last_buy_datetime) > 0:
-            #         last_buy_datetime = last_buy_datetime.iloc[-1]['datetime']
-            #     else:
-            #         last_buy_datetime = datetime.now(est).replace(year=1989) # no last buy ~ buy away
-            #     seconds_needed = star_refresh_star_seconds(refresh_star)
-            #     time_in_trade_datetime = datetime.now(est) - last_buy_datetime
-                # if seconds_needed > time_in_trade_datetime.total_seconds():
-                #     print(symbol, ttf, ": STAR REFRESH TIME IN TRADE", time_in_trade_datetime.total_seconds(), "SECONDS NEEDED", seconds_needed)
-                    # return True
-            
-            return False
-
-        def star_messages(last_buy=None, msg=None):
-            # Your function logic here (if any)
-            
-            # Return the local variables
-            return locals()
 
         def stop_ticker(storygauge, ticker, QUEEN_KING):
             # Ensure Trading Model
@@ -1817,7 +1937,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                                       portfolio=QUEEN['portfolio']
                                                       )
                                 if exx.get('executed'):
-                                    append_queen_order(QUEEN, exx.get('new_queen_order_df'))
+                                    new_queen_order_df = pd.DataFrame([exx['new_queen_order']]).set_index("client_order_id", drop=False)
+                                    append_queen_order(QUEEN, new_queen_order_df)
                                     # logging.info(exx.get('msg'))
                                     msg = (exx.get('msg'))
                                     print(msg)
@@ -2355,15 +2476,24 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                 QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty'] = sell_qty
                                 # save_order = True
                         
-                        if not close_order_today and not app_request: # based on user input, profit, sellout,  and sell_trigbee_trigger...
-                            """ AUTO PILOT """
-                            auto_pilot_df = QUEEN_KING['king_controls_queen']['ticker_autopilot']
-                            if symbol in auto_pilot_df.index:
-                                if auto_pilot_df.at[symbol, 'sell_autopilot'] != True:
-                                    # print(symbol, ": sell_autopilot FALSE", " -- Sell Reasons", sell_reasons)
-                                    return {'sell_order': False, 'save_order': save_order}
-                            else:
+                    if not close_order_today and not app_request: # based on user input, profit, sellout,  and sell_trigbee_trigger...
+                        """ AUTO PILOT """
+                        # ✅ Get ticker_autopilot as list of dicts
+                        ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
+                        # ✅ Ensure it's a list
+                        if not isinstance(ticker_autopilot, list):
+                            return {'sell_order': False, 'save_order': save_order}
+                        # ✅ Find the symbol in the list
+                        symbol_autopilot = next((item for item in ticker_autopilot if item.get('symbol') == symbol), None)
+                        
+                        if symbol_autopilot:
+                            # Symbol found in autopilot list
+                            if symbol_autopilot.get('sell_autopilot') != True:
+                                # print(symbol, ": sell_autopilot FALSE", " -- Sell Reasons", sell_reasons)
                                 return {'sell_order': False, 'save_order': save_order}
+                        else:
+                            # Symbol not in autopilot list, block selling
+                            return {'sell_order': False, 'save_order': save_order}
 
 
                         makers_middle_price = priceinfo.get('maker_middle')
@@ -2465,14 +2595,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             client_order_id = run_order.get('client_order_id')
             # refresh_star = QUEEN_KING['king_controls_queen'] #### WORKERBEE
             entered_trade_time = run_order['datetime'].astimezone(est)
-            # if 'ticker_refresh_star' in QUEEN_KING['king_controls_queen'].keys():
-            #     refresh_star = QUEEN_KING['king_controls_queen']['ticker_refresh_star'].get(symbol, '1Day_1Year')
-            #     seconds_needed = star_refresh_star_seconds(refresh_star)
-            #     time_in_trade_datetime = datetime.now(est) - entered_trade_time
-                # if seconds_needed > time_in_trade_datetime.total_seconds():
-                #     print(symbol, ttf, ": STAR REFRESH TIME IN TRADE", time_in_trade_datetime.total_seconds(), "SECONDS NEEDED", seconds_needed)
-                    # return True
-            # measure times for all ticker_refresh_star
             
             if str(run_order['order_trig_sell_stop']).lower() == 'true': ### consider remaining qty
                 return True
@@ -2678,14 +2800,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                 )
                             if exx.get('executed'):
                                 save = True
-                                # logging.info(exx.get('msg'))
-                                append_queen_order(QUEEN, exx.get('new_queen_order_df'))
-                                queen_order_idx = exx.get('new_queen_order_df').index[0]
+                                new_queen_order_df = pd.DataFrame([exx['new_queen_order']]).set_index("client_order_id", drop=False)
+                                append_queen_order(QUEEN, new_queen_order_df)
+                                queen_order_idx = new_queen_order_df.index[0]
 
                                 QUEEN = refresh_broker_account_portolfio(api, QUEEN) #heartbeat
                                 
                                 """ Hold ORDER from being SOLD again until Release Validation """
-                                origin_order_idx = exx.get('new_queen_order_df').at[queen_order_idx, 'exit_order_link']
+                                origin_order_idx = new_queen_order_df.at[queen_order_idx, 'exit_order_link']
                                 QUEEN['queen_orders'].at[origin_order_idx, 'order_trig_sell_stop'] = True
                                 update_origin_order_qty_available(QUEEN=QUEEN, run_order_idx=origin_order_idx, RUNNING_CLOSE_Orders=RUNNING_CLOSE_Orders, RUNNING_Orders=RUNNING_Orders, save=save)
 
@@ -3065,8 +3187,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
             charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
             QUEEN['revrec'] = revrec
-            # Save Revrec WORKERBEE unessecary SAVING only save whats needed ! Handle via conscience_utils / websockets
+            # Save Revrec WORKERBEE unessecary SAVING only save whats needed ! Handle via conscience_utils / websockets SO need to refresh REVREC in API on first load
             god_save_the_queen(QUEEN, save_rr=True, console=False, upsert_to_main_server=upsert_to_main_server) # WORKERBEE unessecary SAVING only save whats needed
+            # check if active connection to websocket server and if so send revrec update # WORKERBEE
+            # check if any changes to revrec to send (priceinfo, QUEEN_KING changes) # WORKERBEE
+            if check_user_websocket_status(client_user, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
+                story_grid_update(QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server)
 
             # Process All Orders
             s_time = datetime.now(est)

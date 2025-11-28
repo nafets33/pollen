@@ -21,22 +21,13 @@ import argparse
 #pages
 # from pages.orders import order_grid, config_orders_cols
 from pages.conscience import queens_conscience
-# from pages.chessboard import chessboard
 
-# main chess piece
-# from chess_piece.workerbees import queen_workerbees
-# from chess_piece.workerbees_manager import workerbees_multiprocess_pool
 from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator, standard_AGgrid
 from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData, return_app_ip
 from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
 from chess_piece.queen_mind import kings_order_rules
 from chess_utils.trigrule_utils import create_TrigRule
 
-# componenets
-# import streamlit_antd_components as sac
-# from streamlit_extras.switch_page_button import switch_page
-# from streamlit_extras.stoggle import stoggle
-# import hydralit_components as hc
 from custom_button import cust_Button
 from chess_piece.pollen_db import PollenDatabase
 # from pages.PortfolioManager import ozz 
@@ -238,7 +229,6 @@ def sneak_peak_form():
             #     st.error("Incorrect Password")
             #     st.stop()
             st.session_state['sneak_pw'] = os.environ.get("quantqueen_pw")
-            # switch_page("LiveBot")
             st.switch_page("pages/LiveBot.py")
             
             return True
@@ -264,12 +254,6 @@ def display_for_unAuth_client_user(pct_queens_taken=89):
                     
 
     page_line_seperator("25")
-    # sneak_peak = st.button("Watch a QueenBot Trade Live")
-    # if sneak_peak:
-        # switch_page("LiveBot")
-    # st.error(
-    #     "ONLY a limited number of Queens Available!! Please contact pollenq.queen@gmail.com for any questions"
-    # )
 
     page_line_seperator("1")
 
@@ -306,7 +290,7 @@ def add_new_trading_models_settings(QUEEN_KING, active_orders=False):
     if save:
         st.write(new_rules_confirmation)
         if pg_migration:
-            save_king_queen(QUEEN_KING)
+            PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
         else:
             PickleData(st.session_state["PB_App_Pickle"], QUEEN_KING)
     
@@ -377,7 +361,7 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets, prod):
                 save = True
     if save:
         if pg_migration:
-            save_king_queen(QUEEN_KING)
+            PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
         else:
             PickleData(pickle_file=QUEEN_KING.get('source'), data_to_store=QUEEN_KING, console="Cleared APP Requests")
             st.success(f"Cleared App Request from {request_buckets}")
@@ -498,7 +482,6 @@ def pollenq(sandbox=False, demo=False):
             st.switch_page('pollen.py')
         else:
             st.switch_page('pages/sandbox.py')
-    
 
     ip_address = st.session_state['ip_address'] # return_app_ip()
     st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
@@ -511,6 +494,7 @@ def pollenq(sandbox=False, demo=False):
         prod_name = "Switch to Sandbox" if prod else "Switch to Live"
         image__ = "misc/power.png" if prod else "misc/bitcoin_spinning.gif"
         prod_switch = cust_Button(image__, hoverText=f'{prod_name}', key=f'switch_env', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
+   
     with cols[1]:
         header_text_1 = st.empty()
 
@@ -645,7 +629,7 @@ def pollenq(sandbox=False, demo=False):
         if APP_req['update']:
             print("Updating QK db")
             if pg_migration:
-                save_king_queen(QUEEN_KING)
+                PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
             else:
                 PickleData(QUEEN_KING.get('source'), QUEEN_KING, console=True)
 
@@ -728,16 +712,22 @@ def pollenq(sandbox=False, demo=False):
             king_controls_queen=return_queen_controls(stars)
             QUEEN_KING['king_controls_queen'] = king_controls_queen
             if st.session_state.get('pg_migration'):
-                save_king_queen(QUEEN_KING)
+                PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
             else:
                 PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="QUEEN CONTROLS RESET")
         if st.button("Reset TrigRules"):
             QUEEN_KING['king_controls_queen']['ticker_trigrules'] = [create_TrigRule(symbol='SPY')]
             if pg_migration:
-                save_king_queen(QUEEN_KING)
+                PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
             else:
                 PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="RESET TRIGRULES")
-
+        if st.button("Reset Auto Pilot"):
+            QUEEN_KING['king_controls_queen']['ticker_autopilot'] = [{'symbol': 'SPY', 'buy_autopilot': False, 'sell_autopilot': False}]
+            if pg_migration:
+                PollenDatabase.upsert_data(QUEEN_KING.get('table_name'), QUEEN_KING.get('key'), QUEEN_KING)
+            else:
+                PickleData(QUEEN_KING.get('source'), QUEEN_KING, console="RESET AUTO PILOT")
+    
     print(f'>>>> pollen END >>>> {(datetime.now() - main_page_start).total_seconds()}' )
 
 

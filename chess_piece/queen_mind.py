@@ -1478,18 +1478,11 @@ def refresh_chess_board__revrec(
 
             # Deploy Allocation Number
             waveview['allocation_deploy'] = waveview['allocation_long'] - waveview['star_buys_at_play_allocation']
-            waveview['allocation_deploy'] = np.where(waveview['star_total_budget']<=0,
-                                                     0, 
-                                                     waveview['allocation_deploy']
-                                                     ) # WORKERBEE This check should'v been handled earlier?
+            waveview['allocation_deploy'] = np.where(waveview['star_total_budget']<=0, 0,  waveview['allocation_deploy']) # WORKERBEE This check should'v been handled earlier?
             # Total Allocation Deploy Borrow        
             waveview['allocation_long_deploy'] = (waveview['allocation_long'] + waveview['allocation_borrow_long']) - waveview['star_buys_at_play_allocation']
             waveview['allocation_borrow_deploy'] = waveview['allocation_long_deploy'] - waveview['allocation_deploy']
 
-            # **New Logic for Deployment vs Margin** # Calculate deployment based on remaining budget and margin 
-            # waveview['deploy_vs_margin_ratio'] = np.where( waveview['remaining_budget_margin'] > 0, waveview['remaining_budget'] / (waveview['remaining_budget'] + waveview['remaining_budget_margin']), 1 # If margin is zero, deploy everything ) # Adjust deployment allocation based on the ratio 
-            # waveview['final_deploy_allocation'] = waveview['allocation_long_deploy'] * waveview['deploy_vs_margin_ratio'] # Calculate margin allocation 
-            # waveview['final_margin_allocation'] = waveview['allocation_long_deploy'] - waveview['final_deploy_allocation']
 
         except Exception as e:
             print_line_of_error(e)
@@ -1942,18 +1935,30 @@ def refresh_chess_board__revrec(
         s = datetime.now()
         ########### gauge ############
 
-        # Get refresh Star
-        ticker_refresh_star = QUEEN_KING['king_controls_queen'].get('ticker_refresh_star')
-        if type(ticker_refresh_star) == pd.DataFrame:
-            storygauge = storygauge.merge(ticker_refresh_star, left_index=True, right_index=True, how='left')
-            storygauge['ticker_refresh_star'] = storygauge['ticker_refresh_star'].fillna(False)
-            
         # Join in AutoPilot
-        ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot')
-        if type(ticker_autopilot) == pd.DataFrame:
-            storygauge = storygauge.merge(ticker_autopilot, left_index=True, right_index=True, how='left')
-            storygauge['buy_autopilot'] = storygauge['buy_autopilot'].fillna(False)
-            storygauge['sell_autopilot'] = storygauge['sell_autopilot'].fillna(False)
+        ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
+
+        # ✅ Handle list of dicts instead of DataFrame
+        if isinstance(ticker_autopilot, list) and len(ticker_autopilot) > 0:
+            # Convert list of dicts to DataFrame for joining
+            autopilot_df = pd.DataFrame(ticker_autopilot).set_index('symbol')
+            
+            # Only keep relevant columns
+            if 'buy_autopilot' in autopilot_df.columns and 'sell_autopilot' in autopilot_df.columns:
+                autopilot_df = autopilot_df[['buy_autopilot', 'sell_autopilot']]
+                
+                # Merge with storygauge
+                storygauge = storygauge.merge(autopilot_df, left_index=True, right_index=True, how='left')
+                storygauge['buy_autopilot'] = storygauge['buy_autopilot'].fillna(False)
+                storygauge['sell_autopilot'] = storygauge['sell_autopilot'].fillna(False)
+            else:
+                # Columns missing, set defaults
+                storygauge['buy_autopilot'] = False
+                storygauge['sell_autopilot'] = False
+        else:
+            # No autopilot data or wrong type, set defaults
+            storygauge['buy_autopilot'] = False
+            storygauge['sell_autopilot'] = False
         
         # Build a DataFrame from STORY_bee
         story_data = []
@@ -2033,11 +2038,8 @@ def refresh_chess_board__revrec(
             
             # Create lookup dict by trigger_id
             orders_by_trigger = aggregated_orders.set_index('trigger_id').to_dict('index')
-            
-            print(f"📊 Aggregated {len(aggregated_orders)} trigger_ids with orders")
         else:
             orders_by_trigger = {}
-            print("📊 No existing orders with trigger_ids")
 
         # Build comprehensive trigger rules with order data
         comprehensive_trig_rules = {}

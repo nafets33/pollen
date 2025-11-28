@@ -20,46 +20,60 @@ router = APIRouter(
     tags=["auth"]
 )
 
-logging.basicConfig(level=logging.ERROR)
+@router.get("/debug/active_connections")
+async def debug_active_connections():
+    """Debug: Show raw active connections data."""
+    connections_debug = []
+    
+    async with manager.lock:
+        for ws, info in manager.active_connections.items():
+            connections_debug.append({
+                'websocket_id': id(ws),
+                'websocket_state': str(ws.client_state) if hasattr(ws, 'client_state') else 'unknown',
+                'stored_data': info,
+                'keys_in_data': list(info.keys()),
+            })
+    
+    return {
+        "total_connections": len(manager.active_connections),
+        "raw_connections": connections_debug,
+        "timestamp": datetime.now(est).isoformat()
+    }
 
 ### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
 # ✅ Store active WebSocket connections by username
 active_connections: Dict[str, Set[WebSocket]] = {}
+
 @router.websocket("/ws_story")
 async def websocket_story_endpoint(websocket: WebSocket):
-    """
-    WebSocket endpoint for real-time story grid updates.
-    """
     client_user = None
+    toggle_view = None
     
     try:
-        # ✅ Accept connection FIRST
         await websocket.accept()
-        logging.info("🔌 WebSocket connection accepted, waiting for handshake...")
+        logging.info(f"✅ WebSocket accepted")
         
-        # ✅ Wait for handshake with timeout
-        try:
-            handshake_data = await asyncio.wait_for(
-                websocket.receive_text(), 
-                timeout=10.0
-            )
-        except asyncio.TimeoutError:
-            logging.error("❌ Handshake timeout - no data received from client")
+        # Receive handshake
+        data = await websocket.receive_text()
+        handshake = json.loads(data)
+        logging.info(f"📦 Handshake: {handshake}")
+        
+        client_user = handshake.get('username')
+        toggle_view = handshake.get('toggle_view_selection', 'queen')
+        api_key = handshake.get('api_key')
+        
+        # Validate
+        if not client_user:
+            logging.error("❌ No username in handshake")
+            await websocket.send_text(json.dumps({
+                'type': 'error',
+                'message': 'username required'
+            }))
             await websocket.close()
             return
         
-        handshake = json.loads(handshake_data)
-        
-        client_user = handshake.get('username')
-        api_key = handshake.get('api_key')
-        toggle_view = handshake.get('toggle_view_selection', 'queen')
-        
-        logging.info(f"📥 Received handshake from: {client_user}")
-        
-        # ✅ Validate API key
-        expected_key = os.getenv('fastAPI_key')
-        if api_key != expected_key:
-            logging.error(f"❌ Invalid API key from {client_user}")
+        if api_key != os.getenv('fastAPI_key'):
+            logging.error(f"❌ Invalid API key")
             await websocket.send_text(json.dumps({
                 'type': 'error',
                 'message': 'Invalid API key'
@@ -67,60 +81,59 @@ async def websocket_story_endpoint(websocket: WebSocket):
             await websocket.close()
             return
         
-        # ✅ Register connection with manager
-        async with manager.lock:
-            manager.active_connections[websocket] = {
-                'username': client_user,
-                'toggle_view_selection': toggle_view,
-                'connected_at': str(datetime.now())
-            }
+        # Register connection
+        await manager.connect(websocket, {
+            'username': client_user,
+            'toggle_view_selection': toggle_view,
+            'connected_at': str(datetime.now())
+        })
         
-        logging.info(f"✅ WebSocket registered: {client_user} | Total: {len(manager.active_connections)}")
+        logging.info(f"✅ Registered {client_user} in manager")
+        logging.info(f"📊 Total connections: {len(manager.active_connections)}")
         
-        # ✅ Send confirmation
+        # Send confirmation
         await websocket.send_text(json.dumps({
             'type': 'connection_established',
             'message': f'Connected as {client_user}',
-            'toggle_view': toggle_view
+            'username': client_user
         }))
         
-        logging.info(f"✅ Confirmation sent to {client_user}, entering message loop...")
-        
-        # ✅ Keep connection alive
+        # ✅ Keep alive loop - handle ping/pong
         while True:
             try:
-                # Wait for client messages (ping/pong, etc.)
                 data = await websocket.receive_text()
-                logging.debug(f"📥 Received from {client_user}: {data}")
+                message = json.loads(data)
                 
-                # Handle ping
-                if data == 'ping':
-                    await websocket.send_text('pong')
-                    logging.debug(f"🏓 Pong sent to {client_user}")
+                # ✅ Handle ping from client
+                if message.get('type') == 'ping':
+                    logging.debug(f"💓 Received ping from {client_user}")
+                    await websocket.send_text(json.dumps({
+                        'type': 'pong',
+                        'timestamp': datetime.now(est).isoformat()
+                    }))
+                else:
+                    # Handle other message types if needed
+                    logging.debug(f"📨 Message from {client_user}: {str(message)[:100]}")
                     
             except WebSocketDisconnect:
-                logging.info(f"🔌 Client {client_user} disconnected gracefully")
+                logging.info(f"🔌 {client_user} disconnected normally")
                 break
+            except json.JSONDecodeError as e:
+                logging.warning(f"⚠️  Invalid JSON from {client_user}: {e}")
             except Exception as e:
                 logging.error(f"❌ Error in message loop for {client_user}: {e}")
                 break
                 
     except WebSocketDisconnect:
-        logging.info(f"🔌 WebSocket disconnected during setup: {client_user}")
-    except json.JSONDecodeError as e:
-        logging.error(f"❌ Invalid JSON in handshake: {e}")
+        logging.info(f"🔌 WebSocket disconnected: {client_user}")
     except Exception as e:
         logging.error(f"❌ WebSocket error for {client_user}: {e}")
         import traceback
         traceback.print_exc()
     finally:
-        # ✅ Clean up
-        logging.info(f"🧹 Cleaning up connection for {client_user}")
         await manager.disconnect(websocket)
-        try:
-            await websocket.close()
-        except:
-            pass
+        logging.info(f"🗑️ Cleaned up {client_user}")
+
 
 @router.post("/trigger_story_grid_update")
 async def trigger_story_grid_update(request: Request):
@@ -136,10 +149,10 @@ async def trigger_story_grid_update(request: Request):
         
         client_user = payload.get('client_user')
         api_key = payload.get('api_key')
-        QUEEN_KING = payload.get('QUEEN_KING')
+        # QUEEN_KING = payload.get('QUEEN_KING')
         revrec = payload.get('revrec')
         toggle_view_selection = payload.get('toggle_view_selection', 'queen')
-        qk_chessboard = payload.get('qk_chessboard')
+        # qk_chessboard = payload.get('qk_chessboard')
         
         # ✅ Validate API key
         if api_key != os.getenv('fastAPI_key'):
@@ -157,10 +170,10 @@ async def trigger_story_grid_update(request: Request):
         # ✅ Send update
         success = await send_story_grid_update(
             client_user=client_user,
-            QUEEN_KING=QUEEN_KING,
+            # QUEEN_KING=QUEEN_KING,
             revrec=revrec,
             toggle_view_selection=toggle_view_selection,
-            qk_chessboard=qk_chessboard
+            # qk_chessboard=qk_chessboard
         )
         
         if success:
@@ -182,6 +195,67 @@ async def trigger_story_grid_update(request: Request):
             "status": "error",
             "message": str(e)
         }
+
+@router.get("/ws_status/{client_user}")
+async def get_websocket_status(client_user: str):
+    """Check if user has active WebSocket connection."""
+    try:
+        # ✅ Safely iterate over connections
+        user_connections = []
+        all_users = set()
+        
+        async with manager.lock:
+            for ws, info in list(manager.active_connections.items()):
+                client_user = info.get('username')
+                if client_user:
+                    all_users.add(client_user)
+                    if client_user == client_user:
+                        user_connections.append(ws)
+        
+        return {
+            "client_user": client_user,
+            "connected": len(user_connections) > 0,
+            "connection_count": len(user_connections),
+            "all_connected_users": sorted(list(all_users)),
+            "total_connections": len(manager.active_connections),
+            "timestamp": datetime.now(est).isoformat()
+        }
+    except Exception as e:
+        logging.error(f"❌ Error in ws_status: {e}")
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@router.get("/ws_status")
+async def get_all_websocket_status():
+    """Get all active WebSocket connections."""
+    try:
+        users_dict = {}
+        
+        async with manager.lock:
+            for ws, info in list(manager.active_connections.items()):
+                client_user = info.get('username')
+                if client_user:
+                    users_dict[client_user] = users_dict.get(client_user, 0) + 1
+        
+        return {
+            "total_users": len(users_dict),
+            "total_connections": len(manager.active_connections),
+            "users": users_dict,
+            "timestamp": datetime.now(est).isoformat()
+        }
+    except Exception as e:
+        logging.error(f"❌ Error in ws_status: {e}")
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 ### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
 
 

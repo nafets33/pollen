@@ -59,7 +59,7 @@ current_month = datetime.now(est).month
 current_year = datetime.now(est).year
 
 
-def init_logging(queens_chess_piece, prod=True, loglevel='error', db_root=''):
+def init_logging(queens_chess_piece, prod=True, loglevel='warning', db_root=''):
     """
     Initializes logging to write to PostgreSQL instead of files.
     """
@@ -813,17 +813,19 @@ def set_chess_pieces_symbols(QUEEN_KING, qcp_bees_key):
         # worker_names = [v.get('piece_name') for i, v in QUEEN_KING[qcp_bees_key].items()]
         
         ticker_qcp_index = {}
-        view = []
         dups = {}
 
         for qcp in all_workers:
-            view.append(f'{qcp.upper()} ({QUEEN_KING[qcp_bees_key][qcp].get("tickers")} )')
-            for ticker in QUEEN_KING[qcp_bees_key][qcp].get("tickers"):
-                ticker_qcp_index[ticker] = qcp
-                if ticker in dups.keys():
-                    dups[ticker] = qcp
-        
-        return {'ticker_qcp_index': ticker_qcp_index, 'view': view, 'all_workers': all_workers, 'dups': dups}
+            qcp_tickers = QUEEN_KING[qcp_bees_key][qcp].get("tickers")
+            if len(qcp_tickers) > 1:
+                for ticker in qcp_tickers:
+                    ticker_qcp_index[ticker] = qcp
+                    if ticker in dups.keys():
+                        dups[ticker] = qcp
+            else:
+                print(f'WARNING: {qcp} has no tickers assigned!')
+    
+        return {'ticker_qcp_index': ticker_qcp_index, 'all_workers': all_workers, 'dups': dups}
     except Exception as e:
         print_line_of_error(e)
 
@@ -3631,16 +3633,10 @@ def process_order_submission(order_key, prod, broker, trading_model, order, orde
         priceinfo=priceinfo,
         )
 
-        # Append Order
-        new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id", drop=False)
-        new_queen_order_df['cost_basis_current'] = new_queen_order_df.get('wave_amo')
-
-        # # Append to queen_orders table
-        # table_name = 'queen_orders' if prod else 'queen_orders_sandbox'
-        # key = f'{order_key}___{client_order_id}'
-        # PollenDatabase.upsert_data(table_name=table_name, key=key, value=new_queen_order_df.loc[client_order_id].to_dict(), console=True)
+        new_queen_order['cost_basis_current'] = new_queen_order['wave_amo']
+        # new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id", drop=False)
         
-        return new_queen_order_df
+        return new_queen_order
 
     except Exception as e:
         print_line_of_error()
@@ -3914,14 +3910,6 @@ def create_QueenOrderBee(
     return running_order
 
 
-# def sync_current_broker_account(symbol, BROKER, QUEEN, ORDERS):
-#     # WORKERBEE
-#     ## Sync current broker account
-#     # check broker_qty_delta >> if <0 then find orders, create order link, determine which star to use based on budget, if not budget use 1 year
-
-#     return True
-
-
 def generate_queen_buying_powers_settings(
     portfolio_name="Jq", total_dayTrade_allocation=0.5, total_longTrade_allocation=0.5
 ):
@@ -3989,16 +3977,8 @@ def return_queen_controls(stars=stars):
             # "ready_buy_cross": "not_active", # NOT USED
         },        
         # revrec
-        'ticker_autopilot' : pd.DataFrame([{'symbol': 'SPY', 'buy_autopilot': True, 'sell_autopilot': True}]).set_index('symbol'),
-        'ticker_refresh_star': pd.DataFrame([{'symbol': 'SPY', 'ticker_refresh_star': None}]).set_index('symbol'),
+        'ticker_autopilot' : [{'symbol': 'SPY', 'buy_autopilot': False, 'sell_autopilot': False}],
         'ticker_trigrules': [create_TrigRule(symbol='SPY')], # GAMBLE_v2
-
-        ## NOT USED ##
-        # 'daytrade_risk_takes': {'frame_blocks': {'morning': 1, 'lunch': 1, 'afternoon':1},'budget_type': 'star'}, # NOT USED
-        # 'throttle': .5, # NOT USED
-        # 'ticker_buying_powers': {'SPY': {'buying_power': 0, 'borrow_power': 0}}, # not needed done in KORS
-        # 'ticker_revrec_allocation_mapping' : {}, # not needed done in KORS
-        # 'trade_only_margin': False, # control not adding WORKERBEE
 
     }
     return queen_controls_dict

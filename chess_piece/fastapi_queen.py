@@ -282,7 +282,7 @@ def return_startime_from_ttf(ticker_time_frame):
    t,tt,f = ticker_time_frame.split("_")
    return f'{tt}_{f}'
 
-def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0', long_short='long', wave_buy_orders=[], wave_buys=False): # index & wave_amount
+def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0', long_short='long', wave_buy_orders=[], wave_buys=False, buy_amount_field="allocation_long"): # index & wave_amount
   try:
     #WORKERBEE Handling Crypto, # workerbee add check for buying amount allowed
     
@@ -290,8 +290,8 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     if wave_buys:
       if len(df_wave_buys) > 0:
         df_wave_buys['close_order_today'] = df_wave_buys['close_order_today'].astype(bool)
-        df_wave_buys['buy_amount'] = pd.to_numeric(df_wave_buys['buy_amount'], errors='coerce').fillna(0)
-        df_wave_buys = df_wave_buys[(df_wave_buys['confirm_buy'] == True) & (df_wave_buys['buy_amount'] > 0)]
+        df_wave_buys[buy_amount_field] = pd.to_numeric(df_wave_buys[buy_amount_field], errors='coerce').fillna(0)
+        df_wave_buys = df_wave_buys[(df_wave_buys['confirm_buy'] == True) & (df_wave_buys[buy_amount_field] > 0)]
         if df_wave_buys.empty:
           return grid_row_button_resp(status='error', description='No valid wave buy orders to process.', message_type='fade', close_modal=False, color_text='red', error=True)
       else:
@@ -331,7 +331,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
           'star_borrow_budget', 'remaining_budget_borrow', 'star_at_play',
           'star_at_play_borrow', 'allocation_long', 'allocation_long_deploy',
           'allocation_deploy', 'limit_price', 'take_profit', 'sell_out',
-          'buy_amount', ] # 'close_order_today', 'sell_trigbee_date', ''confirm_buy'
+          buy_amount_field, ] # 'close_order_today', 'sell_trigbee_date', ''confirm_buy'
     
     orders_saved_msg = []
     if wave_buys and len(df_wave_buys) > 0:
@@ -356,7 +356,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
         # else:
         #     kors['sell_trigbee_date'] = False
         # print(type(kors['sell_trigbee_date']), kors['sell_trigbee_date'], "sell_trigbee_date")
-        kors['wave_amo'] = row.get('buy_amount', 0)
+        kors['wave_amo'] = row.get(buy_amount_field, 0)
         kors['limit_price'] = row.get('limit_price', 0)
         
         # Trading Model
@@ -426,7 +426,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
         if exx.get('executed'):
           print("APP EXX Order")
 
-          buy_package.update({'new_queen_order_df': exx.get('new_queen_order_df')})   
+          buy_package.update({'new_queen_order': exx.get('new_queen_order')})
 
           # save
           QUEEN_KING['buy_orders'].append(buy_package)
@@ -509,7 +509,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
       if exx.get('executed'):
         print("APP EXX Order")
 
-        buy_package.update({'new_queen_order_df': exx.get('new_queen_order_df')})   
+        buy_package.update({'new_queen_order': exx.get('new_queen_order')})   
 
         # save
         QUEEN_KING['buy_orders'].append(buy_package)
@@ -1117,17 +1117,44 @@ def update_buy_autopilot(client_user, prod, selected_row, default_value, status=
     buy_autopilot = default_value.get('buy_autopilot')
     QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
     symbol = selected_row.get('symbol')
-    if symbol not in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
-        QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([None, None], index=['buy_autopilot', 'sell_autopilot'])
     
-    status = f'{status} BUY AutoPilot Updated to {buy_autopilot}'
-    QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'buy_autopilot'] = buy_autopilot
+    # ✅ Handle list of dicts instead of DataFrame
+    ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
+    
+    # Ensure it's a list
+    if not isinstance(ticker_autopilot, list):
+        ticker_autopilot = []
+    
+    # Find existing entry for symbol
+    existing_entry = None
+    for idx, entry in enumerate(ticker_autopilot):
+        if entry.get('symbol') == symbol:
+            existing_entry = idx
+            break
+    
+    # Update or add new entry
+    if existing_entry is not None:
+        # Update existing
+        ticker_autopilot[existing_entry]['buy_autopilot'] = buy_autopilot
+        status = f'{status} BUY AutoPilot Updated to {buy_autopilot}'
+    else:
+        # Add new entry
+        ticker_autopilot.append({
+            'symbol': symbol,
+            'buy_autopilot': buy_autopilot,
+            'sell_autopilot': False  # Default value
+        })
+        status = f'{status} BUY AutoPilot Created with value {buy_autopilot}'
+    
+    # Save back to QUEEN_KING
+    QUEEN_KING['king_controls_queen']['ticker_autopilot'] = ticker_autopilot
 
     if pg_migration:
         table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
         PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
     else:
        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    
     print(status)
     return grid_row_button_resp(description=status)
 
@@ -1137,20 +1164,46 @@ def update_sell_autopilot(client_user, prod, selected_row, default_value, status
     sell_autopilot = default_value.get('sell_autopilot')
     QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
     symbol = selected_row.get('symbol')
-    if symbol not in QUEEN_KING['king_controls_queen']['ticker_autopilot'].index:
-        QUEEN_KING['king_controls_queen']['ticker_autopilot'].loc[symbol] = pd.Series([False, False], index=['buy_autopilot', 'sell_autopilot'])
-  
-    status = f'{status} SELL AutoPilot Updated to {sell_autopilot}'
-    QUEEN_KING['king_controls_queen']['ticker_autopilot'].at[symbol, 'sell_autopilot'] = sell_autopilot
     
+    # ✅ Handle list of dicts instead of DataFrame
+    ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
+    
+    # Ensure it's a list
+    if not isinstance(ticker_autopilot, list):
+        ticker_autopilot = []
+    
+    # Find existing entry for symbol
+    existing_entry = None
+    for idx, entry in enumerate(ticker_autopilot):
+        if entry.get('symbol') == symbol:
+            existing_entry = idx
+            break
+    
+    # Update or add new entry
+    if existing_entry is not None:
+        # Update existing
+        ticker_autopilot[existing_entry]['sell_autopilot'] = sell_autopilot
+        status = f'{status} SELL AutoPilot Updated to {sell_autopilot}'
+    else:
+        # Add new entry
+        ticker_autopilot.append({
+            'symbol': symbol,
+            'buy_autopilot': False,  # Default value
+            'sell_autopilot': sell_autopilot
+        })
+        status = f'{status} SELL AutoPilot Created with value {sell_autopilot}'
+    
+    # Save back to QUEEN_KING
+    QUEEN_KING['king_controls_queen']['ticker_autopilot'] = ticker_autopilot
+
     if pg_migration:
         table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
         PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
     else:
        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+    
     print(status)
     return grid_row_button_resp(description=status)
-
 
 def update_queenking_chessboard(client_user, prod, selected_row, default_value): # DEPRECATED NOT USED
    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
@@ -1321,11 +1374,6 @@ def queenking_symbol(client_user, prod, selected_row, default_value, triggers):
                 if qcp != value:
                     if remove_symbol_from_chess_board(chess_board, symbol):
                         add_symbol_to_chess_board(chess_board, value, symbol)
-        elif key == 'refresh_star': # add as new key to KORS?
-            trading_model['refresh_star'] = refresh_star_names.get(value[0])
-            if 'ticker_refresh_star' in QUEEN_KING['king_controls_queen'].keys():
-              QUEEN_KING['king_controls_queen']['ticker_refresh_star'].at[symbol, 'refresh_star'] = refresh_star_names.get(value[0])
-
         elif key == 'status': # qcp data ? change / remove
             # QUEEN_KING["chess_board"][ticker] = init_qcp(ticker_list=[ticker], buying_power=buying_power, piece_name=ticker)
             pass

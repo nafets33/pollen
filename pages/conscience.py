@@ -702,7 +702,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
     ##### STREAMLIT ###
 
   
-    def story_grid(prod, client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default', tab_view=None):
+    def story_grid(prod, client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default', tab_view=None, api_ws=None):
 
         king_G = kingdom__global_vars()
         try:
@@ -826,14 +826,14 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             'display_grid_column': 'wave_data',
                             'editableCols': [
                                 # { 'col_header': "buy_qty", 'dtype': "number" },
-                                { 'col_header': "buy_amount", 'dtype': "number" },
+                                { 'col_header': "confirm_buy", 'dtype': "checkbox" },
+                                { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore AutoPilot"},
+                                { 'col_header': "close_order_today", 'dtype': "checkbox" },
+                                { 'col_header': "allocation_long", 'dtype': "number", "display_name": "Buy Amount"},
                                 { 'col_header': "limit_price", 'dtype': "number" },
                                 { 'col_header': "take_profit", 'dtype': "number" },
                                 { 'col_header': "sell_out", 'dtype': "number" },
                                 { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
-                                { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore Allocation Deploy"},
-                                { 'col_header': "close_order_today", 'dtype': "checkbox" },
-                                { 'col_header': "confirm_buy", 'dtype': "checkbox" },
                                 ],
                             },
 
@@ -965,14 +965,34 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                 'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110} ,
                 'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
                 'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
-                'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
-                                'cellStyle': generate_shaded_cell_style('trinity_w_L'), 'pinned': 'right'},
-                'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                'cellStyle': generate_shaded_cell_style('trinity_w_15')},
-                'trinity_w_30': {'headerName': 'MACD-VWAP-RSI Quarter','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                'cellStyle': generate_shaded_cell_style('trinity_w_30')},
-                'trinity_w_54': {'headerName': 'MACD-VWAP-RSI Year','sortable': True, 'initialWidth': 89, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                'cellStyle': generate_shaded_cell_style('trinity_w_54')},
+                'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 
+                                'initialWidth': 89, 'enableCellChangeFlash': True, 
+                                'cellRenderer': 'agAnimateShowChangeCellRenderer', 
+                                'cellStyle': generate_shaded_cell_style('trinity_w_L'), 
+                                'pinned': 'right',
+                                'valueFormatter': value_format_pct,
+                                },
+                'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 
+                                 'initialWidth': 89, 'enableCellChangeFlash': True, 
+                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                                'cellStyle': generate_shaded_cell_style('trinity_w_15'),
+                                'valueFormatter': value_format_pct,
+                                },
+                'trinity_w_30': {'headerName': 'MACD-VWAP-RSI Quarter','sortable': True, 
+                                 'initialWidth': 89, 
+                                 'enableCellChangeFlash': True, 
+                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                                'cellStyle': generate_shaded_cell_style('trinity_w_30'),
+                                'valueFormatter': value_format_pct,
+                                },
+                'trinity_w_54': {'headerName': 'MACD-VWAP-RSI Year',
+                                 'sortable': True, 
+                                 'initialWidth': 89, 
+                                 'enableCellChangeFlash': True, 
+                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                                'cellStyle': generate_shaded_cell_style('trinity_w_54'),
+                                'valueFormatter': value_format_pct,
+                                },
                 'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
                 'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
@@ -1107,14 +1127,16 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
             g_buttons = story_grid_buttons(storygauge, hf)
             go = gb.build()
             # go['pivotMode'] = True
-
+            api_ws = f"{ip_address}/api/data/ws_story"
+            if api_ws:
+                refresh_sec = None
             print("STORY GRID refresh_sec", refresh_sec)
             st_custom_grid(
                 key=f'{prod}{tab_view}story_grid{ui_refresh_sec}',
                 client_user=client_user,
                 username=client_user, 
                 api=f"{ip_address}/api/data/story",
-                api_ws=f"{ip_address}/api/data/ws_story",
+                api_ws=api_ws,
                 api_update=f"{ip_address}/api/data/update_queenking_chessboard",
                 refresh_sec=refresh_sec, 
                 refresh_cutoff_sec=seconds_to_market_close, 

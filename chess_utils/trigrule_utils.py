@@ -1,5 +1,6 @@
 from datetime import datetime
 import pandas as pd
+import logging
 
 
 ### """ TRIGGER RULES"""
@@ -206,7 +207,7 @@ def get_existing_trigrule_orders(symbols, active_orders):
         # Filter out orders without trigger_ids
         existing_orders = existing_orders[existing_orders['trigger_id'].notna()].copy()
         
-        print(f"[TRIGRULE DEBUG] Found {len(existing_orders)} existing orders with trigger_ids")
+        logging.info(f"[TRIGRULE DEBUG] Found {len(existing_orders)} existing orders with trigger_ids")
         
         return existing_orders[['symbol', 'trigger_id', 'queen_order_state', 'order_rules', 'cost_basis_current', 'filled_qty', 'qty_available', 'money', 'honey']]
     
@@ -258,14 +259,14 @@ def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df
             marker_value = float(rule.get('marker_value'))
 
             if pd.isna(marker_value):
-                print(f"[TRIGRULE DEBUG] Rule {idx} skipped: marker_value is NaN")
+                logging.info(f"[TRIGRULE DEBUG] Rule {idx} skipped: marker_value is NaN")
                 continue
 
             # Check if this trigger_id already has an order (max_order_nums = 1)
             trigger_id = f"{symbol}_{rule.get('trigrule_type')}_{rule.get('ttf')}"
             
             if trigger_id in existing_trigger_ids:
-                print(f"[TRIGRULE DEBUG] Rule {idx} skipped: existing order found with trigger_id: {trigger_id}")
+                logging.info(f"[TRIGRULE DEBUG] Rule {idx} skipped: existing order found with trigger_id: {trigger_id}")
                 continue
 
             # Check wave_trinity type
@@ -283,12 +284,12 @@ def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df
                         condition_met = story_field_value >= marker_value
 
                     if condition_met:
-                        print(f"[TRIGRULE DEBUG] TrigRule PASSED for {symbol}! trigger_id: {trigger_id} ::: marker_direction {marker_direction} Marker Value {marker_value} VS Trinity Value {story_field_value} ")
+                        logging.info(f"[TRIGRULE DEBUG] TrigRule PASSED for {symbol}! trigger_id: {trigger_id} ::: marker_direction {marker_direction} Marker Value {marker_value} VS Trinity Value {story_field_value} ")
                         rule_dict = rule.to_dict()
                         rule_dict['trigger_id'] = trigger_id
                         return rule_dict
                     else:
-                        print(f"[TRIGRULE DEBUG] TrigRule NOT PASSED for {symbol} (condition not met)")
+                        logging.info(f"[TRIGRULE DEBUG] TrigRule NOT PASSED for {symbol} (condition not met)")
 
             # Check trading_pairs Rule
             elif trigrule_type == 'trading_pairs':  # WORKERBEE NEED TO REDO THIS LOGIC
