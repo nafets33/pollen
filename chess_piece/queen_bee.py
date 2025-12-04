@@ -2375,6 +2375,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 now_time = datetime.now(est)
                 sell_reasons = []
                 close_order_today = order_rules.get('close_order_today')
+                makers_middle_price = priceinfo.get('maker_middle')
+                if 'sell_reason' not in run_order.keys():
+                    run_order['sell_reason'] = []
+                if 'queen_wants_to_sell_qty' not in run_order.keys():
+                    run_order['queen_wants_to_sell_qty'] = 0
+
                 try:
                     sell_trigbee_datetime = order_rules.get('sell_trigbee_date')
                     if sell_trigbee_datetime:
@@ -2393,36 +2399,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 # last_call_time = now_time.replace(hour=15, minute=58, second=0)
 
                 try:
-                    # if scalp_profits:
-                    #     scalp_profits = order_rules['scalp_profits_timeduration']
-                    #     if time_in_trade_datetime.total_seconds() > float(scalp_profits):
-                    #         if honey_gauge['last_30_avg']:
-                    #             # store message and compare trading model against distance from breakeven
-                    #             if honey_gauge['last_30_avg'] < 0:
-                    #                 profit_seek = qorder_honey__distance_from_breakeven_tiers(run_order=run_order)
-                    #                 profit_stars = ['high_above_breakeven', 'low_above_breakeven', 'breakeven', 'below_breakeven', 'immediate']
-                    #                 # if profit_seek = 'high_above_breakeven'
-                    #                 # set limit price based on profit_seek
-                    #                 # print("selling out due Scalp Exit last_30_avg ")
-                    #                 sell_reason = 'scalp_exit__last_30_avg'
-                    #                 # sell_reasons.append(sell_reason)
-                    #                 # sell_order = True
-                    #                 # order_side = 'sell'
-                    #                 # limit_price = False
-                    #                 profit_seek_value = priceinfo['maker_middle'] + abs(float(honey) * float(run_order['filled_avg_price']))
-                    #                 profit_seek_value = profit_seek_value + (priceinfo['maker_middle'] * .00033)
-                    #                 # print(f'{run_order.get("filled_avg_price")}, {profit_seek_value}')
-                    #                 # if crypto:
-                    #                 #     limit_price = round(profit_seek_value, 1) # current price + (current price * profit seek)
-                    #                 # else:
-                    #                 #     limit_price = round(profit_seek_value, 2) # current price + (current price * profit seek)
-
-                    #                 # # store message
-                    #                 # if 'queen_orders' in QUEEN['subconscious'].keys():
-                    #                 #     QUEEN['subconscious']['queen_orders'].update({run_order['client_order_id']: {'client_order_id': run_order['client_order_id'],  'waterfall_sellout_msg': f'{"last_30_avg"}{" find exit price"}' }})
-                    #                 # else:
-                    #                 #     QUEEN['subconscious']['queen_orders'] = {run_order['client_order_id']: {'client_order_id': run_order['client_order_id'],  'waterfall_sellout_msg': f'{"last_30_avg"}{" find exit price"}' }}
-
                     """ Take Profit """
                     if honey >= take_profit:
                         # print(f"{ticker_time_frame} selling out due PROFIT ACHIVED order profit: {take_profit}")
@@ -2481,34 +2457,52 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                         order_type = app_req['type']
                         order_side = app_req['side']
                         limit_price = False
-                    
 
-                    if sell_order and sell_reasons:
-                        if 'sell_reason' in run_order.keys():
-                            current_reasons = QUEEN['queen_orders'].at[client_order_id, 'sell_reason']
-                            if str(current_reasons) != str(sell_reasons):
-                                # print(ticker_time_frame,  ": Sell Reason Changed", current_reasons, "to", sell_reasons)
-                                QUEEN['queen_orders'].at[client_order_id, 'sell_reason'] = sell_reasons
-                                # save_order = True
-                        if 'queen_wants_to_sell_qty' in run_order.keys():
-                            current_sell_qty = QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty']
-                            if sell_qty != current_sell_qty:
-                                # print(ticker_time_frame, "QUEEN WANTS TO SELL QTY CHANGED: from ", current_sell_qty, "TO NOW SELL", sell_qty)
-                                QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty'] = sell_qty
-                                # save_order = True
+                    """ Check RevRec for Sell Qty Allowed """
+                    sell_qty = check_revrec(order_rules=order_rules,
+                                            sell_qty=sell_qty, 
+                                            revrec=revrec, 
+                                            crypto=crypto, 
+                                            ticker_time_frame=ticker_time_frame, 
+                                            makers_middle_price=makers_middle_price, 
+                                            close_order_today=close_order_today,
+                                            app_request=app_request,
+                                            min_allocation_field='ticker_total_budget',
+                                            )
+
+                    # ALWAYS update queen_wants_to_sell_qty and sell_reason (even if not selling)
+                    current_sell_reasons = QUEEN['queen_orders'].at[client_order_id, 'sell_reason']
+                    current_sell_qty = QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty']
+                    
+                    # Track if changes occurred
+                    reasons_changed = str(current_sell_reasons) != str(sell_reasons)
+                    qty_changed = current_sell_qty != sell_qty
+                    
+                    # Update sell_reason if changed
+                    if reasons_changed:
+                        QUEEN['queen_orders'].at[client_order_id, 'sell_reason'] = sell_reasons
+                        # save_order = True
+                        print(f"{ticker_time_frame}: Sell Reason Changed from {current_sell_reasons} to {sell_reasons}")
+                    
+                    # Update queen_wants_to_sell_qty if changed
+                    if qty_changed:
+                        QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty'] = sell_qty
+                        # save_order = True
+                        print(f"{ticker_time_frame}: QUEEN wants to sell QTY changed from {current_sell_qty} to {sell_qty}")
+
+                    # if sell_order and sell_reasons:
+                    #     QUEEN['queen_orders'].at[client_order_id, 'sell_reason'] = sell_reasons
+                    #     QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty'] = sell_qty
+                    #     save_order = True
                         
                     if not close_order_today and not app_request: # based on user input, profit, sellout,  and sell_trigbee_trigger...
                         """ AUTO PILOT """
-                        # ✅ Get ticker_autopilot as list of dicts
                         ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
-                        # ✅ Ensure it's a list
                         if not isinstance(ticker_autopilot, list):
                             return {'sell_order': False, 'save_order': save_order}
-                        # ✅ Find the symbol in the list
                         symbol_autopilot = next((item for item in ticker_autopilot if item.get('symbol') == symbol), None)
                         
                         if symbol_autopilot:
-                            # Symbol found in autopilot list
                             if symbol_autopilot.get('sell_autopilot') != True:
                                 # print(symbol, ": sell_autopilot FALSE", " -- Sell Reasons", sell_reasons)
                                 return {'sell_order': False, 'save_order': save_order}
@@ -2517,20 +2511,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                             return {'sell_order': False, 'save_order': save_order}
 
 
-                        makers_middle_price = priceinfo.get('maker_middle')
-                        mm_cost = priceinfo.get('maker_middle') * sell_qty
                         order_side = 'sell'
-                        sell_qty = check_revrec(order_rules=order_rules,
-                                                sell_qty=sell_qty, 
-                                                revrec=revrec, 
-                                                crypto=crypto, 
-                                                ticker_time_frame=ticker_time_frame, 
-                                                makers_middle_price=makers_middle_price, 
-                                                close_order_today=close_order_today,
-                                                app_request=app_request,
-                                                min_allocation_field='ticker_total_budget',
-                                                )
-                        
+                        mm_cost = priceinfo.get('maker_middle') * sell_qty
                         if sell_qty > 0:
                             msg = ("Bishop SAYs SELL:", symbol, ticker_time_frame, sell_reasons, current_macd, sell_qty, mm_cost)
                             print(msg)
@@ -2551,19 +2533,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                             # print("Bishop DONOT SELL Min.Allocation Stop", ticker_time_frame)
                             return {'sell_order': False, 'save_order': save_order}
                     else:
-                        pass
-                        if 'sell_reason' in run_order.keys():
-                            current_reasons = QUEEN['queen_orders'].at[client_order_id, 'sell_reason']
-                            if str(current_reasons) != str([]):
-                                # print(ticker_time_frame,  ": Sell Reason Changed", current_reasons, "to", sell_reasons)
-                                QUEEN['queen_orders'].at[client_order_id, 'sell_reason'] = sell_reasons
-                                # save_order = True
-                        if 'queen_wants_to_sell_qty' in run_order.keys():
-                            current_sell_qty = QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty']
-                            if current_sell_qty != 0:
-                                # print(ticker_time_frame, "No Sell Reasons Reset Sell Qty to 0 from: ", current_sell_qty)
-                                QUEEN['queen_orders'].at[client_order_id, 'queen_wants_to_sell_qty'] = 0
-                                # save_order = True
                         return {'sell_order': False, 'save_order': save_order}
                 
                 except Exception as e:
@@ -2580,15 +2549,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                                   sell_out,
                                                   order_rules=order_rules, 
                                                   QUEEN=QUEEN)
-            # if client_order_id == 'run__31359334':
-            #     print("RUN ORDER", king_bishop)
+
             charlie_bee['queen_cyle_times']['om_bishop_block3__om'] = (datetime.now(est) - s_time).total_seconds()
 
             save_order = True if king_bishop.get('save_order') else False
-            if king_bishop['sell_order']:
-                if str(king_bishop['sell_qty']) == 'nan':
-                    send_email(subject='error checker go see whats up')
 
+            if king_bishop['sell_order']:
                 order_vars = order_vars__queen_order_items(order_side='sell',  
                 maker_middle=king_bishop['limit_price'],
                 sell_reason=king_bishop['sell_reason'], 
@@ -2597,10 +2563,20 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 ticker_time_frame_origin=ticker_time_frame,
                 first_sell=first_sell, 
                 time_intrade=time_in_trade_datetime)
-                return {'bee_sell': True, 'order_vars': order_vars, 'app_request': king_bishop['app_request'], 'bishop_keys':bishop_keys, 'save_order': save_order}
+                return {
+                        'bee_sell': True, 
+                        'order_vars': order_vars, 
+                        'app_request': king_bishop['app_request'], 
+                        'bishop_keys':bishop_keys, 
+                        'save_order': True
+                    }
             else:
-                return {'bee_sell': False, 'run_order': run_order, 'save_order': save_order}
-        
+                return {
+                    'bee_sell': False, 
+                    'run_order': run_order, 
+                    'save_order': save_order
+                }
+
         except Exception as e:
             print_line_of_error("Bishop Selling Error")
             logging.error("Bishop Selling Error")

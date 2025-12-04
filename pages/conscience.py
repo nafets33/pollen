@@ -1,13 +1,10 @@
 import os
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 import pytz
 from itertools import islice
-from PIL import Image
 from dotenv import load_dotenv
 import streamlit as st
-import os
 
 from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, kingdom__global_vars, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
@@ -21,9 +18,6 @@ from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
 # from streamlit_custom_api_grid import st_custom_grid, GridOptionsBuilder, JsCode
 
 from custom_graph_v1 import st_custom_graph
-
-import ipdb
-
 
 pd.options.mode.chained_assignment = None
 
@@ -488,51 +482,6 @@ def chunk(it, size):
 def trigger_queen_vars(dag, client_username, last_trig_date=datetime.now(est)):
     return {'dag': dag, 'last_trig_date': last_trig_date, 'client_user': client_username}
 
-def chunk_write_dictitems_in_row(chunk_list, max_n=10, write_type='checkbox', title="Active Models", groupby_qcp=False, info_type='buy'):
-
-    try:
-        # chunk_list = chunk_list
-        num_rr = len(chunk_list) + 1 # + 1 is for chunking so slice ends at last 
-        chunk_num = max_n if num_rr > max_n else num_rr
-        
-        # if num_rr > chunk_num:
-        chunks = list(chunk(range(num_rr), chunk_num))
-        for i in chunks:
-            if i[0] == 0:
-                slice1 = i[0]
-                slice2 = i[-1] # [0 : 49]
-            else:
-                slice1 = i[0] - 1
-                slice2 = i[-1] # [49 : 87]
-            chunk_n = chunk_list[slice1:slice2]
-            cols = st.columns(len(chunk_n) + 1)
-            with cols[0]:
-                if write_type == 'info':
-                    flying_bee_gif(width='53', height='53')
-                else:
-                    st.write(title)
-                # bees = [write_flying_bee(width='3') for i in chunk_n]
-            for idx, package in enumerate(chunk_n):
-                for ticker, v in package.items():
-                # ticker, value = package.items()
-                    with cols[idx + 1]:
-                        if write_type == 'checkbox':
-                            st.checkbox(ticker, v, key=f'{ticker}')  ## add as quick save to turn off and on Model
-                        if write_type == 'info':
-                            if info_type == 'buy':
-                                st.info(f'{ticker} {v}')
-                                # local_gif(gif_path=uparrow_gif, height='23', width='23')
-                            else:
-                                st.error(f'{ticker} {v}')
-                            # flying_bee_gif(width='43', height='40')
-                        if write_type == 'pl_profits':
-                            st.write(ticker, v)
-    except Exception as e:
-        print_line_of_error()
-
-    return True 
-
-
 
 button_style_broker = JsCode("""
 function(ppp) {
@@ -552,8 +501,6 @@ function(ppp) {
 }
 """)
 
-# @st.cache_data
-# def portfolio_history():
 
 def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close):
     try:
@@ -660,15 +607,6 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
     except Exception as e:
         print_line_of_error(e)
 
-# @st.cache_data
-def load_storybee(QUEEN_KING, pg_migration, symbols, QUEEN=None):
-    if pg_migration:
-        symbols = return_QUEEN_KING_symbols(QUEEN_KING)
-        STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
-    else:
-        STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, read_storybee=True, read_pollenstory=False).get('STORY_bee') ## async'd func
-    
-    return STORY_bee
 
 def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=True, show_acct=True):
     run_times = {}

@@ -1882,6 +1882,7 @@ def refresh_chess_board__revrec(
                                     'created_at',
                                     'side',  
                                     'queen_wants_to_sell_qty', 
+                                    'sell_reason',
                                     'qty', 
         ]
 
