@@ -168,6 +168,8 @@ if __name__ == '__main__':
     client_user = st.session_state['client_user']
     ip_address = st.session_state['ip_address']
     prod = st.session_state['prod']
+    if not prod:
+        st.warning("⚠️ You are in Sandbox Environment", icon="⚠️")
 
     # KING = kingdom__grace_to_find_a_Queen()
 

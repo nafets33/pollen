@@ -1,4 +1,4 @@
-import asyncio
+import os
 import uvicorn
 from fastapi import FastAPI, status, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,8 +9,7 @@ import argparse
 from dotenv import load_dotenv
 
 from chess_piece import fastapi_router
-# from chess_piece.king import get_ip_address
-# from chess_piece.queen_hive import read_swarm_db
+
 
 load_dotenv()
 prod = True
@@ -50,13 +49,6 @@ def check():
 
 cache_manager = CacheManager()
 
-# on_event is deprecated, use lifespan event handlers instead.
-# @app.on_event("startup")
-# async def startup_event():
-#     await cache_manager.load()
-    # asyncio.create_task(fastapi_router.poll_table_and_notify())
-
-
 @app.get("/cachedata")
 async def get_data(request: Request):
     headers = request.headers
@@ -68,13 +60,11 @@ async def get_key(key: str):
     return cache_manager.get_data().get(key, "Key not found")
 
 if __name__ == '__main__':
-    def ozzapi_script_Parser():
-        parser = argparse.ArgumentParser()
-        parser.add_argument ('-ip', default='127.0.0.1')
-        parser.add_argument ('-port', default='8000')
-        return parser
+    API_URL = os.getenv('fastAPI_url')
+    parser = argparse.ArgumentParser()
+    parser.add_argument ('-ip', default=API_URL.split("://")[1].split(":")[0]) #'127.0.0.1'
+    parser.add_argument ('-port', default=API_URL.split(":")[2]) #'8000'
 
-    parser = ozzapi_script_Parser()
     namespace = parser.parse_args()
     ip_address = namespace.ip
     port=int(namespace.port)

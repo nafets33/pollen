@@ -55,6 +55,7 @@ from chess_piece.queen_mind import refresh_chess_board__revrec, weight_team_keys
 from chess_piece.pollen_db import PollenDatabase, PollenJsonEncoder, PollenJsonDecoder
 from chess_utils.robinhood_crypto_utils import CryptoAPITrading
 from chess_utils.conscience_utils import story_return
+# from chess_utils.websocket_manager import manager
 
 import copy
 from tqdm import tqdm
@@ -103,13 +104,24 @@ exclude_conditions = [
     'P','Q','R','T','V','Z'
 ] # 'U'
 
-def check_user_websocket_status(client_user, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
+def check_user_websocket_status(client_user, prod, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
     """
     Check if a specific user has an active WebSocket connection.
+    
+    Args:
+        client_user: Username to check
+        prod: Boolean indicating production (True) or sandbox (False) environment
+        API_URL: Base URL for the API
+        upsert_to_main_server: Whether to use main server URL
+    
+    Returns:
+        bool: True if user is connected in specified environment, False otherwise
     """
     if upsert_to_main_server:
         API_URL = os.getenv('main_fastAPI_url')
-    endpoint = f"{API_URL}/api/data/ws_status/{client_user}"
+    
+    # ✅ Add prod parameter to query string
+    endpoint = f"{API_URL}/api/data/ws_status/{client_user}?prod={'true' if prod else 'false'}"
     
     try:
         response = requests.get(endpoint, timeout=5)
@@ -117,12 +129,22 @@ def check_user_websocket_status(client_user, API_URL=API_URL, upsert_to_main_ser
         if response.status_code == 200:
             data = response.json()
             
-            # print(f"\n👤 Client User: {data.get('client_user')}")
-            print(f"🔌 {data.get('client_user')} Connected: {f'✅ YES' if data.get('connected') else '❌ NO'}")
-            # print(f"📊 Active Connections: {data.get('connection_count', 0)}")
-            # print(f"⏰ Check Time: {data.get('timestamp', 'N/A')}")
-                                    
-            return data.get('connected', False)
+            environment = "PROD" if prod else "SANDBOX"
+            is_connected = data.get('connected', False)
+            connection_count = data.get('connection_count', 0)
+            
+            # ✅ Show environment-specific status
+            status = '✅ YES' if is_connected else '❌ NO'
+            logging.info(f"🔌 {data.get('client_user')} [{environment}] Connected: {status} ({connection_count} connections)")
+            
+            # ✅ Log connection details if connected
+            if is_connected and connection_count > 0:
+                connections = data.get('connections', [])
+                for conn in connections:
+                    conn_env = conn.get('environment', 'unknown')
+                    logging.info(f"   └─ Connection: {conn_env}")
+
+            return is_connected
         else:
             print(f"❌ HTTP Error: {response.status_code}")
             print(f"Response: {response.text}")
@@ -141,7 +163,7 @@ def check_user_websocket_status(client_user, API_URL=API_URL, upsert_to_main_ser
         traceback.print_exc()
         return False
 
-def story_grid_update(QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
+def story_grid_update(prod, QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
     if upsert_to_main_server:
         API_URL = os.getenv('main_fastAPI_url')
     endpoint = f"{API_URL}/api/data/trigger_story_grid_update"
@@ -149,13 +171,13 @@ def story_grid_update(QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=
     QUEEN_KING_copy = copy.deepcopy(QUEEN_KING)
     df_story = story_return(QUEEN_KING_copy, revrec_copy)
     
-    print("BTC/USD", df_story.at['BTC/USD', 'trinity_w_L'])
     revrec_for_ws = {'storygauge': df_story.to_dict('records')}
     
     # Prepare payload
     payload = {
         'client_user': client_user,
         'api_key': API_KEY,
+        'prod': prod,
         'revrec': revrec_for_ws,
         'toggle_view_selection': 'queen',
     }
@@ -191,29 +213,29 @@ def story_grid_update(QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=
             # print(f"✅ Status: {result.get('status')}")
             # print(f"💬 Message: {result.get('message')}")
             if result.get('status') == 'success':
-                print(f"\n🎉 SUCCESS! {client_user} Story grid update sent via WebSocket")
+                logging.info(f"\n🎉 SUCCESS! {client_user} Story grid update sent via WebSocket")
                 return True
             elif result.get('status') == 'warning':
-                print(f"\n⚠️  WARNING: {result.get('message')}")
-                print(f"💡 Connected users: {result.get('connected_users', [])}")
+                logging.warning(f"\n⚠️  WARNING: {result.get('message')}")
+                logging.info(f"💡 Connected users: {result.get('connected_users', [])}")
                 return False
             else:
-                print(f"\n❌ ERROR: {result.get('message')}")
+                logging.error(f"\n❌ ERROR: {result.get('message')}")
                 return False
         else:
-            print(f"❌ HTTP Error: {response.status_code}")
-            print(f"Response: {response.text}")
+            logging.error(f"❌ HTTP Error: {response.status_code}")
+            logging.error(f"Response: {response.text}")
             return False
             
     except requests.exceptions.Timeout:
-        print(f"\n⏱️  TIMEOUT: Request took longer than 15 seconds")
+        logging.error(f"\n⏱️  TIMEOUT: Request took longer than 15 seconds")
         return False
     except requests.exceptions.ConnectionError:
-        print(f"\n❌ CONNECTION ERROR: Could not connect to {API_URL}")
-        print(f"💡 Make sure FastAPI server is running!")
+        logging.error(f"\n❌ CONNECTION ERROR: Could not connect to {API_URL}")
+        logging.error(f"💡 Make sure FastAPI server is running!")
         return False
     except Exception as e:
-        print(f"\n❌ ERROR: {e}")
+        logging.error(f"\n❌ ERROR: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -1746,7 +1768,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             req = process_app_requests(QUEEN, QUEEN_KING, request_name='buy_orders')
             if req.get('app_flag'):
                 acct_info = QUEEN['account_info']
-                """Rev Rec"""
                 revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states=active_queen_order_states) ## Setup Board
                 waveview = revrec.get('waveview')
                 QUEEN['revrec'] = revrec
@@ -2626,8 +2647,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             
             try: # App Requests
                 s_app = datetime.now(est)
-                process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_queen_order')
-                process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_order_rules')
+                req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_queen_order')
+                if req.get('app_flag'):
+                    print("APP: Queen Order Main PROCESSING ORDER")
+                    god_save_the_queen(QUEEN, save_q=True, upsert_to_main_server=upsert_to_main_server)
+                req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='update_order_rules')
+                if req.get('app_flag'):
+                    print("APP: Queen Order Order Rules Updated SAVE")
+                    god_save_the_queen(QUEEN, save_q=True, upsert_to_main_server=upsert_to_main_server)
                 # charlie_bee['queen_cyle_times']['om_app_req_om'] = (datetime.now(est) - s_app).total_seconds()
             except Exception as e:
                 msg=('APP: Queen Order Main FAILED PROCESSING ORDER', print_line_of_error(e))
@@ -2689,7 +2716,6 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
                 if save_b:
                     if pg_migration:
-                        print("DEBUG: UPDATING BROKER ORDERS TO POLLEN DB")
                         PollenDatabase.upsert_data(BROKER.get('table_name'), BROKER.get('key'), BROKER, main_server=server)
                     else:
                         PickleData(BROKER.get('source'), BROKER, console=False)
@@ -3096,8 +3122,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
 
         # handle App updates
-        process_app_requests(QUEEN, QUEEN_KING, request_name='update_queen_order')
-        process_app_requests(QUEEN, QUEEN_KING, request_name='update_order_rules')
+        req = process_app_requests(QUEEN, QUEEN_KING, request_name='update_queen_order')
+        if req.get('app_flag'):
+            print("APP: Queen Order Order Rules Updated SAVE")
+            god_save_the_queen(QUEEN, save_q=True, upsert_to_main_server=upsert_to_main_server)
+        req = process_app_requests(QUEEN, QUEEN_KING, request_name='update_order_rules')
+        if req.get('app_flag'):
+            print("APP: Queen Order Order Rules Updated SAVE")
+            god_save_the_queen(QUEEN, save_q=True, upsert_to_main_server=upsert_to_main_server)
         
         if pg_migration:
             charlie_bee = qb.get('CHARLIE_BEE')
@@ -3175,8 +3207,11 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
             # Read client App Reqquests
             s_time = datetime.now(est)
-            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_sleep')
-            process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious')
+            req = process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='queen_sleep')
+            if req.get('app_flag'):
+                print("APP: Queen Sleeps SAVE")
+                god_save_the_queen(QUEEN, save_q=True, upsert_to_main_server=upsert_to_main_server)
+            # process_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_name='subconscious')
             charlie_bee['queen_cyle_times']['app'] = (datetime.now(est) - s_time).total_seconds()
 
             # Refresh Board
@@ -3187,12 +3222,20 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
             charlie_bee['queen_cyle_times']['cc_revrec'] = revrec.get('cycle_time')
             QUEEN['revrec'] = revrec
+            
             # Save Revrec WORKERBEE unessecary SAVING only save whats needed ! Handle via conscience_utils / websockets SO need to refresh REVREC in API on first load
-            god_save_the_queen(QUEEN, save_rr=True, console=False, upsert_to_main_server=upsert_to_main_server) # WORKERBEE unessecary SAVING only save whats needed
-            # check if active connection to websocket server and if so send revrec update # WORKERBEE
-            # check if any changes to revrec to send (priceinfo, QUEEN_KING changes) # WORKERBEE
-            if check_user_websocket_status(client_user, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
-                story_grid_update(QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server)
+            # god_save_the_queen(QUEEN, save_rr=True, console=False, upsert_to_main_server=upsert_to_main_server) # WORKERBEE unessecary SAVING only save whats needed
+
+            # WORKERBEE ONLY SEND NECESSARY DATA (Priceinfo, total budget, remaining balance...????)
+            if check_user_websocket_status(client_user, prod, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
+                story_grid_update(prod, QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server)
+
+            # WORKERBEE FIX WEBSOCKET TO USE MANAGER AND HANDLE LOCAL API VS VM API CALL
+            # if not manager.is_connected(client_user, prod=prod):
+            #     environment = "PROD" if prod else "SANDBOX"
+            #     print(f"⚠️ User {client_user} [{environment}] not connected via WebSocket")
+            # else:
+            #     story_grid_update(prod, QUEEN_KING, revrec, client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server)
 
             # Process All Orders
             s_time = datetime.now(est)

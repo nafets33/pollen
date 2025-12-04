@@ -144,17 +144,72 @@ const MyModal: React.FC<MyModalProps> = ({
 
 
   useEffect(() => {
-    if (!editableCols || !selectedRow || !display_grid_column || !Array.isArray(selectedRow[display_grid_column])) return;
-    const orders = selectedRow[display_grid_column];
+    if (!isOpen) {
+      setEditableValues({});
+      return;
+    }
+
+    console.log("🔄 Modal opening - fetching fresh data from grid");
+
+    // ✅ Get fresh data directly from AG Grid
+    const gridRef = modalData.gridRef;
+    const index = modalData.index;
+    const selectedRowFromModal = modalData.selectedRow; // ✅ Use modalData.selectedRow, not props
+    const selectedRowId = selectedRowFromModal?.[index];
+
+    if (!gridRef?.current?.api || !selectedRowId) {
+      console.warn("⚠️  Missing gridRef or selectedRowId", {
+        hasGridRef: !!gridRef?.current?.api,
+        hasIndex: !!index,
+        hasSelectedRow: !!selectedRowFromModal,
+        selectedRowId
+      });
+      return;
+    }
+
+    // ✅ ALWAYS get the latest data from grid when modal opens
+    const freshNode = gridRef.current.api.getRowNode(selectedRowId);
+
+    if (!freshNode || !freshNode.data) {
+      console.warn("⚠️  Row not found in grid:", selectedRowId);
+      return;
+    }
+
+    const freshData = freshNode.data;
+    const orders = freshData[display_grid_column];
+
+    if (!Array.isArray(orders) || !editableCols) {
+      console.warn("⚠️  Invalid orders data", {
+        hasOrders: !!orders,
+        isArray: Array.isArray(orders),
+        hasEditableCols: !!editableCols,
+        displayColumn: display_grid_column
+      });
+      setEditableValues({});
+      return;
+    }
+
+    console.log("✅ Building editableValues from FRESH grid data:", {
+      rowId: selectedRowId,
+      orderCount: orders.length,
+      firstOrderTakeProfit: orders[0]?.take_profit,
+      allOrders: orders
+    });
+
+    // ✅ Build editableValues from fresh data
     const reset: any = {};
     editableCols.forEach(({ col_header }: { col_header: string }) => {
       reset[col_header] = {};
       orders.forEach((order: any, idx: number) => {
-        reset[col_header][idx] = order[col_header] ?? ""; // default to value in row if present
+        reset[col_header][idx] = order[col_header] ?? "";
       });
     });
+
+    console.log("✅ Setting editableValues:", reset);
     setEditableValues(reset);
-  }, [isOpen, selectedRow, display_grid_column, editableCols]);
+
+    // ✅ Only depend on isOpen - refresh EVERY time modal opens
+  }, [isOpen]);
 
   const isValidDate = (dateStr: string) => {
     return formats.some(format => moment(dateStr, format, true).isValid());

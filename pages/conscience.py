@@ -736,7 +736,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                         "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
                                         'valueFormatter': value_format_pct_2
                                         },
-                                'current_ask': {'headerName': 'ask', 'sortable':'true',
+                                'current_ask': {'headerName': 'Ask', 'sortable':'true',
                                                 "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
                                                 'valueFormatter': value_format_number},
                                 '5Minute_5Day_change': {'headerName':"Week Change", 'cellStyle': honey_colors, 'sortable':'true',
@@ -1020,6 +1020,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                'queens_suggested_buy', 
                                'queens_suggested_sell', 
                                 'current_from_yesterday',
+                                'current_ask',
                                 'pct_portfolio',
                                 'star_buys_at_play',
                                 'total_budget',
@@ -1030,7 +1031,6 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                                'trinity_deviation_from_qcp',
                                'buy_autopilot', 
                                'sell_autopilot',
-                            #    'current_ask', 
             ]
 
             toggle_view = []

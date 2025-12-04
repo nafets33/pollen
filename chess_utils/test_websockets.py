@@ -28,14 +28,15 @@ def test_trigger_story_grid_update():
     print("=" * 80)
     print("🧪 Testing Story Grid WebSocket Update")
     print("=" * 80)
+    prod = False
     
     # Load Queen Bee data
     print("📦 Loading Queen Bee data...")
     qb = init_queenbee(
-        client_user=CLIENT_USER, 
-        prod=False, 
-        revrec=True, 
-        queen_king=True, 
+        client_user=CLIENT_USER,
+        prod=prod,
+        revrec=True,
+        queen_king=True,
         pg_migration=True
     )
     
@@ -72,7 +73,7 @@ def test_trigger_story_grid_update():
     payload = {
         'client_user': CLIENT_USER,
         'api_key': API_KEY,
-        # 'QUEEN_KING': QUEEN_KING,
+        'prod': prod,
         'revrec': revrec_for_ws,
         'toggle_view_selection': 'queen',
         # 'qk_chessboard': None
@@ -368,3 +369,5 @@ if __name__ == "__main__":
     print("🏁 Test Complete")
     print("=" * 80)
     check_user_websocket_status(CLIENT_USER)
+
+    # curl "http://localhost:8000/api/data/ws_status/stefanstapinski@gmail.com?prod=true"

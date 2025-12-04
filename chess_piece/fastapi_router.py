@@ -14,6 +14,7 @@ from master_ozz.ozz_query import ozz_query
 from chess_piece.fastapi_queen import *
 from chess_utils.websocket_manager import manager
 from chess_utils.websocket_updates import send_story_grid_update
+from chess_piece.pollen_db import PollenJsonDecoder
 
 router = APIRouter(
     prefix="/api/data",
@@ -61,6 +62,7 @@ async def websocket_story_endpoint(websocket: WebSocket):
         client_user = handshake.get('username')
         toggle_view = handshake.get('toggle_view_selection', 'queen')
         api_key = handshake.get('api_key')
+        prod = handshake.get('prod', None)
         
         # Validate
         if not client_user:
@@ -85,6 +87,7 @@ async def websocket_story_endpoint(websocket: WebSocket):
         await manager.connect(websocket, {
             'username': client_user,
             'toggle_view_selection': toggle_view,
+            'prod': prod,
             'connected_at': str(datetime.now())
         })
         
@@ -144,23 +147,21 @@ async def trigger_story_grid_update(request: Request):
     try:
         # Get payload
         body = await request.body()
-        from chess_piece.pollen_db import PollenJsonDecoder
         payload = json.loads(body, cls=PollenJsonDecoder)
         
         client_user = payload.get('client_user')
         api_key = payload.get('api_key')
-        # QUEEN_KING = payload.get('QUEEN_KING')
+        prod = payload.get('prod')
         revrec = payload.get('revrec')
         toggle_view_selection = payload.get('toggle_view_selection', 'queen')
-        # qk_chessboard = payload.get('qk_chessboard')
         
         # ✅ Validate API key
         if api_key != os.getenv('fastAPI_key'):
             return {"status": "error", "message": "Invalid API key"}
         
         # ✅ Check if user is connected
-        if not manager.is_connected(client_user):
-            logging.warning(f"⚠️  User {client_user} not connected via WebSocket")
+        if not manager.is_connected(client_user, prod):
+            logging.warning(f"⚠️  User {client_user} not connected via WebSocket PROD: {prod}")
             return {
                 "status": "warning",
                 "message": f"User {client_user} not connected",
@@ -170,21 +171,20 @@ async def trigger_story_grid_update(request: Request):
         # ✅ Send update
         success = await send_story_grid_update(
             client_user=client_user,
-            # QUEEN_KING=QUEEN_KING,
+            prod=prod,
             revrec=revrec,
-            toggle_view_selection=toggle_view_selection,
-            # qk_chessboard=qk_chessboard
+            toggle_view_selection=toggle_view_selection
         )
         
         if success:
             return {
                 "status": "success",
-                "message": f"Story grid update sent to {client_user}"
+                "message": f"Story grid update sent to {client_user} PROD: {prod}"
             }
         else:
             return {
                 "status": "error",
-                "message": f"Failed to send update to {client_user}"
+                "message": f"Failed to send update to {client_user} PROD: {prod}"
             }
             
     except Exception as e:
@@ -197,26 +197,38 @@ async def trigger_story_grid_update(request: Request):
         }
 
 @router.get("/ws_status/{client_user}")
-async def get_websocket_status(client_user: str):
+async def get_websocket_status(client_user: str, prod: Optional[bool] = None):
     """Check if user has active WebSocket connection."""
     try:
-        # ✅ Safely iterate over connections
         user_connections = []
-        all_users = set()
+        all_users = []
         
         async with manager.lock:
             for ws, info in list(manager.active_connections.items()):
-                client_user = info.get('username')
-                if client_user:
-                    all_users.add(client_user)
-                    if client_user == client_user:
-                        user_connections.append(ws)
+                username = info.get('username')
+                user_prod = info.get('prod')
+                
+                if username:
+                    all_users.append({
+                        'username': username,
+                        'prod': user_prod,
+                        'environment': "PROD" if user_prod else "SANDBOX"
+                    })
+                    
+                    # Match username and optionally prod
+                    if username == client_user:
+                        if prod is None or user_prod == prod:
+                            user_connections.append({
+                                'prod': user_prod,
+                                'environment': "PROD" if user_prod else "SANDBOX"
+                            })
         
         return {
             "client_user": client_user,
             "connected": len(user_connections) > 0,
             "connection_count": len(user_connections),
-            "all_connected_users": sorted(list(all_users)),
+            "connections": user_connections,
+            "all_connected_users": all_users,
             "total_connections": len(manager.active_connections),
             "timestamp": datetime.now(est).isoformat()
         }

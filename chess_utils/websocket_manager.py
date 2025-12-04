@@ -20,7 +20,8 @@ class ConnectionManager:
             self.active_connections[websocket] = initial_data
         
         client_user = initial_data.get("username", "unknown")
-        logging.info(f"✅ WebSocket connected: {client_user} | Total: {len(self.active_connections)}")
+        client_prod = initial_data.get("prod", "unknown")
+        logging.info(f"✅ WebSocket connected: {client_user} env: {client_prod} | Total: {len(self.active_connections)}")
     
     async def disconnect(self, websocket: WebSocket):
         """Remove WebSocket connection."""
@@ -30,13 +31,13 @@ class ConnectionManager:
                 del self.active_connections[websocket]
                 logging.info(f"❌ WebSocket disconnected: {client_user} | Remaining: {len(self.active_connections)}")
     
-    async def send_to_user(self, client_user: str, message):
+    async def send_to_user(self, client_user: str, message, prod: bool):
         """Send message to specific user by username."""
         to_remove = set()
         sent = False
         
         for connection, initial_data in self.active_connections.items():
-            if initial_data.get("username") == client_user:
+            if (initial_data.get("username") == client_user and initial_data.get("prod") == prod):
                 try:
                     # ✅ Ensure message is a string
                     # ✅ Message should already be a JSON string from websocket_updates.py
@@ -69,16 +70,29 @@ class ConnectionManager:
         
         return sent
         
-    def is_connected(self, client_user: str) -> bool:
-        """Check if user is connected."""
+    def is_connected(self, client_user: str, prod: bool = None) -> bool:
+        """Check if user is connected, optionally filter by environment."""
         for initial_data in self.active_connections.values():
             if initial_data.get("username") == client_user:
-                return True
+                # ✅ If prod is specified, match it too
+                if prod is not None:
+                    if initial_data.get("prod") == prod:
+                        return True
+                else:
+                    # If prod not specified, just check username
+                    return True
         return False
     
     def get_active_users(self):
-        """Get list of connected usernames."""
-        return [data.get("username") for data in self.active_connections.values()]
+        """Get list of connected users with their environments."""
+        return [
+            {
+                'username': data.get("username"),
+                'prod': data.get("prod"),
+                'toggle_view': data.get("toggle_view_selection")
+            } 
+            for data in self.active_connections.values()
+        ]
 
 # Global manager instance
 manager = ConnectionManager()
