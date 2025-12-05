@@ -945,11 +945,21 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                     # Send Info Back to Not Trade Again?
                     QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = "failed"
                 elif alp_order_status in accetped:
-                    if order_status['side'] == 'buy':
-                        QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_open'
+                    # For limit orders that are not yet filled, keep as 'pending'
+                    # Check if it's a limit order (has limit_price) and filled_qty is still 0
+                    filled_qty = order_status.get('filled_qty', 0)
+                    limit_price = queen_order.get('limit_price') or queen_order.get('req_limit_price')
+                    is_limit_order = limit_price and limit_price != False
+                    
+                    if is_limit_order and (filled_qty == 0 or (isinstance(filled_qty, (int, float)) and float(filled_qty) == 0)):
+                        # Keep limit order as 'pending' until it fills
+                        QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'pending'
                     else:
-                        #WORKERBEE IF SHORTING THIS WON"T WORK NEED TO FIX. CHECK IF SHORITNG
-                        QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_close'
+                        # Market order or limit order that has started filling
+                        if order_status['side'] == 'buy':
+                            QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_open'
+                        else:
+                            QUEEN['queen_orders'].at[queen_order_idx, 'queen_order_state'] = 'running_close'
 
                 # Handle Filled Orders #
                 elif alp_order_status in filled:
