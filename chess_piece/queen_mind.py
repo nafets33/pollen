@@ -35,85 +35,9 @@ def search_for_gamble_trade(revrec):
 def return_long_short(active_orders, cost_basis_ref='cost_basis_current'):
     reverse_indexes = ['SH', 'PSQ']
     mask = active_orders['symbol'].isin(reverse_indexes)
-    
-    # Handle pending limit orders: use limit_price * qty for pending orders, cost_basis_ref for filled orders
-    # Also handle partially filled limit orders: use filled portion + reserved portion for unfilled
-    if len(active_orders) > 0:
-        # Separate pending orders (completely unfilled limit orders)
-        pending_mask = active_orders['queen_order_state'] == 'pending'
-        filled_mask = ~pending_mask
-        
-        # Calculate long/short for filled/partially filled orders using cost_basis_ref
-        long = 0
-        short = 0
-        if filled_mask.any():
-            filled_orders = active_orders[filled_mask]
-            long = filled_orders.loc[~filled_orders['symbol'].isin(reverse_indexes), cost_basis_ref].fillna(0).sum()
-            short = filled_orders.loc[filled_orders['symbol'].isin(reverse_indexes), cost_basis_ref].fillna(0).sum()
-            
-            # For partially filled limit orders, add reserved budget for unfilled portion
-            # Check for limit orders that are partially filled (have limit_price, filled_qty > 0 but < qty)
-            if 'limit_price' in filled_orders.columns and 'filled_qty' in filled_orders.columns and 'qty' in filled_orders.columns:
-                partially_filled_mask = (
-                    (filled_orders['limit_price'].notna()) & 
-                    (filled_orders['limit_price'] != False) &
-                    (filled_orders['filled_qty'].fillna(0) > 0) &
-                    (filled_orders['qty'].fillna(0) > filled_orders['filled_qty'].fillna(0))
-                )
-                if partially_filled_mask.any():
-                    partially_filled = filled_orders[partially_filled_mask]
-                    # Calculate reserved budget for unfilled portion: (qty - filled_qty) * limit_price
-                    unfilled_qty = partially_filled['qty'].fillna(0) - partially_filled['filled_qty'].fillna(0)
-                    reserved_long = (partially_filled.loc[~partially_filled['symbol'].isin(reverse_indexes), 'limit_price'].fillna(0) * 
-                                     unfilled_qty.loc[~partially_filled['symbol'].isin(reverse_indexes)]).sum()
-                    reserved_short = (partially_filled.loc[partially_filled['symbol'].isin(reverse_indexes), 'limit_price'].fillna(0) * 
-                                      unfilled_qty.loc[partially_filled['symbol'].isin(reverse_indexes)]).sum()
-                    long += reserved_long
-                    short += reserved_short
-        
-        # Add pending limit orders: use limit_price * qty for pending orders
-        if pending_mask.any():
-            pending_orders = active_orders[pending_mask]
-            # Check if limit_price and qty columns exist
-            if 'limit_price' in pending_orders.columns and 'qty' in pending_orders.columns:
-                pending_long = (pending_orders.loc[~pending_orders['symbol'].isin(reverse_indexes), 'limit_price'].fillna(0) * 
-                               pending_orders.loc[~pending_orders['symbol'].isin(reverse_indexes), 'qty'].fillna(0)).sum()
-                pending_short = (pending_orders.loc[pending_orders['symbol'].isin(reverse_indexes), 'limit_price'].fillna(0) * 
-                                pending_orders.loc[pending_orders['symbol'].isin(reverse_indexes), 'qty'].fillna(0)).sum()
-                long += pending_long
-                short += pending_short
-        
-        # Calculate total cost_basis_current: filled orders + pending orders + reserved portion of partially filled
-        filled_cost_basis = active_orders[filled_mask][cost_basis_ref].fillna(0).sum() if filled_mask.any() else 0
-        
-        # Add reserved budget for unfilled portion of partially filled limit orders
-        reserved_partial_cost_basis = 0
-        if filled_mask.any():
-            filled_orders = active_orders[filled_mask]
-            if 'limit_price' in filled_orders.columns and 'filled_qty' in filled_orders.columns and 'qty' in filled_orders.columns:
-                partially_filled_mask = (
-                    (filled_orders['limit_price'].notna()) & 
-                    (filled_orders['limit_price'] != False) &
-                    (filled_orders['filled_qty'].fillna(0) > 0) &
-                    (filled_orders['qty'].fillna(0) > filled_orders['filled_qty'].fillna(0))
-                )
-                if partially_filled_mask.any():
-                    partially_filled = filled_orders[partially_filled_mask]
-                    unfilled_qty = partially_filled['qty'].fillna(0) - partially_filled['filled_qty'].fillna(0)
-                    reserved_partial_cost_basis = (partially_filled['limit_price'].fillna(0) * unfilled_qty).sum()
-        
-        # Add reserved budget for completely pending limit orders
-        pending_cost_basis = 0
-        if pending_mask.any():
-            pending_orders = active_orders[pending_mask]
-            if 'limit_price' in pending_orders.columns and 'qty' in pending_orders.columns:
-                pending_cost_basis = (pending_orders['limit_price'].fillna(0) * pending_orders['qty'].fillna(0)).sum()
-        
-        cost_basis_current = filled_cost_basis + reserved_partial_cost_basis + pending_cost_basis
-    else:
-        long = 0
-        short = 0
-        cost_basis_current = 0
+    long = active_orders.loc[~mask, cost_basis_ref].fillna(0).sum()
+    short = active_orders.loc[mask, cost_basis_ref].fillna(0).sum()
+    cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
 
     return long, short, cost_basis_current
 
@@ -941,10 +865,9 @@ def return_ttf_remaining_budget(QUEEN, total_budget, borrow_budget, active_queen
         if len(active_orders) == 0:
             return '', total_budget, borrow_budget, 0, 0, 0, 0
 
-        # return_long_short now handles pending limit orders (uses limit_price * qty for pending, cost_basis_ref for filled)
         buys_at_play, sells_at_play, cost_basis_current = return_long_short(active_orders, cost_basis_ref)
 
-        # check current cost_basis (includes both filled orders and reserved budget from pending limit orders)
+        # check current cost_basis
         if cost_basis_current == 0:
             budget_cost_basis = 0
             borrowed_cost_basis = 0

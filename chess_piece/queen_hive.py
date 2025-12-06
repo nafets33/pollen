@@ -3634,14 +3634,6 @@ def process_order_submission(order_key, prod, broker, trading_model, order, orde
         )
 
         new_queen_order['cost_basis_current'] = new_queen_order['wave_amo']
-        
-        # Set initial state to 'pending' for limit orders that are not yet filled
-        # Check if it's a limit order (has limit_price) and filled_qty is 0
-        if new_queen_order.get('limit_price') and new_queen_order.get('limit_price') != False:
-            filled_qty = new_queen_order.get('filled_qty', 0)
-            if filled_qty == 0 or (isinstance(filled_qty, (int, float)) and float(filled_qty) == 0):
-                new_queen_order['queen_order_state'] = 'pending'
-        
         # new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id", drop=False)
         
         return new_queen_order
