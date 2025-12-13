@@ -24,7 +24,7 @@ Manage your Portfolio
 -admin_user = "your email"
 # Preset Variables
 fastAPI_key = "fastapi_pollenq_key"
-fast_api_local_url = "http://127.0.0.1:8000"
+fastAPI_url = "http://127.0.0.1:8000"
 cookie_name = "pollen_user_auth"
 cookie_key = "pollen321"
 cookie_expiry_days = "30"

@@ -7,9 +7,10 @@ from datetime import datetime
 from tqdm import tqdm
 import streamlit as st
 from chess_piece.workerbees import queen_workerbees
-from chess_piece.queen_hive import analyze_waves, send_email
+from chess_piece.queen_hive import analyze_waves, send_email, set_chess_pieces_symbols
 from chess_piece.king import hive_master_root, workerbee_dbs_backtesting_root__STORY_bee, stars, master_swarm_QUEENBEE, ReadPickleData
 from chess_piece.pollen_db import PollenDatabase
+import argparse
 
 send_email(subject=f"Running BackTesting")
 fast_vals = range(7,15)
@@ -68,7 +69,7 @@ def read_backtest_folder_assert_insight(backtest_folder, return_len=15):
                 maxprofit = buycross["sum_maxprofit"].mean()
                 df.loc[df.shape[0]] = [ttf, fast_val, slow_val, smooth_val, win_ratio, maxprofit]
                 # print("{}, {}, {}, {}, {}, {}".format(ttf, fast_val, slow_val, smooth_val, win_ratio, maxprofit))
-    print(df.head(5))
+
     if use_blocktime:   
         df.to_csv("backtesting/macd_grid_search_blocktime.txt")
     else:
@@ -179,7 +180,9 @@ if __name__ == '__main__':
         QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
     else:
         QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
-
-    QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=True))
-
-    run_backtesting_pollenstory(QUEENBEE=QUEENBEE, run_wave_analysis=True, qcp_s=['castle', ]) # 'knight', 'bishop', 'pawn_6', 'Basic Materials', 'Communication Services', 'Technology', 'Consumer Cyclical', 'Financial Services', 'Industrials'
+    chess_pieces = set_chess_pieces_symbols(QUEEN_KING=QUEENBEE, qcp_bees_key='workerbees')
+    all_workers = chess_pieces.get('all_workers')
+    run_backtesting_pollenstory(QUEENBEE=QUEENBEE, 
+                                run_wave_analysis=True, 
+                                qcp_s=all_workers
+                                ) # 'knight', 'bishop', 'pawn_6', 'Basic Materials', 'Communication Services', 'Technology', 'Consumer Cyclical', 'Financial Services', 'Industrials'

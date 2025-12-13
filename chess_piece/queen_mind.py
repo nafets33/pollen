@@ -23,6 +23,7 @@ pd.set_option('display.max_columns', None)
 # load_dotenv(os.path.join(main_root, ".env"))
 # db_root = os.path.join(main_root, "db")
 crypto_currency_symbols = ["BTCUSD", "ETHUSD", "BTC/USD", "ETH/USD"]
+reverse_indexes = ['SH', 'PSQ']
 macd_tiers = 8
 
 
@@ -33,11 +34,11 @@ def search_for_gamble_trade(revrec):
 
 # handle long_short in update WORKERBEE
 def return_long_short(active_orders, cost_basis_ref='cost_basis_current'):
-    reverse_indexes = ['SH', 'PSQ']
     mask = active_orders['symbol'].isin(reverse_indexes)
-    long = active_orders.loc[~mask, cost_basis_ref].fillna(0).sum()
+    # long = active_orders.loc[~mask, cost_basis_ref].fillna(0).sum()
     short = active_orders.loc[mask, cost_basis_ref].fillna(0).sum()
     cost_basis_current = sum(active_orders[cost_basis_ref]) if len(active_orders) > 0 else 0
+    long = cost_basis_current
 
     return long, short, cost_basis_current
 
@@ -1870,20 +1871,20 @@ def refresh_chess_board__revrec(
         active_orders_order_book = ['ticker_time_frame',   
                                     'wave_amo', 
                                     'cost_basis_current',
-                                    'filled_qty', 
-                                    'qty_available', 
                                     'money', 
                                     'honey', 
                                     'queen_order_state', 
                                     'status',
+                                    'qty_available', 
+                                    'queen_wants_to_sell_qty', 
+                                    'sell_reason',
                                     'macd_state',
                                     'trigname',
                                     'client_order_id', 
                                     'created_at',
-                                    'side',  
-                                    'queen_wants_to_sell_qty', 
-                                    'sell_reason',
+                                    'filled_qty', 
                                     'qty', 
+                                    'side', #  is this needed ?
         ]
 
         kors_to_add = ['sell_trigbee_date', 'sell_out', 'take_profit', 'close_order_today'] #
@@ -1904,7 +1905,9 @@ def refresh_chess_board__revrec(
                             lambda row: row['order_rules'].get(k) if isinstance(row['order_rules'], dict) else None,
                             axis=1
                         )
-                        orders['sell_trigbee_date'] = orders['sell_trigbee_date'].apply(to_iso_datetime)
+                    orders['sell_trigbee_date'] = orders['sell_trigbee_date'].apply(to_iso_datetime)
+                    orders['created_at'] = orders['created_at'].apply(to_iso_datetime)
+                    orders['honey'] = pd.to_numeric(orders['honey'], errors='coerce') * 100
                     # if symbol == 'SPY':
                     #     print("TEST see data", orders['sell_trigbee_date'])
                     orders = orders[active_orders_order_book]
@@ -2084,6 +2087,10 @@ def refresh_chess_board__revrec(
                     rule['total_money'] = 0.0
                     rule['total_honey'] = 0.0
                     rule['has_active_orders'] = False
+                
+                # clean up // TEMP until fix via QUEEN update
+                if rule['trigrule_status'] == 'trig_running' and rule['num_orders'] == 0:
+                    rule['trigrule_status'] = 'not_active'
             
             comprehensive_trig_rules[symbol] = all_rules
 

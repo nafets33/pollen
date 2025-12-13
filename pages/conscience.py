@@ -569,7 +569,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
         
         go = gb.build()
 
-
+        
         st_custom_grid(
             client_user=client_user,
             username=client_user, #KING['users_allowed_queen_emailname__db'].get(client_user), 
@@ -608,6 +608,641 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
         print_line_of_error(e)
 
 
+
+
+def story_grid(prod, client_user, 
+               ip_address, revrec, symbols, 
+               refresh_sec=8, paginationOn=False, 
+               key='default', tab_view=None, 
+               api_ws=None,
+               seconds_to_market_close=300,
+               k_colors={},
+               ui_refresh_sec=60
+               ):
+
+    king_G = kingdom__global_vars()
+    try:
+        gb = GridOptionsBuilder.create()
+        gb.configure_grid_options(pagination=True, 
+                                    paginationPageSize=100, 
+                                #   suppressPaginationPanel=True, 
+                                    enableRangeSelection=True, 
+                                    copyHeadersToClipboard=True,
+                                    sideBar=True,
+                                    sortable=True
+                                ) 
+        gb.configure_default_column(column_width=100, 
+                                    resizable=True, 
+                                    wrapText=False, 
+                                    wrapHeaderText=True, 
+                                    sortable=True, 
+                                    autoHeaderHeight=True, 
+                                    autoHeight=True, 
+                                    suppress_menu=False, 
+                                    filter=True, 
+                                    minWidth=89,
+                                    cellStyle={"fontSize": "15px"})            
+        gb.configure_index('symbol')
+        gb.configure_theme('ag-theme-material')
+        if paginationOn:
+            gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+
+        pct_change_columns_config = {
+                            'pct_portfolio': {'headerName':"% Portfolio", 'sortable':'true',
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                    'valueFormatter': value_format_pct_2
+                                    },
+                            'current_ask': {'headerName': 'Ask', 'sortable':'true',
+                                            "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                            'valueFormatter': value_format_number},
+                            '5Minute_5Day_change': {'headerName':"Week Change", 'cellStyle': honey_colors, 'sortable':'true',
+                                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                                'valueFormatter': value_format_pct_2
+                                                },
+                        '30Minute_1Month_change': {'headerName':"Month Change", 'cellStyle': honey_colors, 'sortable':'true',
+                                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                                'valueFormatter': value_format_pct_2
+                                                },
+                        '1Hour_3Month_change': {'headerName':"Quarter Change", 'cellStyle': honey_colors, 'sortable':'true',
+                                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                                'valueFormatter': value_format_pct_2
+                                                } ,
+                        '2Hour_6Month_change': {'headerName':"2 Quarters Change", 'cellStyle': honey_colors, 'sortable':'true',
+                                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                                'valueFormatter': value_format_pct_2
+                                                },
+                        '1Day_1Year_change': {'headerName':"1 Year Change", 'cellStyle': honey_colors, 'sortable':'true',
+                                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                                'valueFormatter': value_format_pct_2
+                                                },
+
+        }
+        def story_grid_buttons(storygauge, hf=False):
+            # try:
+            active_orders_order_book = ['ticker_time_frame', 'side', 'wave_amo', 'filled_qty', 'qty_available', 'qty', 'money', 'honey', 'trigname', 'order_rules']
+            # data  ={
+            # "filterParams": {
+            # "buttons": ['apply', 'reset'], 
+            # }}
+            buttons = []
+            exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
+            trig_data = create_trig_rule_metadata(list(storygauge.index), list(set(storygauge['qcp'])), list(stars().keys()))
+            trig_editableCols = []
+            for trig in trig_data.keys():
+                trig_dict = trig_data.get(trig)
+                trig_editableCols.append(trig_dict)
+
+
+            buttons=[
+                        {'button_name': None, # MAIN SYMBOL BUTTON
+                        'button_api': f'{ip_address}/api/data/update_queenking_symbol',
+                        'prompt_message': 'Manage Board',
+                        'prompt_field': 'add_symbol_option',
+                        'col_headername': 'Symbol',
+                        "col_header": "symbol",
+                        'col_width':100,
+                        'sortable': True,
+                        'pinned': 'left',
+                        'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None and i != 'symbol'],
+                        'cellStyle': button_style_symbol,
+                        'display_grid_column': 'trig_data',
+                        'editableCols': trig_editableCols, #[ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
+
+                        'cellRenderer': "agGroupCellRenderer",
+                        'pivot': True,
+                        'add_symbol_row_info': ['buy_autopilot', 'sell_autopilot', 'trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'] # ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
+                        # 'display_grid_column': 'active_orders',
+                        # 'editableCols': ['allocation_long'],
+                        },
+
+                        {'button_name': None,
+                        'button_api': f'{ip_address}/api/data/queen_buy_orders',
+                        'prompt_message': 'Edit Buy',
+                        'prompt_field': 'kors',
+                        'col_headername': 'Advisors Allocation',
+                        "col_header": "queens_suggested_buy", # allocation_long_deploy
+                        'col_width':100,
+                        'sortable': True,
+                        # 'pinned': 'left',
+                        'prompt_order_rules': ['broker'], #[i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
+                        'cellStyle': button_suggestedallocation_style,
+                        'valueFormatter': JsCode("""
+                        function(params) {
+                            if (typeof params.value === 'number' && !isNaN(params.value)) {
+                            return '$' + params.value.toLocaleString();
+                            } else if (typeof params.value === 'string' && !isNaN(parseFloat(params.value))) {
+                            return '$' + parseFloat(params.value).toLocaleString();
+                            }
+                            return params.value;
+                        }
+                        """),
+                        
+                        'add_symbol_row_info': ['current_ask'],
+
+                        'display_grid_column': 'wave_data',
+                        'editableCols': [
+                            # { 'col_header': "buy_qty", 'dtype': "number" },
+                            { 'col_header': "confirm_buy", 'dtype': "checkbox" },
+                            { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore AutoPilot"},
+                            { 'col_header': "close_order_today", 'dtype': "checkbox" },
+                            { 'col_header': "allocation_long", 'dtype': "number", "display_name": "Buy Amount"},
+                            { 'col_header': "limit_price", 'dtype': "number" },
+                            { 'col_header': "take_profit", 'dtype': "number" },
+                            { 'col_header': "sell_out", 'dtype': "number" },
+                            { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
+                            ],
+                        },
+
+                        {'button_name': None,
+                        'button_api': f'{ip_address}/api/data/queen_sell_orders',
+                        'prompt_message': 'Edit Sell',
+                        'prompt_field': 'sell_option',
+                        'col_headername': 'Sell',
+                        "col_header": "queens_suggested_sell",
+                        'col_width':100,
+                        'sortable': True,
+                        # 'pinned': 'left',
+                        # 'border': '2px solid red',
+                        'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
+                        'cellStyle': button_style_sell, #generate_cell_style_range(100000), #button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
+                        'cellRendererParams': {
+                            'cellStyle': generate_cell_style_range(100000),
+                                'color': 'red',  # or button_style_sell, etc.
+                            # ...add any other params you want to pass to the renderer
+                        },
+                        'add_symbol_row_info': ['qty_available', 'current_ask', 
+                                                'star_buys_at_play', 'ticker_total_budget', 
+                                                'ticker_remaining_budget', 'ticker_remaining_borrow'],
+                        'editableCols': [
+                            { 'col_header': "sell_qty", 'dtype': "number", "display_name": "Sell Qty"},
+                            { 'col_header': "sell_amount", 'dtype': "number" ,"info": "This will overwrite Sell Qty"},
+                            { 'col_header': "take_profit", 'dtype': "number" },
+                            { 'col_header': "sell_out", 'dtype': "number" },
+                            { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
+                            { 'col_header': "close_order_today", 'dtype': "checkbox" },
+                            { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore Allocation Deploy"},
+                            { 'col_header': "confirm_sell", 'dtype': "checkbox", "display_name": "Confirm Sell / Update Order"},
+                            { 'col_header': "queen_order_state", 'dtype': "list", "display_name": "queen_order_state", "values": king_G.get('active_order_state_list')},
+                            ],
+                        'display_grid_column': 'active_orders',
+                        },
+                        
+                        {'button_name': None,
+                        'button_api': f'{ip_address}/api/data/update_buy_autopilot',
+                        'prompt_message': 'Edit AutoPilot',
+                        'prompt_field': 'edit_buy_autopilot_option',
+                        'col_headername': 'Buy Auto Pilot',
+                        "col_header": "buy_autopilot",
+                        # "border_color": "green",
+                        'col_width':75,
+                        # 'pinned': 'left',
+                        'prompt_order_rules': ['buy_autopilot'],
+                        'cellStyle': button_style_BUY_autopilot,
+                        },
+                        {'button_name': None,
+                        'button_api': f'{ip_address}/api/data/update_sell_autopilot',
+                        'prompt_message': 'Edit AutoPilot',
+                        'prompt_field': 'edit_sell_autopilot_option',
+                        'col_headername': 'Sell Auto Pilot',
+                        "col_header": "sell_autopilot",
+                        # "border_color": "red",
+                        'col_width':75,
+                        # 'pinned': 'left',
+                        'prompt_order_rules': ['sell_autopilot'],
+                        'cellStyle': button_style_SELL_autopilot,
+                        },
+                    ]
+            
+            exclude_buy_kors = ['star_list', 'reverse_buy', 'sell_trigbee_trigger_timeduration']
+            if not hf:
+                for star in star_names().keys():
+                    starname = star
+                    if star == 'Day':
+                        starname = 'Day'
+                        cellStyle = generate_cell_style('Day_state')
+                    elif star == 'Week':
+                        cellStyle = generate_cell_style('Week_state')
+                    elif star == 'Month':
+                        cellStyle = generate_cell_style('Month_state')
+                    elif star == 'Quarter':
+                        cellStyle = generate_cell_style('Quarter_state')
+                    elif star == 'Quarters':
+                        cellStyle = generate_cell_style('Quarters_state')
+                    elif star == 'Year':
+                        cellStyle = generate_cell_style('Year_state')
+                    else:
+                        cellStyle = {}
+                    temp = {'button_name': None,
+                            'button_api': f'{ip_address}/api/data/ttf_buy_orders',
+                            'prompt_message': 'Edit Buy',
+                            'prompt_field': f'{star}_kors',
+                            'col_headername': f'{starname}',
+                            "col_header": f"{star}_state",
+                            "border_color": "#BEE3FE",
+                            'col_width':135,
+                            # 'pinned': 'right',
+                            'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
+                            'cellStyle': cellStyle,
+                            }
+                    buttons.append(temp)
+            # except Exception as e:
+            #     print_line_of_error(f'ERRRROR BUSTSON {e}')
+            
+            return buttons
+
+        def config_cols(qcp_piece_names):
+            df_ticker_qcp_names = qcp_piece_names
+            configg =  {
+            # for col in cols:
+            'trig_rules': {"hide": True},
+            # 'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
+            'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',
+                                    'cellStyle': honey_colors,
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                    'valueFormatter': value_format_pct
+                                    }, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                                      
+
+            'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
+            'unrealized_pl': {'headerName':"Unrealized PL", 'cellStyle': honey_colors, 'sortable':'true',
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                    'valueFormatter': value_format,
+                                    'cellRenderer': "agGroupCellRenderer",
+                                    },
+            'unrealized_plpc': {'headerName':"Unrealized PL %", 'cellStyle': honey_colors, 'sortable':'true',
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                    'valueFormatter': value_format_pct_2
+                                    },
+
+            'piece_name': {'headerName': 'Budget Group', 
+                            'filter': True,
+                            "cellEditorParams": {"values": df_ticker_qcp_names},"editable":True, "cellEditor":"agSelectCellEditor",
+                                                                },
+            'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
+            'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110} ,
+            'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
+            'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
+            'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 
+                            'initialWidth': 89, 'enableCellChangeFlash': True, 
+                            'cellRenderer': 'agAnimateShowChangeCellRenderer', 
+                            'cellStyle': generate_shaded_cell_style('trinity_w_L'), 
+                            # 'pinned': 'right',
+                            'valueFormatter': value_format_pct,
+                            },
+            'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 
+                                'initialWidth': 89, 'enableCellChangeFlash': True, 
+                                'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                            'cellStyle': generate_shaded_cell_style('trinity_w_15'),
+                            'valueFormatter': value_format_pct,
+                            },
+            'trinity_w_30': {'headerName': 'MACD-VWAP-RSI Quarter','sortable': True, 
+                                'initialWidth': 89, 
+                                'enableCellChangeFlash': True, 
+                                'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                            'cellStyle': generate_shaded_cell_style('trinity_w_30'),
+                            'valueFormatter': value_format_pct,
+                            },
+            'trinity_w_54': {'headerName': 'MACD-VWAP-RSI Year',
+                                'sortable': True, 
+                                'initialWidth': 89, 
+                                'enableCellChangeFlash': True, 
+                                'cellRenderer': 'agAnimateShowChangeCellRenderer',
+                            'cellStyle': generate_shaded_cell_style('trinity_w_54'),
+                            'valueFormatter': value_format_pct,
+                            },
+            'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
+            'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
+            'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
+            'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
+            'broker_qty_available': {},
+            'trinity_deviation_from_qcp': {'headerName':"Trinity Deviation", 'cellStyle': generate_shaded_cell_style('trinity_deviation_from_qcp'), 'sortable':'true',
+                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
+                                    'valueFormatter': value_format_pct
+                                    },
+            'shortName' : {'headerName':'Symbol Name', 'initialWidth':110,},
+            'sector' : {'headerName':'Sector', 'initialWidth':110,},                
+            'industry' : {'headerName':'Industry', 'initialWidth':110,'hide': True,},
+            'city' : {'headerName':'City', 'initialWidth':110,'hide': True,},
+            'country' : {'headerName':'Country', 'initialWidth':110,'hide': True,},
+            'longBusinessSummary' : {'headerName':'Long Business Summary', 'initialWidth':110, },
+            # 'shortRatio' : {'headerName':'Short Ratio', 'initialWidth':89, 'sortable':'true',},
+            
+            # 'refresh_star': {'headerName': 'ReAllocate Time', 
+            #                 "cellEditorParams": {"values": list(star_refresh_star_times().keys())},
+            #                                                     "editable":True,
+            #                                                     "cellEditor":"agSelectCellEditor",
+            #                                                     },       
+            }
+
+            return {**configg, **pct_change_columns_config}
+
+        
+        story_col_order = [
+                            'queens_suggested_buy', 
+                            'queens_suggested_sell', 
+                            'current_from_yesterday',
+                            'current_ask',
+                            'pct_portfolio',
+                            'star_buys_at_play',
+                            'total_budget',
+                            'allocation_long',
+                            'unrealized_pl', 
+                            'unrealized_plpc', 
+                            'piece_name',
+                            'trinity_deviation_from_qcp',
+                            'buy_autopilot', 
+                            'sell_autopilot',
+        ]
+
+        toggle_view = []
+        if client_user == 'stefanstapinski@gmail.com':
+            main_toggles = ["Portfolio", "King", '2025_Screen']
+        else:
+            main_toggles = ["Portfolio", "King"]
+        hf=False
+        if tab_view == 'Hedge Funds':
+            hf=True
+            refresh_sec = None
+            story_col_order = []
+            main_toggles = []
+            all_avail_hfunds = PollenDatabase.get_all_keys('hedgefund_holdings')
+            from pages.hedgefunds import read_filer_names_coverpage
+            df = read_filer_names_coverpage()
+            filer_names = dict(zip(df['ACCESSION_NUMBER'], df['FILINGMANAGER_NAME']))
+            filer_names_ = {v:k for k,v in filer_names.items() if k in all_avail_hfunds}
+            
+            ACCESSION_NUMBER = all_avail_hfunds[223]
+            data = PollenDatabase.retrieve_data('hedgefund_holdings', ACCESSION_NUMBER)
+            hedge_fund_names = [i for i in filer_names_.keys()][54:89]
+            
+            # df = df[df['ACCESSION_NUMBER'].isin(all_avail_hfunds)]
+            # print(df.columns)
+            # print("LEEEN", len(df))
+            # [i for i in all_avail_hfunds if i in df['ACCESSION_NUMBER']]
+            # ipdb.set_trace()
+            # hedge_fund_names = df['FILINGMANAGER_NAME'].tolist()[:23]
+
+            # ACCESSION_NUMBER = filer_names_[hedge_fund_names[2]]
+            # for ACCESSION_NUMBER in hedge_fund_names:
+            #     print(ACCESSION_NUMBER)
+            #     data = PollenDatabase.retrieve_data('hedgefund_holdings', ACCESSION_NUMBER)
+            #     print(data)
+
+            toggle_view = hedge_fund_names
+            for col, config in pct_change_columns_config.items():
+                gb.configure_column(col, config)
+
+        elif tab_view == 'Portfolio':
+            data  ={
+            "filterParams": {
+            "buttons": ['apply', 'reset'], 
+            }}
+            # Build toggle_view as list of "piece_name (XX%)" where XX is total portfolio_pct for that qcp
+            toggle_view = []
+            storygauge = revrec['storygauge']
+
+            story_col = storygauge.columns.tolist()
+            qcp_piece_names = storygauge['piece_name'].unique().tolist() if 'piece_name' in storygauge.columns else []
+            config_cols_ = config_cols(qcp_piece_names)
+            mmissing = [i for i in story_col if i not in config_cols_.keys()]
+            if len(mmissing) > 0:
+                for col in mmissing:
+                    col_dtype = storygauge[col].dtype if col in storygauge.columns else None
+                    if col_dtype is not None and pd.api.types.is_string_dtype(col_dtype):
+                        extra = {'pivotable': True, 'enableRowGroup': True}
+                    elif col_dtype is not None and pd.api.types.is_float_dtype(col_dtype):
+                        extra = {'enableValue': True, 'pivotable': True}
+                    else:
+                        extra ={}
+                    # if col == 'symbol':
+                    #     extra = {**extra, **{'enablePivot': True, 'rowGroup': True, 'pivotable': True, 'enableRowGroup': True, 'initialWidth': 100,}}
+                    # if col == 'ticker_buying_power':
+                    #     st.write("ASK COL", col, col_dtype)
+                    #     extra = {**extra, **{'aggFunc': 'sum', 'enableValue': True, 'pivotable': True, 'initialWidth': 100,}}
+                    gb.configure_column(col, {**data, **{'hide': True}, **extra})
+            for col, config_values in config_cols_.items():
+                col_dtype = storygauge[col].dtype if col in storygauge.columns else None
+                if col_dtype is not None and pd.api.types.is_string_dtype(col_dtype):
+                    extra = {'pivotable': True, 'enableRowGroup': True}
+                elif col_dtype is not None and pd.api.types.is_float_dtype(col_dtype):
+                    extra = {'enableValue': True, 'pivotable': True}
+                else:
+                    extra ={}
+                # if col == 'symbol':
+                #     extra = {**extra, **{'enablePivot': True, 'rowGroup': True, 'pivotable': True, 'enableRowGroup': True, 'initialWidth': 100,}}
+                # if col == 'ticker_buying_power':
+                #     st.write("ASK COL", col, col_dtype)
+                #     extra = {**extra, **{'aggFunc': 'sum', 'enableValue': True, 'pivotable': True, 'initialWidth': 100,}}
+                gb.configure_column(col, {**data, **config_values, **extra})
+
+
+            # ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
+            # for col in ticker_info_cols:
+            #     if col not in story_col + list(config_cols_.keys()):
+            #         # config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true', 'editable': True}
+            #         gb.configure_column(col, {'hide': True, 'sortable': 'true', 'cellEditorPopup': True, 'editable': True, 'cellEditorPopupParams': {
+            #   'popupWidth': '500',
+            #   'popupHeight': '300'}})
+
+        toggle_views = main_toggles + toggle_view
+        g_buttons = story_grid_buttons(storygauge, hf)
+        go = gb.build()
+        # go['pivotMode'] = True
+        api_ws = f"{ip_address}/api/data/ws_story"
+        # api_ws = None # DEBUGGING
+        if api_ws:
+            refresh_sec = None
+        print("prod", prod)
+        print("STORY GRID refresh_sec", refresh_sec)
+        st_custom_grid(
+            key=f'{prod}{tab_view}story_grid{ui_refresh_sec}',
+            client_user=client_user,
+            username=client_user, 
+            api=f"{ip_address}/api/data/story",
+            api_ws=api_ws,
+            api_update=f"{ip_address}/api/data/update_queenking_chessboard",
+            refresh_sec=refresh_sec, 
+            refresh_cutoff_sec=seconds_to_market_close, 
+            prod=prod,
+            grid_options=go,
+            return_type='story',
+            # kwargs from here
+            api_lastmod_key=f"REVREC",
+            prompt_message = "symbol",
+            prompt_field = "symbol", # "current_macd_tier", # for signle value
+            api_key=os.environ.get("fastAPI_key"),
+            symbols=symbols,
+            buttons=g_buttons,
+            grid_height='550px',
+            toggle_views = toggle_views,
+            allow_unsafe_jscode=True,
+            columnOrder=story_col_order,
+            refresh_success=True,
+            total_col="symbol", # where total is located
+            subtotal_cols = ["queens_suggested_buy", #"Advisors Allocation",
+                                "broker_qty_delta",
+                                "allocation_long", #"Minimum Allocation Long", 
+                                "total_budget", 
+                                "qty_available", 
+                                "money", 
+                                "Day_state", 
+                                "Week_state", 
+                                "Month_state", 
+                                "Quarter_state", 
+                                "Quarters_state", 
+                                "Year_state", 
+                                'star_buys_at_play', 
+                                'remaining_budget', 
+                             'star_sells_at_play', 
+                            'remaining_budget_borrow', 
+                            'pct_portfolio', 
+                            ],
+            filter_apply=True,
+            filter_button='piece_name',
+            show_clear_all_filters=True,
+            column_sets = {
+"Simple View": [
+    "symbol", 
+    "qty_available", 
+    "current_ask", 
+    "pct_portfolio", 
+    "star_buys_at_play", 
+    "star_sells_at_play",
+    "money",
+    "unrealized_pl"
+],
+
+"Trading View": [
+    "queens_suggested_buy",
+    "queens_suggested_sell",
+    "current_ask",
+    "current_bid",
+    "qty_available",
+],
+
+"Budget Manager": [
+    "symbol",
+    "piece_name",
+    "total_budget",
+    "remaining_budget",
+    "remaining_budget_borrow",
+    "allocation_long",
+    "star_buys_at_play",
+],
+
+"Performance Analysis": [
+    "symbol",
+    "pct_portfolio",
+    "money",
+    "honey",
+    "unrealized_pl",
+    "unrealized_plpc",
+    "current_from_yesterday",
+    "1Day_1Year_change",
+    "30Minute_1Month_change",
+    "5Minute_5Day_change"
+],
+
+"Technical Indicators": [
+    "symbol",
+    "trinity_w_L",
+    "trinity_w_15",
+    "trinity_w_30",
+    "trinity_w_54",
+    "Day_state",
+    "Week_state",
+    "Month_state"
+],
+
+
+"Time Frames": [
+    "Day_state",
+    "Day_value",
+    "Week_state",
+    "Week_value",
+    "Month_state",
+    "Month_value",
+    "Quarter_state",
+    "Quarter_value",
+    "Year_state",
+    "Year_value"
+],
+
+
+"Quick Stats": [
+    "symbol",
+    "current_ask",
+    "current_from_yesterday",
+    "qty_available",
+    "money",
+    "pct_portfolio",
+    "Day_state"
+],
+
+# "Broker Info": [
+#     "symbol",
+#     "qty_available",
+#     "broker_qty_available",
+#     "broker_qty_delta",
+#     "current_ask",
+#     "unrealized_pl",
+#     "wash_loss"
+# ],
+
+"Full Technical": [
+    "symbol",
+    "trinity_w_L",
+    "trinity_w_S",
+    "trinity_w_15",
+    "trinity_w_30",
+    "trinity_w_54",
+    "w_L_macd_tier_position",
+    "w_L_vwap_tier_position",
+    "w_L_rsi_tier_position",
+    "w_15_macd_tier_position",
+    "w_15_vwap_tier_position",
+    "w_15_rsi_tier_position",
+    "w_30_macd_tier_position",
+    "w_30_vwap_tier_position",
+    "w_30_rsi_tier_position"
+],
+
+# "All Changes": [
+#     "symbol",
+#     "current_from_open",
+#     "current_from_yesterday",
+#     "1Minute_1Day_change",
+#     "5Minute_5Day_change",
+#     "30Minute_1Month_change",
+#     "1Hour_3Month_change",
+#     "2Hour_6Month_change",
+#     "1Day_1Year_change"
+# ]
+},
+show_cell_content=True,
+
+#                 nestedGridEnabled=True,
+# detailGridOptions = {
+#     'columnDefs': [{'field': 'count_on_me', 'cellRenderer': "agGroupCellRenderer"}],
+#     'masterDetail': True,
+#     'detailCellRendererParams': {
+#         'detailGridOptions': {
+#             'masterDetail': True,
+#             'columnDefs': [{'field': 'count_on_her', 'cellRenderer': "agGroupCellRenderer"}],
+#             # 'detailCellRendererParams': {
+#             #     'detailGridOptions': {
+#             #         'masterDetail': True,
+#             #         'columnDefs': [{'field': 'count_on_them', 'cellRenderer': "agGroupCellRenderer"}],
+#             #     }
+#             # }
+#         }
+#     }
+# }
+    )
+    except Exception as e:
+        print_line_of_error(f"STORYGRID FAILED {e}")
+
+
+
 def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=True, show_acct=True):
     run_times = {}
     s = datetime.now()
@@ -629,633 +1264,6 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
     client_user = st.session_state["username"]
     db_root = st.session_state['db_root']
     prod, admin, prod_name = st.session_state['prod'], st.session_state.get('admin'), st.session_state.get('prod_name')
-    # st.write("PRODUCTION", prod)
-
-    # return page last visited
-    # revrec = QUEEN.get('revrec')
-    # if QUEEN_KING.get('revrec') == 'init' or st.sidebar.button("refresh revrec"):
-    #     revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
-    #     QUEEN_KING['revrec'] = revrec
-
-    ##### STREAMLIT ###
-
-  
-    def story_grid(prod, client_user, ip_address, revrec, symbols, refresh_sec=8, paginationOn=False, key='default', tab_view=None, api_ws=None):
-
-        king_G = kingdom__global_vars()
-        try:
-            gb = GridOptionsBuilder.create()
-            gb.configure_grid_options(pagination=True, 
-                                      paginationPageSize=100, 
-                                    #   suppressPaginationPanel=True, 
-                                      enableRangeSelection=True, 
-                                      copyHeadersToClipboard=True,
-                                      sideBar=True,
-                                      sortable=True
-                                    ) 
-            gb.configure_default_column(column_width=100, 
-                                        resizable=True, 
-                                        wrapText=False, 
-                                        wrapHeaderText=True, 
-                                        sortable=True, 
-                                        autoHeaderHeight=True, 
-                                        autoHeight=True, 
-                                        suppress_menu=False, 
-                                        filter=True, 
-                                        minWidth=89,
-                                        cellStyle={"fontSize": "15px"})            
-            gb.configure_index('symbol')
-            gb.configure_theme('ag-theme-material')
-            if paginationOn:
-                gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
-
-            pct_change_columns_config = {
-                                'pct_portfolio': {'headerName':"% Portfolio", 'sortable':'true',
-                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                        'valueFormatter': value_format_pct_2
-                                        },
-                                'current_ask': {'headerName': 'Ask', 'sortable':'true',
-                                                "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                                'valueFormatter': value_format_number},
-                                '5Minute_5Day_change': {'headerName':"Week Change", 'cellStyle': honey_colors, 'sortable':'true',
-                                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                                    'valueFormatter': value_format_pct_2
-                                                    },
-                            '30Minute_1Month_change': {'headerName':"Month Change", 'cellStyle': honey_colors, 'sortable':'true',
-                                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                                    'valueFormatter': value_format_pct_2
-                                                    },
-                            '1Hour_3Month_change': {'headerName':"Quarter Change", 'cellStyle': honey_colors, 'sortable':'true',
-                                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                                    'valueFormatter': value_format_pct_2
-                                                    } ,
-                            '2Hour_6Month_change': {'headerName':"2 Quarters Change", 'cellStyle': honey_colors, 'sortable':'true',
-                                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                                    'valueFormatter': value_format_pct_2
-                                                    },
-                            '1Day_1Year_change': {'headerName':"1 Year Change", 'cellStyle': honey_colors, 'sortable':'true',
-                                                    "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                                    'valueFormatter': value_format_pct_2
-                                                    },
-
-            }
-            def story_grid_buttons(storygauge, hf=False):
-                # try:
-                active_orders_order_book = ['ticker_time_frame', 'side', 'wave_amo', 'filled_qty', 'qty_available', 'qty', 'money', 'honey', 'trigname', 'order_rules']
-                # data  ={
-                # "filterParams": {
-                # "buttons": ['apply', 'reset'], 
-                # }}
-                buttons = []
-                exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
-                trig_data = create_trig_rule_metadata(list(storygauge.index), list(set(storygauge['qcp'])), list(stars().keys()))
-                trig_editableCols = []
-                for trig in trig_data.keys():
-                    trig_dict = trig_data.get(trig)
-                    trig_editableCols.append(trig_dict)
-
-
-                buttons=[
-                            {'button_name': None, # MAIN SYMBOL BUTTON
-                            'button_api': f'{ip_address}/api/data/update_queenking_symbol',
-                            'prompt_message': 'Manage Board',
-                            'prompt_field': 'add_symbol_option',
-                            'col_headername': 'Symbol',
-                            "col_header": "symbol",
-                            'col_width':100,
-                            'sortable': True,
-                            'pinned': 'left',
-                            'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None and i != 'symbol'],
-                            'cellStyle': button_style_symbol,
-                            'display_grid_column': 'trig_data',
-                            'editableCols': trig_editableCols, #[ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
-
-                            'cellRenderer': "agGroupCellRenderer",
-                            'pivot': True,
-                            'add_symbol_row_info': ['buy_autopilot', 'sell_autopilot', 'trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'] # ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
-                            # 'display_grid_column': 'active_orders',
-                            # 'editableCols': ['allocation_long'],
-                            },
-
-                            {'button_name': None,
-                            'button_api': f'{ip_address}/api/data/queen_buy_orders',
-                            'prompt_message': 'Edit Buy',
-                            'prompt_field': 'kors',
-                            'col_headername': 'Advisors Allocation',
-                            "col_header": "queens_suggested_buy", # allocation_long_deploy
-                            'col_width':100,
-                            'sortable': True,
-                            # 'pinned': 'left',
-                            'prompt_order_rules': ['broker'], #[i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
-                            'cellStyle': button_suggestedallocation_style,
-                            'valueFormatter': JsCode("""
-                            function(params) {
-                                if (typeof params.value === 'number' && !isNaN(params.value)) {
-                                return '$' + params.value.toLocaleString();
-                                } else if (typeof params.value === 'string' && !isNaN(parseFloat(params.value))) {
-                                return '$' + parseFloat(params.value).toLocaleString();
-                                }
-                                return params.value;
-                            }
-                            """),
-                            
-                            'add_symbol_row_info': ['current_ask'],
-
-                            'display_grid_column': 'wave_data',
-                            'editableCols': [
-                                # { 'col_header': "buy_qty", 'dtype': "number" },
-                                { 'col_header': "confirm_buy", 'dtype': "checkbox" },
-                                { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore AutoPilot"},
-                                { 'col_header': "close_order_today", 'dtype': "checkbox" },
-                                { 'col_header': "allocation_long", 'dtype': "number", "display_name": "Buy Amount"},
-                                { 'col_header': "limit_price", 'dtype': "number" },
-                                { 'col_header': "take_profit", 'dtype': "number" },
-                                { 'col_header': "sell_out", 'dtype': "number" },
-                                { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
-                                ],
-                            },
-
-                            {'button_name': None,
-                            'button_api': f'{ip_address}/api/data/queen_sell_orders',
-                            'prompt_message': 'Edit Sell',
-                            'prompt_field': 'sell_option',
-                            'col_headername': 'Sell',
-                            "col_header": "queens_suggested_sell",
-                            'col_width':100,
-                            'sortable': True,
-                            # 'pinned': 'left',
-                            # 'border': '2px solid red',
-                            'prompt_order_rules': [i for i in sell_button_dict_items().keys()],
-                            'cellStyle': button_style_sell, #generate_cell_style_range(100000), #button_style_sell, #JsCode("""function(p) {if (p.data.money > 0) {return {backgroundColor: 'green'}} else {return {}} } """),
-                            'cellRendererParams': {
-                                'cellStyle': generate_cell_style_range(100000),
-                                  'color': 'red',  # or button_style_sell, etc.
-                                # ...add any other params you want to pass to the renderer
-                            },
-                            'add_symbol_row_info': ['qty_available', 'current_ask', 
-                                                    'star_buys_at_play', 'ticker_total_budget', 
-                                                    'ticker_remaining_budget', 'ticker_remaining_borrow'],
-                            'editableCols': [
-                                { 'col_header': "sell_qty", 'dtype': "number", "display_name": "Sell Qty"},
-                                { 'col_header': "sell_amount", 'dtype': "number" ,"info": "This will overwrite Sell Qty"},
-                                { 'col_header': "take_profit", 'dtype': "number" },
-                                { 'col_header': "sell_out", 'dtype': "number" },
-                                { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
-                                { 'col_header': "close_order_today", 'dtype': "checkbox" },
-                                { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore Allocation Deploy"},
-                                { 'col_header': "confirm_sell", 'dtype': "checkbox", "display_name": "Confirm Sell / Update Order"},
-                                { 'col_header': "queen_order_state", 'dtype': "list", "display_name": "queen_order_state", "values": king_G.get('active_order_state_list'), "multi_select": True},
-                                ],
-                            'display_grid_column': 'active_orders',
-                            },
-                            
-                            {'button_name': None,
-                            'button_api': f'{ip_address}/api/data/update_buy_autopilot',
-                            'prompt_message': 'Edit AutoPilot',
-                            'prompt_field': 'edit_buy_autopilot_option',
-                            'col_headername': 'Buy Auto Pilot',
-                            "col_header": "buy_autopilot",
-                            # "border_color": "green",
-                            'col_width':75,
-                            # 'pinned': 'left',
-                            'prompt_order_rules': ['buy_autopilot'],
-                            'cellStyle': button_style_BUY_autopilot,
-                            },
-                            {'button_name': None,
-                            'button_api': f'{ip_address}/api/data/update_sell_autopilot',
-                            'prompt_message': 'Edit AutoPilot',
-                            'prompt_field': 'edit_sell_autopilot_option',
-                            'col_headername': 'Sell Auto Pilot',
-                            "col_header": "sell_autopilot",
-                            # "border_color": "red",
-                            'col_width':75,
-                            # 'pinned': 'left',
-                            'prompt_order_rules': ['sell_autopilot'],
-                            'cellStyle': button_style_SELL_autopilot,
-                            },
-                        ]
-                
-                exclude_buy_kors = ['star_list', 'reverse_buy', 'sell_trigbee_trigger_timeduration']
-                if not hf:
-                    for star in star_names().keys():
-                        starname = star
-                        if star == 'Day':
-                            starname = 'Day'
-                            cellStyle = generate_cell_style('Day_state')
-                        elif star == 'Week':
-                            cellStyle = generate_cell_style('Week_state')
-                        elif star == 'Month':
-                            cellStyle = generate_cell_style('Month_state')
-                        elif star == 'Quarter':
-                            cellStyle = generate_cell_style('Quarter_state')
-                        elif star == 'Quarters':
-                            cellStyle = generate_cell_style('Quarters_state')
-                        elif star == 'Year':
-                            cellStyle = generate_cell_style('Year_state')
-                        else:
-                            cellStyle = {}
-                        temp = {'button_name': None,
-                                'button_api': f'{ip_address}/api/data/ttf_buy_orders',
-                                'prompt_message': 'Edit Buy',
-                                'prompt_field': f'{star}_kors',
-                                'col_headername': f'{starname}',
-                                "col_header": f"{star}_state",
-                                "border_color": "#BEE3FE",
-                                'col_width':135,
-                                # 'pinned': 'right',
-                                'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
-                                'cellStyle': cellStyle,
-                                }
-                        buttons.append(temp)
-                # except Exception as e:
-                #     print_line_of_error(f'ERRRROR BUSTSON {e}')
-                
-                return buttons
-
-            def config_cols(qcp_piece_names):
-                df_ticker_qcp_names = qcp_piece_names
-                configg =  {
-                # for col in cols:
-                'trig_rules': {"hide": True},
-                # 'symbol': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
-                'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',
-                                        'cellStyle': honey_colors,
-                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                        'valueFormatter': value_format_pct
-                                        }, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                                      
-
-                'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
-                'unrealized_pl': {'headerName':"Unrealized PL", 'cellStyle': honey_colors, 'sortable':'true',
-                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                        'valueFormatter': value_format,
-                                        'cellRenderer': "agGroupCellRenderer",
-                                        },
-                'unrealized_plpc': {'headerName':"Unrealized PL %", 'cellStyle': honey_colors, 'sortable':'true',
-                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                        'valueFormatter': value_format_pct_2
-                                        },
-
-                'piece_name': {'headerName': 'Budget Group', 
-                               'filter': True,
-                                "cellEditorParams": {"values": df_ticker_qcp_names},"editable":True, "cellEditor":"agSelectCellEditor",
-                                                                    },
-                'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
-                'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110} ,
-                'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
-                'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
-                'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 
-                                'initialWidth': 89, 'enableCellChangeFlash': True, 
-                                'cellRenderer': 'agAnimateShowChangeCellRenderer', 
-                                'cellStyle': generate_shaded_cell_style('trinity_w_L'), 
-                                'pinned': 'right',
-                                'valueFormatter': value_format_pct,
-                                },
-                'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 
-                                 'initialWidth': 89, 'enableCellChangeFlash': True, 
-                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                'cellStyle': generate_shaded_cell_style('trinity_w_15'),
-                                'valueFormatter': value_format_pct,
-                                },
-                'trinity_w_30': {'headerName': 'MACD-VWAP-RSI Quarter','sortable': True, 
-                                 'initialWidth': 89, 
-                                 'enableCellChangeFlash': True, 
-                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                'cellStyle': generate_shaded_cell_style('trinity_w_30'),
-                                'valueFormatter': value_format_pct,
-                                },
-                'trinity_w_54': {'headerName': 'MACD-VWAP-RSI Year',
-                                 'sortable': True, 
-                                 'initialWidth': 89, 
-                                 'enableCellChangeFlash': True, 
-                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                'cellStyle': generate_shaded_cell_style('trinity_w_54'),
-                                'valueFormatter': value_format_pct,
-                                },
-                'remaining_budget': create_ag_grid_column(headerName='Remaining Budget', initialWidth=100,  type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
-                'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
-                'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
-                'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
-                'broker_qty_available': {},
-                'trinity_deviation_from_qcp': {'headerName':"Trinity Deviation", 'cellStyle': generate_shaded_cell_style('trinity_deviation_from_qcp'), 'sortable':'true',
-                                        "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                        'valueFormatter': value_format_pct
-                                        },
-                # 'shortName' : {'headerName':'Symbol Name', 'initialWidth':110,},
-                # 'sector' : {'headerName':'Sector', 'initialWidth':110,},
-                # 'shortRatio' : {'headerName':'Short Ratio', 'initialWidth':89, 'sortable':'true',},
-                
-                # 'refresh_star': {'headerName': 'ReAllocate Time', 
-                #                 "cellEditorParams": {"values": list(star_refresh_star_times().keys())},
-                #                                                     "editable":True,
-                #                                                     "cellEditor":"agSelectCellEditor",
-                #                                                     },       
-                }
-
-                return {**configg, **pct_change_columns_config}
-
-            
-            story_col_order = [
-                               'queens_suggested_buy', 
-                               'queens_suggested_sell', 
-                                'current_from_yesterday',
-                                'current_ask',
-                                'pct_portfolio',
-                                'star_buys_at_play',
-                                'total_budget',
-                                'allocation_long',
-                               'unrealized_pl', 
-                               'unrealized_plpc', 
-                               'piece_name',
-                               'trinity_deviation_from_qcp',
-                               'buy_autopilot', 
-                               'sell_autopilot',
-            ]
-
-            toggle_view = []
-            if client_user == 'stefanstapinski@gmail.com':
-                main_toggles = ["Portfolio", "King", '2025_Screen']
-            else:
-                main_toggles = ["Portfolio", "King"]
-            hf=False
-            if tab_view == 'Hedge Funds':
-                hf=True
-                refresh_sec = None
-                story_col_order = []
-                main_toggles = []
-                all_avail_hfunds = PollenDatabase.get_all_keys('hedgefund_holdings')
-                from pages.hedgefunds import read_filer_names_coverpage
-                df = read_filer_names_coverpage()
-                filer_names = dict(zip(df['ACCESSION_NUMBER'], df['FILINGMANAGER_NAME']))
-                filer_names_ = {v:k for k,v in filer_names.items() if k in all_avail_hfunds}
-                
-                ACCESSION_NUMBER = all_avail_hfunds[223]
-                data = PollenDatabase.retrieve_data('hedgefund_holdings', ACCESSION_NUMBER)
-                hedge_fund_names = [i for i in filer_names_.keys()][54:89]
-                
-                # df = df[df['ACCESSION_NUMBER'].isin(all_avail_hfunds)]
-                # print(df.columns)
-                # print("LEEEN", len(df))
-                # [i for i in all_avail_hfunds if i in df['ACCESSION_NUMBER']]
-                # ipdb.set_trace()
-                # hedge_fund_names = df['FILINGMANAGER_NAME'].tolist()[:23]
-
-                # ACCESSION_NUMBER = filer_names_[hedge_fund_names[2]]
-                # for ACCESSION_NUMBER in hedge_fund_names:
-                #     print(ACCESSION_NUMBER)
-                #     data = PollenDatabase.retrieve_data('hedgefund_holdings', ACCESSION_NUMBER)
-                #     print(data)
-
-                toggle_view = hedge_fund_names
-                for col, config in pct_change_columns_config.items():
-                    gb.configure_column(col, config)
-
-            elif tab_view == 'Portfolio':
-                data  ={
-                "filterParams": {
-                "buttons": ['apply', 'reset'], 
-                }}
-                # Build toggle_view as list of "piece_name (XX%)" where XX is total portfolio_pct for that qcp
-                toggle_view = []
-                storygauge = revrec['storygauge']
-
-                story_col = storygauge.columns.tolist()
-                qcp_piece_names = storygauge['piece_name'].unique().tolist() if 'piece_name' in storygauge.columns else []
-                config_cols_ = config_cols(qcp_piece_names)
-                mmissing = [i for i in story_col if i not in config_cols_.keys()]
-                if len(mmissing) > 0:
-                    for col in mmissing:
-                        col_dtype = storygauge[col].dtype if col in storygauge.columns else None
-                        if col_dtype is not None and pd.api.types.is_string_dtype(col_dtype):
-                            extra = {'pivotable': True, 'enableRowGroup': True}
-                        elif col_dtype is not None and pd.api.types.is_float_dtype(col_dtype):
-                            extra = {'enableValue': True, 'pivotable': True}
-                        else:
-                            extra ={}
-                        # if col == 'symbol':
-                        #     extra = {**extra, **{'enablePivot': True, 'rowGroup': True, 'pivotable': True, 'enableRowGroup': True, 'initialWidth': 100,}}
-                        # if col == 'ticker_buying_power':
-                        #     st.write("ASK COL", col, col_dtype)
-                        #     extra = {**extra, **{'aggFunc': 'sum', 'enableValue': True, 'pivotable': True, 'initialWidth': 100,}}
-                        gb.configure_column(col, {**data, **{'hide': True}, **extra})
-                for col, config_values in config_cols_.items():
-                    col_dtype = storygauge[col].dtype if col in storygauge.columns else None
-                    if col_dtype is not None and pd.api.types.is_string_dtype(col_dtype):
-                        extra = {'pivotable': True, 'enableRowGroup': True}
-                    elif col_dtype is not None and pd.api.types.is_float_dtype(col_dtype):
-                        extra = {'enableValue': True, 'pivotable': True}
-                    else:
-                        extra ={}
-                    # if col == 'symbol':
-                    #     extra = {**extra, **{'enablePivot': True, 'rowGroup': True, 'pivotable': True, 'enableRowGroup': True, 'initialWidth': 100,}}
-                    # if col == 'ticker_buying_power':
-                    #     st.write("ASK COL", col, col_dtype)
-                    #     extra = {**extra, **{'aggFunc': 'sum', 'enableValue': True, 'pivotable': True, 'initialWidth': 100,}}
-                    gb.configure_column(col, {**data, **config_values, **extra})
-
-
-                # ticker_info_cols = bishop_ticker_info().get('ticker_info_cols')
-                # for col in ticker_info_cols:
-                #     if col not in story_col + list(config_cols_.keys()):
-                #         # config = {"cellEditorParams":{"editable":True,"cellEditor":"agSelectCellEditor",}, 'hide': True, 'sortable': 'true', 'editable': True}
-                #         gb.configure_column(col, {'hide': True, 'sortable': 'true', 'cellEditorPopup': True, 'editable': True, 'cellEditorPopupParams': {
-                #   'popupWidth': '500',
-                #   'popupHeight': '300'}})
-
-            toggle_views = main_toggles + toggle_view
-            g_buttons = story_grid_buttons(storygauge, hf)
-            go = gb.build()
-            # go['pivotMode'] = True
-            api_ws = f"{ip_address}/api/data/ws_story"
-            if api_ws:
-                refresh_sec = None
-            print("STORY GRID refresh_sec", refresh_sec)
-            st_custom_grid(
-                key=f'{prod}{tab_view}story_grid{ui_refresh_sec}',
-                client_user=client_user,
-                username=client_user, 
-                api=f"{ip_address}/api/data/story",
-                api_ws=api_ws,
-                api_update=f"{ip_address}/api/data/update_queenking_chessboard",
-                refresh_sec=refresh_sec, 
-                refresh_cutoff_sec=seconds_to_market_close, 
-                prod=st.session_state['prod'],
-                grid_options=go,
-                return_type='story',
-                # kwargs from here
-                api_lastmod_key=f"REVREC",
-                prompt_message = "symbol",
-                prompt_field = "symbol", # "current_macd_tier", # for signle value
-                api_key=os.environ.get("fastAPI_key"),
-                symbols=symbols,
-                buttons=g_buttons,
-                grid_height='550px',
-                toggle_views = toggle_views,
-                allow_unsafe_jscode=True,
-                columnOrder=story_col_order,
-                refresh_success=True,
-                total_col="symbol", # where total is located
-                subtotal_cols = ["queens_suggested_buy", #"Advisors Allocation",
-                                 "broker_qty_delta",
-                                 "allocation_long", #"Minimum Allocation Long", 
-                                 "total_budget", 
-                                 "qty_available", 
-                                 "money", 
-                                 "Day_state", 
-                                 "Week_state", 
-                                 "Month_state", 
-                                 "Quarter_state", 
-                                 "Quarters_state", 
-                                 "Year_state", 
-                                 'star_buys_at_play', 
-                                 'remaining_budget', 
-                                #  'allocation_long', 
-                                'remaining_budget_borrow', 
-                                'pct_portfolio', 
-                                ],
-                filter_apply=True,
-                filter_button='piece_name',
-                show_clear_all_filters=True,
-                column_sets = {
-    "Simple View": [
-        "symbol", 
-        "qty_available", 
-        "current_ask", 
-        "pct_portfolio", 
-        "star_buys_at_play", 
-        "star_sells_at_play",
-        "money",
-        "unrealized_pl"
-    ],
-    
-    "Trading View": [
-        "queens_suggested_buy",
-        "queens_suggested_sell",
-        "current_ask",
-        "current_bid",
-        "qty_available",
-    ],
-    
-    "Budget Manager": [
-        "symbol",
-        "piece_name",
-        "total_budget",
-        "remaining_budget",
-        "remaining_budget_borrow",
-        "allocation_long",
-        "star_buys_at_play",
-    ],
-    
-    "Performance Analysis": [
-        "symbol",
-        "pct_portfolio",
-        "money",
-        "honey",
-        "unrealized_pl",
-        "unrealized_plpc",
-        "current_from_yesterday",
-        "1Day_1Year_change",
-        "30Minute_1Month_change",
-        "5Minute_5Day_change"
-    ],
-    
-    "Technical Indicators": [
-        "symbol",
-        "trinity_w_L",
-        "trinity_w_15",
-        "trinity_w_30",
-        "trinity_w_54",
-        "Day_state",
-        "Week_state",
-        "Month_state"
-    ],
-    
-
-    "Time Frames": [
-        "Day_state",
-        "Day_value",
-        "Week_state",
-        "Week_value",
-        "Month_state",
-        "Month_value",
-        "Quarter_state",
-        "Quarter_value",
-        "Year_state",
-        "Year_value"
-    ],
-    
-
-    "Quick Stats": [
-        "symbol",
-        "current_ask",
-        "current_from_yesterday",
-        "qty_available",
-        "money",
-        "pct_portfolio",
-        "Day_state"
-    ],
-    
-    # "Broker Info": [
-    #     "symbol",
-    #     "qty_available",
-    #     "broker_qty_available",
-    #     "broker_qty_delta",
-    #     "current_ask",
-    #     "unrealized_pl",
-    #     "wash_loss"
-    # ],
-    
-    "Full Technical": [
-        "symbol",
-        "trinity_w_L",
-        "trinity_w_S",
-        "trinity_w_15",
-        "trinity_w_30",
-        "trinity_w_54",
-        "w_L_macd_tier_position",
-        "w_L_vwap_tier_position",
-        "w_L_rsi_tier_position",
-        "w_15_macd_tier_position",
-        "w_15_vwap_tier_position",
-        "w_15_rsi_tier_position",
-        "w_30_macd_tier_position",
-        "w_30_vwap_tier_position",
-        "w_30_rsi_tier_position"
-    ],
-    
-    # "All Changes": [
-    #     "symbol",
-    #     "current_from_open",
-    #     "current_from_yesterday",
-    #     "1Minute_1Day_change",
-    #     "5Minute_5Day_change",
-    #     "30Minute_1Month_change",
-    #     "1Hour_3Month_change",
-    #     "2Hour_6Month_change",
-    #     "1Day_1Year_change"
-    # ]
-},
-  show_cell_content=True,
-
-#                 nestedGridEnabled=True,
-# detailGridOptions = {
-#     'columnDefs': [{'field': 'count_on_me', 'cellRenderer': "agGroupCellRenderer"}],
-#     'masterDetail': True,
-#     'detailCellRendererParams': {
-#         'detailGridOptions': {
-#             'masterDetail': True,
-#             'columnDefs': [{'field': 'count_on_her', 'cellRenderer': "agGroupCellRenderer"}],
-#             # 'detailCellRendererParams': {
-#             #     'detailGridOptions': {
-#             #         'masterDetail': True,
-#             #         'columnDefs': [{'field': 'count_on_them', 'cellRenderer': "agGroupCellRenderer"}],
-#             #     }
-#             # }
-#         }
-#     }
-# }
-        )
-        except Exception as e:
-            print_line_of_error(f"STORYGRID FAILED {e}")
 
 
 
@@ -1324,7 +1332,14 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
             ozz(st.session_state['authentication_status'])
             st.stop()
 
-        story_grid(prod, client_user=client_user, ip_address=ip_address, revrec=revrec, symbols=symbols, refresh_sec=refresh_sec, tab_view=tab_view)
+        story_grid(prod, client_user=client_user, ip_address=ip_address, 
+                   revrec=revrec, symbols=symbols, 
+                   refresh_sec=refresh_sec, 
+                   tab_view=tab_view,
+                   ui_refresh_sec=ui_refresh_sec,
+                   k_colors=k_colors,
+                   seconds_to_market_close=seconds_to_market_close
+                   )
           
         if st.sidebar.toggle("Show Wave Grid"):
             if type(revrec.get('waveview')) != pd.core.frame.DataFrame:

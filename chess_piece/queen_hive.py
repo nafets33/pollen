@@ -59,7 +59,7 @@ current_month = datetime.now(est).month
 current_year = datetime.now(est).year
 
 
-def init_logging(queens_chess_piece, prod=True, loglevel='warning', db_root=''):
+def init_logging(queens_chess_piece, prod=True, loglevel='warning', db_root='', console_only=False):
     """
     Initializes logging to write to PostgreSQL instead of files.
     """
@@ -81,10 +81,11 @@ def init_logging(queens_chess_piece, prod=True, loglevel='warning', db_root=''):
     # Create a formatter
     formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
 
-    # Add the PostgreSQL logging handler
-    pg_handler = PostgresHandler(log_name=log_name)
-    pg_handler.setFormatter(formatter)
-    root_logger.addHandler(pg_handler)
+    if not console_only:
+        # Add the PostgreSQL logging handler
+        pg_handler = PostgresHandler(log_name=log_name)
+        pg_handler.setFormatter(formatter)
+        root_logger.addHandler(pg_handler)
 
     # Add a console (StreamHandler) logging handler
     console_handler = StreamHandler()
@@ -3586,13 +3587,14 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         QUEEN_KING['dbs'] = init_pollen
         if pg_migration:
             QUEEN_KING['table_name'] = table_name
+            QUEEN_KING['client_user'] = client_user
             QUEEN_KING['db_root'] = db_root
             QUEEN_KING['last_modified'] =str(init_pollen.get('QUEEN_KING'))
         else:
             QUEEN_KING['last_modified'] = str(os.stat(init_pollen.get('PB_App_Pickle')).st_mtime)
     if QUEEN:
         QUEEN['dbs'] = init_pollen
-        # QUEEN['heartbeat']['beat'] = QUEENsHeart
+        QUEEN['client_user'] = client_user
         QUEEN['table_name'] = table_name
         QUEEN['db_root'] = db_root
 

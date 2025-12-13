@@ -362,6 +362,8 @@ def return_active_orders(QUEEN):
     # try:
     active_queen_order_states = kingdom__global_vars().get('active_queen_order_states')
     df = QUEEN["queen_orders"]
+    if len(df) == 0:
+        return df
     df_active = df[df["queen_order_state"].isin(active_queen_order_states)].copy()
     return df_active
 
@@ -378,7 +380,10 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
         else:
             # symbol ticker data # 1 all current pieces on chess board && all current running orders
             current_active_orders = return_active_orders(QUEEN)
-            active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
+            if len(current_active_orders) > 0:
+                active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
+            else:
+                active_order_symbols = []
             chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
 
             if symbols:
@@ -397,17 +402,21 @@ def return_QUEENs__symbols_data(QUEEN=False, QUEEN_KING=False, symbols=False, sw
 
 
 def return_QUEEN_KING_symbols(QUEEN_KING, QUEEN=None, symbols=[]):
-    if QUEEN:
-        current_active_orders = return_active_orders(QUEEN)
-    else:
-        current_active_orders = []
-        
-    active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
-    chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
+    try:
+        if QUEEN:
+            current_active_orders = return_active_orders(QUEEN)
+        else:
+            current_active_orders = []
+            
+        active_order_symbols = list(set(current_active_orders["symbol"].tolist())) if len(current_active_orders) > 1 else []
+        chessboard_symbols = return_QUEENs_workerbees_chessboard(QUEEN_KING=QUEEN_KING).get("queens_master_tickers")
 
-    symbols = symbols + active_order_symbols + chessboard_symbols
+        symbols = symbols + active_order_symbols + chessboard_symbols
 
-    return symbols
+        return symbols
+    except Exception as e:
+        print_line_of_error(f'king return QUEEN KING symbols failed: {e}')
+        return []
 
 def handle__ttf_notactive__datastream(
     info="if ticker stream offline pull latest price by MasterApi",
@@ -651,7 +660,7 @@ def return_crypto_bars(ticker_list, chart_times, trading_days_df, s_date=False, 
                 "start": start_date,
                 "end": end_date,
             }
-            print("king: crypto bars request params", params)
+            # print("king: crypto bars request params", params)
             data = requests.get(f"{CRYPTO_URL}/bars", headers=CRYPTO_HEADER, params=params).json()
 
             # Combine all symbols' bars into one DataFrame for this charttime

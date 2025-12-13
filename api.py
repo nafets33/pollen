@@ -1,38 +1,46 @@
 import os
 import uvicorn
-from fastapi import FastAPI, status, Request
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
-# from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-# from starlette.responses import RedirectResponse
-# from starlette.requests import Request
+from contextlib import asynccontextmanager
 import argparse
 from dotenv import load_dotenv
 
 from chess_piece import fastapi_router
-
+from chess_piece.fastapi_queen import load_bishop_data
 
 load_dotenv()
 prod = True
-class CacheManager:
-    def __init__(self):
-        self.data = {}
+pg_migration = os.getenv('pg_migration', 'True').lower() == 'true'
 
-    async def load(self):
-        # Simulate data loading
-        BISHOP = "WORKERBEE" #read_swarm_db(prod=prod)
-        self.data = {"BISHOP": BISHOP, "key2": "value2"}
-        print("Cache initialized!")
+# ✅ Simple global cache - just a dict
+CACHE = {}
 
-    def get_data(self):
-        return self.data
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load cache on startup, clear on shutdown."""
+    
+    # ✅ STARTUP - Load BISHOP
+    print("🚀 Loading BISHOP cache...")
+    try:
+        ticker_info = load_bishop_data(prod)
+        print(f"BISHOP ticker_info loaded: {len(ticker_info)} records")
+        CACHE['BISHOP'] = {'ticker_info': ticker_info}
+        print(f"BISHOP loaded: {list(CACHE['BISHOP'].keys())}")
+    except Exception as e:
+        print(f"❌ Failed to load BISHOP: {e}")
+        CACHE['BISHOP'] = {}
+    
+    yield  # App runs
+    
+    # SHUTDOWN - Clear cache
+    print("👋 Clearing cache...")
+    CACHE.clear()
 
+# Create app
+app = FastAPI(title="Pollen API", lifespan=lifespan)
 
-origins = []
-
-app = FastAPI()
-
-app.include_router(fastapi_router.router)
-
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,64 +49,60 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/", status_code=status.HTTP_200_OK, tags=["API Check"])
-def check():
+# Include router
+app.include_router(fastapi_router.router)
+
+# Root
+@app.get("/")
+def root():
     return {
-        "message": "Pollen Welcomes"
+        "message": "Pollen API",
+        "bishop_loaded": 'BISHOP' in CACHE and CACHE['BISHOP'] is not None
     }
 
-cache_manager = CacheManager()
+# Get BISHOP summary
+@app.get("/cache/bishop")
+def get_bishop():
+    """Get BISHOP cache summary."""
+    if 'BISHOP' not in CACHE or not CACHE['BISHOP']:
+        return {"error": "BISHOP not loaded"}
+    
+    BISHOP = CACHE['BISHOP']
+    return {
+        "keys": list(BISHOP.keys()),
+        "ticker_info": BISHOP.get('ticker_info', [])
+    }
 
-@app.get("/cachedata")
-async def get_data(request: Request):
-    headers = request.headers
-    print(headers)  # Prints headers
-    return cache_manager.get_data()
-
-@app.get("/cachedata/{key}")
-async def get_key(key: str):
-    return cache_manager.get_data().get(key, "Key not found")
+# Get specific BISHOP key ## NOT USED CURRENTLY
+@app.get("/cache/bishop/{key}")
+def get_bishop_key(key: str):
+    """Get specific BISHOP data (e.g., ticker_info, 2025_Screen)."""
+    if 'BISHOP' not in CACHE or not CACHE['BISHOP']:
+        return {"error": "BISHOP not loaded"}
+    
+    BISHOP = CACHE['BISHOP']
+    
+    if key not in BISHOP:
+        return {
+            "error": f"Key '{key}' not found",
+            "available": list(BISHOP.keys())
+        }
+    
+    data = BISHOP[key]
+    
+    # Convert DataFrame to dict
+    if hasattr(data, 'to_dict'):
+        return {"data": data.to_dict('records')}
+    
+    return {"data": data}
 
 if __name__ == '__main__':
-    API_URL = os.getenv('fastAPI_url')
+    API_URL = os.getenv('fastAPI_url', 'http://localhost:8000')
     parser = argparse.ArgumentParser()
-    parser.add_argument ('-ip', default=API_URL.split("://")[1].split(":")[0]) #'127.0.0.1'
-    parser.add_argument ('-port', default=API_URL.split(":")[2]) #'8000'
+    parser.add_argument('-ip', default=API_URL.split("://")[1].split(":")[0])
+    parser.add_argument('-port', default=API_URL.split(":")[2])
 
-    namespace = parser.parse_args()
-    ip_address = namespace.ip
-    port=int(namespace.port)
-
-    uvicorn.run(app, host=ip_address, port=port) # '10.3.144.157'
-
-
-
-
-
-
-# from starlette.responses import Response
-
-# from fastapi_cache import FastAPICache
-# from fastapi_cache.backends.redis import RedisBackend
-# from fastapi_cache.decorator import cache
-
-# from redis import asyncio as aioredis
-
-# app = FastAPI()
-
-
-# @cache()
-# async def get_cache():
-#     return 1
-
-
-# @app.get("/")
-# @cache(expire=60)
-# async def index():
-#     return dict(hello="world")
-
-
-# @app.on_event("startup")
-# async def startup():
-#     redis = aioredis.from_url("redis://localhost", encoding="utf8", decode_responses=True)
-#     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    args = parser.parse_args()
+    
+    print(f"🌐 Starting at http://{args.ip}:{args.port}")
+    uvicorn.run(app, host=args.ip, port=int(args.port))

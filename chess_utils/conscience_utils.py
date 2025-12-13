@@ -323,7 +323,10 @@ def story_return(QUEEN_KING, revrec, toggle_view_selection='Queen', qk_chessboar
 
         for symbol in df.index.tolist():
             try:
+                current_group = df.at[symbol, 'piece_name']
                 symbol_qcp_group = list(set(df['piece_name'].tolist()))
+                symbol_qcp_group = [current_group] + [i for i in symbol_qcp_group if i != current_group]
+
 
                 trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
                 if not trading_model:

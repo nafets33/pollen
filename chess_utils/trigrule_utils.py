@@ -5,6 +5,9 @@ import logging
 
 ### """ TRIGGER RULES"""
 
+def trig_rule_ID(symbol, trigrule_type, ttf):
+    return f"{symbol}_{trigrule_type}_{ttf}"
+
 def trigrule_name_ui_backend(trigrule=None):
 
     keys = {'trinity': "trinity_w_L",
@@ -94,7 +97,7 @@ def create_trig_rule_metadata(symbols, qcp_s, star_list):
             "display_name": "Trigger Rule Status",
             "col_header": "trigrule_status",
             "dtype": "list",
-            "values": ["active", "not_active"]
+            "values": ["active", "not_active", "trig_running"]
         },
         "expire_date": {
             "display_name": "Trigger Expiration Date",
@@ -250,23 +253,42 @@ def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df
 
         # Check each rule - return first one that passes
         for idx, rule in symbol_rules.iterrows():
-            # print(rule)
             marker = rule.get('marker', 'trinity_w_L')
             marker_backend_name = trigrule_name_ui_backend(marker)
             story_field_value = float(storygauge.loc[symbol].get(marker_backend_name))
-            
             trigrule_type = rule.get('trigrule_type')
+            ttf = rule.get('ttf')
             marker_value = float(rule.get('marker_value'))
-
-            if pd.isna(marker_value):
-                logging.info(f"[TRIGRULE DEBUG] Rule {idx} skipped: marker_value is NaN")
+            
+            # Check if this trigger_id already has an order (max_order_nums = 1)
+            trigger_id = trig_rule_ID(symbol, trigrule_type, ttf) # trigger_id = f"{symbol}_{rule.get('trigrule_type')}_{rule.get('ttf')}"
+            if trigger_id in existing_trigger_ids:
+                logging.info(f"[TRIGRULE DEBUG] Rule {symbol} {ttf} skipped: existing order found with trigger_id: {trigger_id}")
                 continue
 
-            # Check if this trigger_id already has an order (max_order_nums = 1)
-            trigger_id = f"{symbol}_{rule.get('trigrule_type')}_{rule.get('ttf')}"
+            expire_date = rule.get('expire_date', None)
+            if expire_date:
+                try:
+                    expire_datetime = pd.to_datetime(expire_date)
+                    # Check if conversion resulted in NaT
+                    if pd.isna(expire_datetime):
+                        logging.error(f"[TRIGRULE DEBUG] Rule {symbol} {ttf}: expire_date is invalid (NaT): {expire_date}")
+                        continue
+                    # Make timezone-naive for comparison if needed
+                    if expire_datetime.tzinfo is not None:
+                        expire_datetime = expire_datetime.replace(tzinfo=None)
+                    # Now safe to compare
+                    if datetime.now() > expire_datetime:
+                        logging.info(f"[TRIGRULE DEBUG] Rule {symbol} {ttf} skipped: expired on {expire_datetime}")
+                        # WORKERBEE update trig status to 'not_active'?
+                        continue
+                except Exception as e:
+                    logging.error(f"[TRIGRULE DEBUG] Rule {symbol} {ttf}: Failed to parse expire_date '{expire_date}': {e}")
+                    continue
             
-            if trigger_id in existing_trigger_ids:
-                logging.info(f"[TRIGRULE DEBUG] Rule {idx} skipped: existing order found with trigger_id: {trigger_id}")
+
+            if pd.isna(marker_value):
+                logging.info(f"[TRIGRULE DEBUG] Rule {symbol} {ttf} skipped: marker_value is NaN")
                 continue
 
             # Check wave_trinity type

@@ -74,13 +74,13 @@ class ConnectionManager:
         """Check if user is connected, optionally filter by environment."""
         for initial_data in self.active_connections.values():
             if initial_data.get("username") == client_user:
-                # ✅ If prod is specified, match it too
+                # print("init data router", initial_data)
                 if prod is not None:
                     if initial_data.get("prod") == prod:
                         return True
                 else:
                     # If prod not specified, just check username
-                    return True
+                    return None
         return False
     
     def get_active_users(self):

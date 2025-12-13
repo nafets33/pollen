@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, Header, Body, Query, WebSocket, WebSocket
 from fastapi.responses import JSONResponse, FileResponse
 from dotenv import load_dotenv
 from fastapi import Request
+import logging
 
 import asyncio
 from typing import Dict, Set, Optional
@@ -197,8 +198,9 @@ async def trigger_story_grid_update(request: Request):
         }
 
 @router.get("/ws_status/{client_user}")
-async def get_websocket_status(client_user: str, prod: Optional[bool] = None):
+async def get_websocket_status(client_user: str, prod: bool, request: Request = None):
     """Check if user has active WebSocket connection."""
+
     try:
         user_connections = []
         all_users = []
@@ -207,6 +209,7 @@ async def get_websocket_status(client_user: str, prod: Optional[bool] = None):
             for ws, info in list(manager.active_connections.items()):
                 username = info.get('username')
                 user_prod = info.get('prod')
+                # print(f"prod check websocket_status: {user_prod} for user {username}")
                 
                 if username:
                     all_users.append({
@@ -242,32 +245,6 @@ async def get_websocket_status(client_user: str, prod: Optional[bool] = None):
         )
 
 
-@router.get("/ws_status")
-async def get_all_websocket_status():
-    """Get all active WebSocket connections."""
-    try:
-        users_dict = {}
-        
-        async with manager.lock:
-            for ws, info in list(manager.active_connections.items()):
-                client_user = info.get('username')
-                if client_user:
-                    users_dict[client_user] = users_dict.get(client_user, 0) + 1
-        
-        return {
-            "total_users": len(users_dict),
-            "total_connections": len(manager.active_connections),
-            "users": users_dict,
-            "timestamp": datetime.now(est).isoformat()
-        }
-    except Exception as e:
-        logging.error(f"❌ Error in ws_status: {e}")
-        import traceback
-        traceback.print_exc()
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )
 ### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
 
 
@@ -655,15 +632,11 @@ async def func_update_queenking_symbol(request: Request, client_user: str= Body(
     json_data = queenking_symbol(client_user, prod, selected_row, default_value, triggers)
     return JSONResponse(content=json_data)
 
-
-#### WORKERBEE
-@router.post("/queen_buy_wave_orders", status_code=status.HTTP_200_OK)
-def buy_order(client_user: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
+@router.post("/queen_queenking_trigrule_event", status_code=status.HTTP_200_OK)
+async def func_queen_queenking_trigger_update(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), trigger_id=Body(...)): # new_data for update entire row
+    if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
 
-    if app_buy_wave_order_request(client_user, prod, selected_row, default_value=default_value, ready_buy=False):
-        return JSONResponse(content=grid_row_button_resp())
-    else:
-        return JSONResponse(content=grid_row_button_resp(status='error', message_type='click'))
+    json_data = queen_queenking_trigger_update(client_user, prod, trigger_id)
+    return JSONResponse(content=json_data)
+

@@ -1,5 +1,5 @@
 #find and read the pkl file in the folder.
-import logging
+import requests
 import os
 import json
 import pandas as pd
@@ -9,7 +9,7 @@ import pytz
 import ipdb
 import copy
 from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_data, 
-                              kingdom__global_vars, main_index_tickers, streamlit_config_colors, 
+                              kingdom__global_vars, ReadPickleData, streamlit_config_colors, 
                               hive_master_root, stars, PickleData, hive_master_root_db, 
                               read_QUEENs__pollenstory, print_line_of_error)
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
@@ -31,13 +31,15 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     shape_chess_board,
                                     remove_symbol_from_chess_board,
                                     add_symbol_to_chess_board,
-                                    star_refresh_star_times,
-                                    assign_block_time
+                                    init_swarm_dbs,
+                                    assign_block_time,
+                                    
                                     )
 
 from chess_piece.queen_bee import execute_buy_order, get_priceinfo_snapshot, symbol_is_crypto, handle_broker
 from chess_piece.queen_mind import refresh_chess_board__revrec, init_qcp, kings_order_rules
 from chess_utils.conscience_utils import story_return, return_waveview_fillers, generate_shade, get_powers
+# from chess_utils.trigrule_utils import trig_rule_ID
 from chess_piece.pollen_db import PollenDatabase
 from dotenv import load_dotenv
 
@@ -234,8 +236,44 @@ def create_AppRequest_package(request_name, archive_bucket=None, client_order_id
     'request_timestamp': now,
     }
 
-
-
+### CACHE
+def get_bishop_cache(key=None):
+    """
+    Simple function to get BISHOP data from cache API.
+    
+    Args:
+        key: Optional specific key (e.g., 'ticker_info', '2025_Screen')
+    
+    Returns:
+        dict or DataFrame
+    """
+    API_URL = os.getenv('fastAPI_url', 'http://localhost:8000')
+    
+    try:
+        if key:
+            # Get specific key
+            url = f"{API_URL}/cache/bishop/{key}"
+        else:
+            # Get summary
+            url = f"{API_URL}/cache/bishop"
+        
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # # Convert to DataFrame if it's a list of records
+            # if key and 'data' in data and isinstance(data['data'], list):
+            #     return pd.DataFrame(data['data'])
+            
+            return data
+        else:
+            print(f"❌ API Error: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Request failed: {e}")
+        return None
 ####### Router Calls
 
 def get_waveview_state_for_ttf(revrec, wave_view_name, ttf):
@@ -282,6 +320,7 @@ def return_startime_from_ttf(ticker_time_frame):
    t,tt,f = ticker_time_frame.split("_")
    return f'{tt}_{f}'
 
+
 def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0', long_short='long', wave_buy_orders=[], wave_buys=False, buy_amount_field="allocation_long"): # index & wave_amount
   try:
     #WORKERBEE Handling Crypto, # workerbee add check for buying amount allowed
@@ -306,7 +345,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     portfolio = QUEENsHeart['heartbeat'].get('portfolio')
 
     buy_package = create_AppRequest_package(request_name='buy_orders')
-    buy_package.update({'buy_order': {}})
+    # buy_package.update({'buy_order': {}})
     blessing={} #{i: '': for i in []}, # order_vars
     
     # Broker
@@ -351,11 +390,6 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
         kors['sell_trigbee_date'] = row.get('sell_trigbee_date', False)
         kors['sell_trigbee_date'] = pd.to_datetime(kors['sell_trigbee_date']).strftime('%m/%d/%YT%H:%M')
         kors['ignore_allocation_budget'] = row.get('ignore_allocation_budget', False)
-        # if kors['sell_trigbee_date'][:4].isdigit():
-        #    kors['sell_trigbee_date'] = pd.to_datetime(kors['sell_trigbee_date']).strftime('%m/%d/%YT%H:%M')
-        # else:
-        #     kors['sell_trigbee_date'] = False
-        # print(type(kors['sell_trigbee_date']), kors['sell_trigbee_date'], "sell_trigbee_date")
         kors['wave_amo'] = row.get(buy_amount_field, 0)
         kors['limit_price'] = row.get('limit_price', 0)
         
@@ -424,7 +458,8 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
                         )
 
         if exx.get('executed'):
-          print("APP EXX Order")
+          buy_package = create_AppRequest_package(request_name='buy_orders', client_order_id=exx.get('new_queen_order').get('client_order_id'))
+          print("APP EXX Order", buy_package)
 
           buy_package.update({'new_queen_order': exx.get('new_queen_order')})
 
@@ -798,6 +833,17 @@ def app_queen_order_update_order_rules(client_user, prod, selected_row, default_
        print_line_of_error(e)
        return grid_row_button_resp(status="Error", description=str(e), error=True)
 
+def load_bishop_data(prod):
+
+  if pg_migration:
+      BISHOP = read_swarm_db(prod, 'BISHOP')
+  else:
+      db = init_swarm_dbs(prod)
+      BISHOP = ReadPickleData(db.get('BISHOP'))
+  ticker_info = BISHOP.get('ticker_info', {})
+  # ticker_info = ticker_info.set_index('symbol')
+  return ticker_info.to_json(orient='records')
+
 ## MAIN GRIDS
 
 
@@ -921,31 +967,41 @@ def get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selecti
       # elif toggle_view_selection == "Not On Board":
                    
       elif toggle_view_selection == '2025_Screen':
+        screen = toggle_view_selection
         king_G = kingdom__global_vars()
-        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, queen_king=True, revrec=True, pg_migration=pg_migration)
+        qb = init_queenbee(client_user=client_user, prod=prod, queen=True, orders_v2=True, queen_king=True, api=True, pg_migration=pg_migration)
         QUEEN = qb.get('QUEEN')
+        acct_info = QUEEN.get('account_info')
         QUEEN_KING = qb.get('QUEEN_KING')
-        qk_chessboard = copy.deepcopy(QUEEN_KING['chess_board'])
-
-        QUEENBEE = {'workerbees': {}}
-        # db=init_swarm_dbs(prod)
-        # BISHOP = ReadPickleData(db.get('BISHOP'))
-        BISHOP = read_swarm_db(prod)
-        df = BISHOP.get(toggle_view_selection)
+        active_queen_order_states = king_G.get('active_queen_order_states')
+        
+        workerbees = 'workerbees'
+        QUEENBEE = {workerbees: {}}
+        db = init_swarm_dbs(prod)
+                
+        if pg_migration:
+            BISHOP = read_swarm_db(prod, 'BISHOP')
+        else:
+            BISHOP = ReadPickleData(db.get('BISHOP'))
+        
+        df = BISHOP.get(screen)
         for sector in set(df['sector']):
             token = df[df['sector']==sector]
-            tickers=token['symbol'].tolist() # switch to init_qcp : ) # WORKERBEE
-            QUEENBEE['workerbees'][sector] = init_qcp_workerbees(ticker_list=tickers, buying_power=0)
+            tickers=token['symbol'].tolist()
+            QUEENBEE[workerbees][sector] = init_qcp_workerbees(ticker_list=tickers, buying_power=0)
+        
         QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
         symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
-        symbols = set(['SPY'] + symbols)
-        # print('SPY' in symbols)
+        s = datetime.now()
         if pg_migration:
+            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
             STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
         else:
-            STORY_bee = return_QUEENs__symbols_data(QUEEN=None, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False, symbols=symbols).get('STORY_bee')
-        # print('SPY_1Minute_1Day' in STORY_bee.keys())
-        revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states'), wave_blocktime='morning_9-11', check_portfolio=False) ## Setup Board
+            symbols = [item for sublist in [v.get('tickers') for v in QUEEN_KING['chess_board'].values()] for item in sublist]
+            STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
+
+        revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, wave_blocktime='morning_9-11') ## Setup Board
+        
       else:
         # hedge funds
         qb = init_queenbee(client_user, prod, revrec=True, queen=True, queen_king=True, pg_migration=pg_migration)
@@ -1078,9 +1134,37 @@ def get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selecti
         return json_data
 
       elif return_type == 'story':
+        qk_chessboard = copy.deepcopy(QUEEN_KING['chess_board'])
         
         print('prod', prod)
         df = story_return(QUEEN_KING, revrec, toggle_view_selection, qk_chessboard)
+
+        # BISHOP DATA MERGE
+        data = get_bishop_cache()
+        if isinstance(data['ticker_info'], str):
+            # Parse JSON string to list
+            import json
+            parsed_data = json.loads(data['ticker_info'])
+            ticker_info = pd.DataFrame(parsed_data)
+        elif isinstance(data['ticker_info'], list):
+            ticker_info = pd.DataFrame(data['ticker_info'])
+        else:
+            ticker_info = data['ticker_info']
+    
+        if len(ticker_info) > 0:
+           bishop_cols = ['symbol', 'sector', 'shortName', 'industry', 'website', 'city', 'country', 'longBusinessSummary']
+           df_info = ticker_info[bishop_cols]
+           info_symbols = df_info['symbol'].tolist()
+           df_symbols = df.index.tolist()
+           missing_symbols = [sym for sym in df_symbols if sym not in info_symbols]
+           if missing_symbols:
+              print("Missing BISHOP symbols:", missing_symbols)
+          #  df_info = df_info.set_index(df_info['symbol'])
+          #  print("Merging BISHOP data", df_info.head())
+          #  df = df.merge(df_info, how='left', left_index=True, right_index=True)
+           for col in bishop_cols:
+              if col != 'symbol':
+                df[col] = df.index.map(dict(zip(df_info['symbol'], df_info[col]))).fillna('N/A')
 
         # for idx in df.index:
         #     df.at[idx, 'nestedRows'] = [{
@@ -1303,14 +1387,12 @@ def header_account(client_user, prod):
 
 
 # Add Symbol to Board
-def queenking_symbol(client_user, prod, selected_row, default_value, triggers):
+def queenking_symbol(client_user, prod, selected_row=None, default_value=None, triggers=None, triggers_only=False):
     starnames = star_names()
     starnames_margin = {f'{i} Margin': v for i, v in starnames.items()}
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
 
-    refresh_star_names = star_refresh_star_times()
-    
     symbol = selected_row.get('symbol')
-    buying_power = default_value.get('buying_power', 0)
     
     QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
     chess_board = QUEEN_KING['chess_board']
@@ -1336,8 +1418,8 @@ def queenking_symbol(client_user, prod, selected_row, default_value, triggers):
           # Replace or add
           if trigger_id in existing_by_id:
               # Update existing trigger
-              existing_by_id[trigger_id] = trig
-              print(f"✏️  Updated trigger: {trigger_id}")
+              existing_by_id[trigger_id].update(trig)
+              print(f"✏️  QUEEN_KING Updated trigger: {trigger_id}")
           else:
               # Add new trigger
               existing_by_id[trigger_id] = trig
@@ -1345,6 +1427,14 @@ def queenking_symbol(client_user, prod, selected_row, default_value, triggers):
       
       # Convert back to list and save
       QUEEN_KING['king_controls_queen']['ticker_trigrules'] = list(existing_by_id.values())
+      if triggers_only:
+          if pg_migration:
+              table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+              PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+          else:
+             PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+          
+          return grid_row_button_resp(description=f" {symbol} Trigger Rules Updated")
 
     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
     if not trading_model:
@@ -1387,12 +1477,58 @@ def queenking_symbol(client_user, prod, selected_row, default_value, triggers):
     # {'symbol': 'GOOG', 'buying_power': 0.125, 'borrow_power': 0, 'status': ['active', 'not_active'], 'refresh_star': ['1Minute_1Day', 'Day', 'Week', 'Month', 'Quarter', 'Quarters', 'Year'], 'max_budget_allowed': None, 'symbol group': [], 'Day': 0.03, 'Week': 0.5, 'Month': 0.6, 'Quarter': 0.8, 'Quarters': 0.8, 'Year': 0.8, 'Day Margin': 0.03, 'Week Margin': 0.4, 'Month Margin': 0.4, 'Quarter Margin': 0.5, 'Quarters Margin': 0.8, 'Year Margin': 0.8, 'sell_date': 'Invalid date'}
 
     if pg_migration:
-        table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
         PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
     else:
        PickleData(QUEEN_KING.get('source'), QUEEN_KING)
     
     return grid_row_button_resp(description=f" {symbol} Trading Model Updated")
+
+
+def queen_queenking_trigger_update(client_user, prod, trigger_id):
+    """Update a single trigger rule by trigger_id."""
+    
+    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+    
+    # Get existing trigger rules
+    existing_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules', [])
+    if not isinstance(existing_trigrules, list):
+        existing_trigrules = []
+    
+    # Create lookup dict by trigger_id
+    existing_by_id = {
+        rule.get('trigger_id'): rule 
+        for rule in existing_trigrules 
+        if rule.get('trigger_id')
+    }
+
+    # Find and update the trigger
+    if trigger_id in existing_by_id:
+        # Hardcoded updates
+        # existing_by_id[trigger_id]['save_to_db'] = False
+        existing_by_id[trigger_id]['trigrule_status'] = 'trig_running'
+        
+        print(f"✏️  QUEEN Updated trigger: {trigger_id}")
+        
+        # Convert back to list and save
+        QUEEN_KING['king_controls_queen']['ticker_trigrules'] = list(existing_by_id.values())
+        
+        # Save to database
+        if pg_migration:
+            table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+            PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+        else:
+            PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+        
+        return grid_row_button_resp(
+            description=f"'{trigger_id}' updated"
+        )
+    else:
+        print(f"❌ Trigger not found: {trigger_id}")
+        return grid_row_button_resp(
+            description=f"Trigger '{trigger_id}' not found",
+            error=True
+        )
+    pass
 
 
 ### GRAPH

@@ -256,6 +256,7 @@ const AgGrid = (props: Props) => {
   } = props
   let { grid_options = {} } = props
 
+
   //parsing must be done here. For some unknow reason if its moved after the
   //button mapping, deepMap gets lots of React objects (api, symbolRefs, etc.)
   //this impacts performance and crashes the grid.
@@ -289,7 +290,7 @@ const AgGrid = (props: Props) => {
 
   useEffect(() => {
     if (!kwargs.api_ws) {
-      console.warn("⚠️  api_ws is undefined, WebSocket not started.");
+      log("⚠️  api_ws is undefined, WebSocket not started.");
       return;
     }
 
@@ -301,7 +302,7 @@ const AgGrid = (props: Props) => {
     let isIntentionallyClosed = false;
     let reconnectAttempts = 0;
     const MAX_RECONNECT_ATTEMPTS = 10;
-    const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+    const HEARTBEAT_INTERVAL = 300000; // 5 minutes
     const RECONNECT_DELAY = 3000; // 3 seconds
 
     const connectWebSocket = () => {
@@ -322,7 +323,7 @@ const AgGrid = (props: Props) => {
           log("📤 Sending handshake:", handshake);
           ws?.send(JSON.stringify(handshake));
 
-          // ✅ Start heartbeat
+          // // ✅ Start heartbeat
           startHeartbeat();
         };
 
@@ -331,7 +332,7 @@ const AgGrid = (props: Props) => {
           try {
             const data = JSON.parse(event.data);
 
-            // ✅ Handle pong response
+            // Handle pong response
             if (data.type === 'pong') {
               log("💓 Heartbeat acknowledged");
               return;
@@ -339,11 +340,11 @@ const AgGrid = (props: Props) => {
 
             // Handle connection confirmation
             if (data.type === 'connection_established') {
-              log("✅ Handshake confirmed:", data.message);
+              log("Handshake confirmed:", data.message, prod);
               return;
             }
 
-            // ✅ Handle array of updates (batch)
+            // Handle array of updates (batch)
             if (Array.isArray(data) && data.length > 0) {
               // log(`📥 Received ${data.length} row updates`);
               // log("📦 First update sample:", JSON.stringify(data[0], null, 2));
@@ -356,15 +357,15 @@ const AgGrid = (props: Props) => {
                   // log(`🔍 Existing data for ${row_id}:`, existingNode.data);
                   // log(`📨 Updates for ${row_id}:`, updates);
 
-                  // ✅ Start with existing data to preserve everything
+                  // Start with existing data to preserve everything
                   const updatedRow = { ...existingNode.data };
 
-                  // ✅ Apply only the updates from WebSocket
+                  // Apply only the updates from WebSocket
                   Object.keys(updates).forEach(key => {
                     updatedRow[key] = updates[key];
                   });
 
-                  // ✅ Ensure index is preserved
+                  // Ensure index is preserved
                   updatedRow[index] = row_id;
 
                   rowsToUpdate.push(updatedRow);
@@ -565,7 +566,14 @@ const AgGrid = (props: Props) => {
             ...(button.cellRendererParams || {}),
             clicked: async function (row_index: any) {
               try {
-                const selectedRow = g_rowdata.find((row) => row[index] === row_index);
+                // const selectedRow = g_rowdata.find((row) => row[index] === row_index);
+                const freshNode = gridRef.current?.api.getRowNode(row_index);
+                if (!freshNode?.data) {
+                  console.error("❌ Could not find fresh row data for:", row_index);
+                  toastr.error("Could not load row data");
+                  return;
+                }
+                const selectedRow = freshNode.data;
                 if (prompt_order_rules) {
                   const str = selectedRow[prompt_field];
                   const selectedField =
@@ -582,11 +590,13 @@ const AgGrid = (props: Props) => {
 
                   setModalshow(true);
                   setModalData({
+                    gridRef: gridRef,           // ✅ Pass grid reference
+                    index: index,               // ✅ Pass index
                     prompt_message,
                     button_api: button_api,
                     username: username,
                     prod: prod,
-                    selectedRow: selectedRow,
+                    selectedRow: selectedRow,   // ✅ Fresh data from grid
                     kwargs: kwargs,
                     prompt_field,
                     prompt_order_rules,
@@ -605,14 +615,17 @@ const AgGrid = (props: Props) => {
                 } else if (prompt_field && prompt_message) {
                   setModalshow(true);
                   setModalData({
+                    gridRef: gridRef,           // Pass grid reference
+                    index: index,               // Pass index
                     prompt_message,
                     button_api: button_api,
                     username: username,
                     prod: prod,
-                    selectedRow: selectedRow,
+                    selectedRow: selectedRow,   // Fresh data from grid
                     kwargs: kwargs,
                   });
                   setPromptText(selectedRow[prompt_field]);
+                  setModalshow(true)
                 } else {
                   if (window.confirm(prompt_message)) {
                     await axios.post(button_api, {
