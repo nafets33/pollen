@@ -387,16 +387,36 @@ def fetch_portfolio_history(_api, period='3M', timeframe='1D'):
     except Exception as e:
         print("Error fetching portfolio history:", e)
 
-# @st.cache_data(ttl=timedelta(minutes=5))
 def get_portfolio_performance(_api, periods):
     perf_dict = {}
+    current_year = datetime.now().year
+    ytd_start = datetime(current_year, 1, 1)  # Remove tzinfo=est
+    
     for period in periods:
-        df = fetch_portfolio_history(_api, period=period)
-        if df is not None and not df.empty:
-            portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
-            perf_dict[period] = portfolio_perf
+        if period == 'YTD':
+            # For YTD, fetch 1 year of data and filter to current year
+            df = fetch_portfolio_history(_api, period='1A', timeframe='1D')
+            if df is not None and not df.empty:
+                # Convert timestamp to datetime if it's not already
+                if 'timestamp' in df.columns:
+                    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+                    # Filter to only current year data
+                    df = df[df['timestamp'] >= ytd_start]
+                    
+                if not df.empty:
+                    portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
+                    perf_dict[period] = portfolio_perf
+                else:
+                    perf_dict[period] = None
+            else:
+                perf_dict[period] = None
         else:
-            perf_dict[period] = None
+            df = fetch_portfolio_history(_api, period=period)
+            if df is not None and not df.empty:
+                portfolio_perf = round((df.iloc[-1]['equity'] - df.iloc[0]['equity']) / df.iloc[0]['equity'] * 100, 2)
+                perf_dict[period] = portfolio_perf
+            else:
+                perf_dict[period] = None
     return perf_dict
 
 def pollenq(sandbox=False, demo=False):
@@ -509,7 +529,7 @@ def pollenq(sandbox=False, demo=False):
             # with st.expander("Portfolio Performance", expanded=True):
             # Show all portfolio history periods in columns
             st.write("Portfolio Performance")
-            periods = ['7D', '1M', '3M', '6M', '1A']
+            periods = ['7D', '1M', '3M', '6M', '1A', 'YTD']
             perf_cols = st.columns(len(periods))
             perf_containers = [col.container() for col in perf_cols]
 
@@ -602,10 +622,7 @@ def pollenq(sandbox=False, demo=False):
                 st.session_state['prod'], st.session_state['db_root'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
                 prod = st.session_state['prod']
                 st.session_state['env'] = prod
-                if not prod:
-                    st.switch_page('pages/sandbox.py')
-                else:
-                    st.switch_page('pollen.py')
+
         
 
 

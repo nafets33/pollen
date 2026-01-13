@@ -196,17 +196,7 @@ def waves():
                 marketsells = market[market['bs_position']!='buy']
                 st.write(f"""Star Total Budget ${round(sum(all_["star_total_budget"]),0)}$""")
                 st.write(f"""Star Total Budget Allocation ${round(sum(all_["total_allocation_budget"]),0)}$""")
-                # with cols[0]:
-                #     st.write(f"""Deploy Long ${round(sum(all_["allocation_long_deploy"]),0)}$""")
-                # with cols[0]:
-                #     st.write(f"""Allocation long ${round(sum(all_["allocation_long"]),0)}$""")
-                # with cols[0]:
-                #     st.write(f"""buys ${round(sum(buys["total_allocation_budget"]),0)}$""")
-                # with cols[1]:
-                #     st.write(f"""sells ${round(sum(sells["total_allocation_budget"]))}$""")
-                #     st.write(f"""marketsells ${round(sum(marketsells["total_allocation_budget"]))}$""")
 
-                # df.loc['Total', 'star_total_budget'] = df['star_total_budget'].sum()
                 df = move_columns_to_front(df, wave_view_input_cols)
                 hide_cols = [i for i in df.columns.tolist() if i not in wave_view_input_cols]
                 df = df.rename(columns={i: i.replace('_', ' ') for i in df.columns.tolist()})
@@ -251,7 +241,6 @@ def waves():
         st.write(QUEEN['price_info_symbols'])
         df = story_return(QUEEN_KING, revrec)
         standard_AGgrid(df)
-        print("HERE")
 
 
 if __name__ == '__main__':

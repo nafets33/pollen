@@ -12,20 +12,12 @@ from dotenv import load_dotenv
 import streamlit as st
 import os
 
-
-from chess_piece.app_hive import set_streamlit_page_config_once, create_ag_grid_column, standard_AGgrid
+from chess_piece.app_hive import  create_ag_grid_column, standard_AGgrid
 from chess_piece.king import kingdom__global_vars
-from chess_piece.queen_hive import kingdom__grace_to_find_a_Queen, create_QueenOrderBee, star_names, init_queenbee
+from chess_piece.queen_hive import  create_QueenOrderBee, star_names, init_queenbee
 from pq_auth import signin_main
-from custom_button import cust_Button
 from custom_grid import st_custom_grid, GridOptionsBuilder
-from custom_graph_v1 import st_custom_graph
 
-from streamlit_extras.switch_page_button import switch_page
-
-def symbol_requesting_to_sell(queen_orders, symbol):
-
-    return True
 
 
 def config_orders_cols(active_order_state_list):
@@ -155,13 +147,6 @@ if __name__ == '__main__':
 
     
     signin_main(page="pollenq")
-    # if 'authentication_status' not in st.session_state:
-    #     print("SIGN IN")
-    #     authenticator = 
-
-    # if 'authentication_status' not in st.session_state or st.session_state['authentication_status'] != True:
-    #     print("SWITCHING PAGES")
-    #     switch_page('pollen')
 
     seconds_to_market_close = st.session_state['seconds_to_market_close'] if 'seconds_to_market_close' in st.session_state else 0
     # mkhrs = st.session_state['mkhrs']

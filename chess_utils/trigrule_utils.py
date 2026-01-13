@@ -1,7 +1,12 @@
 from datetime import datetime
 import pandas as pd
 import logging
+import requests
+import os
+from dotenv import load_dotenv
+import ipdb
 
+load_dotenv()
 
 ### """ TRIGGER RULES"""
 
@@ -32,7 +37,7 @@ def create_TrigRule(
                     user_accept=True, 
                     max_order_nums=1, # to achieve max budget
                     wave_amo=89, 
-                    marker='Trinity', # vwap, rsi, macd, trinity..
+                    marker='trinity', # vwap, rsi, macd, trinity..
                     marker_value=None, # -.2
                     marker_direction=['below'], # 'below', 'above'
                     deviation_symbols=[], # list of symbols to compare against
@@ -97,7 +102,7 @@ def create_trig_rule_metadata(symbols, qcp_s, star_list):
             "display_name": "Trigger Rule Status",
             "col_header": "trigrule_status",
             "dtype": "list",
-            "values": ["active", "not_active", "trig_running"]
+            "values": ["active", "not_active", "trig_running", "expired"]
         },
         "expire_date": {
             "display_name": "Trigger Expiration Date",
@@ -210,7 +215,7 @@ def get_existing_trigrule_orders(symbols, active_orders):
         # Filter out orders without trigger_ids
         existing_orders = existing_orders[existing_orders['trigger_id'].notna()].copy()
         
-        logging.info(f"[TRIGRULE DEBUG] Found {len(existing_orders)} existing orders with trigger_ids")
+        # logging.info(f"[TRIGRULE DEBUG] Found {len(existing_orders)} existing orders with trigger_ids")
         
         return existing_orders[['symbol', 'trigger_id', 'queen_order_state', 'order_rules', 'cost_basis_current', 'filled_qty', 'qty_available', 'money', 'honey']]
     
@@ -218,12 +223,13 @@ def get_existing_trigrule_orders(symbols, active_orders):
         print(f"❌ Error getting existing trigrule orders: {e}")
         return pd.DataFrame()
 
-def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df):
+def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df, API_URL=None):
     """
     Check if TrigRule conditions are met for a symbol.
     Returns first passing TrigRule dict with trigger_id, or None if none pass.
     """
-
+    if API_URL is None:
+        API_URL = os.getenv('fastAPI_url')
     try:
         ticker_trigrules = QUEEN_KING['king_controls_queen'].get('ticker_trigrules', [])
         # TEST: Create test TrigRule for this symbol (only once)
@@ -253,13 +259,18 @@ def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df
 
         # Check each rule - return first one that passes
         for idx, rule in symbol_rules.iterrows():
-            marker = rule.get('marker', 'trinity_w_L')
+            marker = rule.get('marker', 'trinity').lower()
             marker_backend_name = trigrule_name_ui_backend(marker)
             story_field_value = float(storygauge.loc[symbol].get(marker_backend_name))
             trigrule_type = rule.get('trigrule_type')
             ttf = rule.get('ttf')
             marker_value = float(rule.get('marker_value'))
-            
+            if pd.isna(marker_value):
+                logging.info(f"[TRIGRULE DEBUG] Rule {symbol} {ttf} skipped: marker_value is NaN")
+                continue
+            if abs(marker_value) > 1:
+                marker_value = marker_value / 100.0  # convert percentage to decimal
+
             # Check if this trigger_id already has an order (max_order_nums = 1)
             trigger_id = trig_rule_ID(symbol, trigrule_type, ttf) # trigger_id = f"{symbol}_{rule.get('trigrule_type')}_{rule.get('ttf')}"
             if trigger_id in existing_trigger_ids:
@@ -280,16 +291,11 @@ def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df
                     # Now safe to compare
                     if datetime.now() > expire_datetime:
                         logging.info(f"[TRIGRULE DEBUG] Rule {symbol} {ttf} skipped: expired on {expire_datetime}")
-                        # WORKERBEE update trig status to 'not_active'?
+                        flip_queen_trigger_rule_status(API_URL, trigger_id, client_user=QUEEN_KING['client_user'], prod=QUEEN_KING['prod'], status='expired')
                         continue
                 except Exception as e:
                     logging.error(f"[TRIGRULE DEBUG] Rule {symbol} {ttf}: Failed to parse expire_date '{expire_date}': {e}")
                     continue
-            
-
-            if pd.isna(marker_value):
-                logging.info(f"[TRIGRULE DEBUG] Rule {symbol} {ttf} skipped: marker_value is NaN")
-                continue
 
             # Check wave_trinity type
             marker_direction = rule['marker_direction']  # default to 'above' if not specified
@@ -350,5 +356,46 @@ def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df
     except Exception as e:
         print(f"Error checking TrigRule conditions for {symbol}: {e}")
         return None
+
+def flip_queen_trigger_rule_status(API_URL, trigger_id, client_user, prod, status):
+    # call to update QUEEN_KING
+    payload = {
+                'api_key': os.getenv('fastAPI_key'),
+                'client_user': client_user,
+                'trigger_id': trigger_id,
+                'prod':prod,
+                'status': status
+                }
+    try:
+        # Determine API URL
+        endpoint = f"{API_URL}/api/data/queen_queenking_trigrule_event"
+        
+        # Send POST request to update trigger
+        response = requests.post(
+            endpoint,
+            json=payload,
+            headers={'Content-Type': 'application/json'},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            logging.info(f"Trigger {trigger_id} status updated successfully")
+            print(f"Trigger {trigger_id} updated: {result.get('description')}")
+            return result
+        else:
+            logging.error(f"❌ Failed to update trigger {trigger_id}: {response.status_code}")
+            print(f"❌ Failed to update trigger: {response.text}")
+            return {'error': response.text}
+            
+    except requests.exceptions.Timeout:
+        logging.error(f"⏱️ Timeout updating trigger {trigger_id}")
+        return {'error': 'Timeout occurred'}
+    except requests.exceptions.ConnectionError:
+        logging.error(f"❌ Connection error updating trigger {trigger_id}")
+        return {'error': 'Connection error occurred'}
+    except Exception as e:
+        logging.error(f"❌ Error updating trigger {trigger_id}: {e}")
+        return {'error': str(e)}
 
 ### """ TRIGGER RULES""" ###

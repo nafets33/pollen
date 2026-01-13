@@ -1266,6 +1266,7 @@ def refresh_chess_board__revrec(
         
     def revrec_allocation(waveview, wave_blocktime):
         
+        
         """ WORK ON
         # handle star allocation, conflicts your sellhomes are cancel out the flying
         """
@@ -1307,6 +1308,9 @@ def refresh_chess_board__revrec(
             for ttf in waveview.index:
                 dict_return = {}
                 dict_return['ttf'] = ttf
+                if ttf not in STORY_bee:
+                    # print(f'WARNING REVREC {ttf} not in STORY_BEE')
+                    continue
                 # story
                 current_macd = STORY_bee[ttf]["story"].get("macd_state")
                 bs_position = STORY_bee[ttf]["story"].get("macd_state_side")
@@ -1583,8 +1587,9 @@ def refresh_chess_board__revrec(
                             if len(active_orders_close_today) > 0:
                                 active_orders_close_today = active_orders_close_today[
                                     (active_orders_close_today['order_rules'].apply(lambda x: x.get('close_order_today') == True)) |
-                                    (active_orders_close_today['order_rules'].apply(lambda x: x.get('ignore_allocation_budget') == True))
-                                                                                      ]
+                                    (active_orders_close_today['order_rules'].apply(lambda x: x.get('ignore_allocation_budget') == True)
+                                     )
+                                ]
                                 buys_at_play_close_today, sells_at_play_today, cost_basis_current = return_long_short(active_orders_close_today)
                                 df_stars.at[ticker_time_frame, 'star_buys_at_play_allocation'] = buys_at_play - buys_at_play_close_today
                             else:
@@ -1607,6 +1612,99 @@ def refresh_chess_board__revrec(
         except Exception as e:
             print_line_of_error(e)
 
+    
+    def adjust_star_allocations_for_broker_delta(df_stars, df_ticker, STORY_bee):
+        """
+        Adjust star-level allocations based on broker quantity deltas.
+        Must be called BEFORE waveview = df_stars.copy()
+        
+        Returns updated df_stars with adjusted star_buys_at_play_allocation
+        """
+        try:
+            adjustments_log = {}
+            adjustment_symbols = []
+            
+            for ticker in df_ticker.index:
+                broker_delta = df_ticker.at[ticker, 'broker_qty_delta']
+                
+                if abs(broker_delta) < 0.001:  # No meaningful delta
+                    continue
+                
+                # Get current price for dollar value calculation
+                ttf_1min = f'{ticker}_1Minute_1Day'
+                if ttf_1min in STORY_bee:
+                    current_price = STORY_bee[ttf_1min]['story'].get('current_bid', 0)
+                else:
+                    current_price = df_ticker.at[ticker, 'current_bid'] if 'current_bid' in df_ticker.columns else 0
+                
+                if current_price == 0:
+                    print(f"WARNING: {ticker} has no current price, skipping broker delta adjustment")
+                    continue
+                
+                # Calculate dollar value of delta
+                broker_delta_value = broker_delta * current_price
+                # print(f"Adjusting {ticker} for broker delta: Qty {broker_delta}, Value ${round(broker_delta_value, 2)} at Price ${current_price}")
+                
+                # Get all stars for this ticker
+                ticker_stars = df_stars[df_stars['ticker'] == ticker].copy()
+                
+                if len(ticker_stars) == 0:
+                    continue
+                
+                adjustment_symbols.append(ticker)
+                # Proportionally distribute delta across stars based on their star_buys_at_play_allocation
+                total_star_buys_allocation = ticker_stars['star_buys_at_play_allocation'].sum()
+                
+                if total_star_buys_allocation == 0:
+                    # No tracked allocations, distribute equally across stars
+                    star_weights = {ttf: 1/len(ticker_stars) for ttf in ticker_stars.index}
+                else:
+                    # Distribute proportionally to existing allocation positions
+                    star_weights = {
+                        ttf: ticker_stars.at[ttf, 'star_buys_at_play_allocation'] / total_star_buys_allocation 
+                        for ttf in ticker_stars.index
+                    }
+                
+                # Apply adjustment to each star
+                for ttf in ticker_stars.index:
+                    weight = star_weights[ttf]
+                    star_delta_value = broker_delta_value * weight
+                    
+                    # Adjust star_buys_at_play_allocation (key field for allocation_deploy)
+                    current_allocation = df_stars.at[ttf, 'star_buys_at_play_allocation']
+                    adjusted_allocation = max(0, current_allocation - star_delta_value)
+                    
+                    df_stars.at[ttf, 'star_buys_at_play_allocation'] = adjusted_allocation
+                    
+                    # Also adjust star_buys_at_play for consistency
+                    current_buys = df_stars.at[ttf, 'star_buys_at_play']
+                    adjusted_buys = max(0, current_buys - star_delta_value)
+                    df_stars.at[ttf, 'star_buys_at_play'] = adjusted_buys
+                    
+                    # Log adjustment
+                    adjustments_log[ttf] = {
+                        'ticker': ticker,
+                        'broker_delta_qty': broker_delta * weight,
+                        'broker_delta_value': star_delta_value,
+                        'old_allocation': current_allocation,
+                        'new_allocation': adjusted_allocation,
+                        'adjustment': star_delta_value
+                    }
+            
+            # Print summary if adjustments were made
+            if adjustments_log:
+                total_adjusted = sum(adj['adjustment'] for adj in adjustments_log.values())
+                print(f"Broker Delta Adjustments: ${round(total_adjusted, 2)} across Symbols {adjustment_symbols}")
+                
+                # Store in QUEEN for visibility
+                QUEEN['heartbeat']['broker_delta_adjustments'] = adjustments_log
+            
+            return df_stars
+            
+        except Exception as e:
+            print_line_of_error(f"adjust_star_allocations_for_broker_delta: {e}")
+            return df_stars
+    
 
     try:
         rr_run_cycle.update({'load': (datetime.now() - s).total_seconds()})
@@ -1620,17 +1718,8 @@ def refresh_chess_board__revrec(
                 if f'{symbol}_{star}' in STORY_bee_keys:
                     pct_change = STORY_bee[f'{symbol}_{star}']['story'].get('last_close_price')
                     storybee_pct_change[f'{symbol}{star}_change'] = pct_change
-                # else:
-                #     print(symbol, star, "not in STORY_bee_keys")
-        # if exit_early:
-        #     df = pd.DataFrame(index=symbols)
-        #     df['symbol'] = df.index
-        #     for symbol in df.index:
-        #         for star in stars().keys():
-        #             df.at[symbol, f'{symbol}{star}_change'] = storybee_pct_change.get(f'{symbol}{star}_change', 0)
-        #     print("EXIT", df.iloc[-1])
-        #     return {'storygauge': df}
 
+        # Initialize RevRec Structures
         chessboard = QUEEN_KING[chess_board]
     
         # Handle Weight change
@@ -1748,7 +1837,13 @@ def refresh_chess_board__revrec(
             df_wash = pd.DataFrame()
 
         # Story Bee
-        # def storybee__data(STORY_bee, df_ticker):
+    #     print(df_broker_portfolio.columns)
+    #     Index(['asset_id', 'symbol', 'exchange', 'asset_class', 'asset_marginable',
+    #    'qty', 'avg_entry_price', 'side', 'market_value', 'cost_basis',
+    #    'unrealized_pl', 'unrealized_plpc', 'unrealized_intraday_pl',
+    #    'unrealized_intraday_plpc', 'current_price', 'lastday_price',
+    #    'change_today', 'qty_available']
+
         for symbol in df_ticker.index:
             ttf = f'{symbol}_1Minute_1Day'
             if ttf not in STORY_bee.keys():
@@ -1766,10 +1861,12 @@ def refresh_chess_board__revrec(
                 df_ticker.at[symbol, 'broker_qty_available'] = float(df_broker_portfolio.at[symbol, 'qty_available'])
                 df_ticker.at[symbol, 'unrealized_pl'] = float(df_broker_portfolio.at[symbol, 'unrealized_pl'])
                 df_ticker.at[symbol, 'unrealized_plpc'] = float(df_broker_portfolio.at[symbol, 'unrealized_plpc'])
+                df_ticker.at[symbol, 'market_value'] = float(df_broker_portfolio.at[symbol, 'market_value'])
             else:
                 df_ticker.at[symbol, 'broker_qty_available'] = 0
                 df_ticker.at[symbol, 'unrealized_pl'] = 0
                 df_ticker.at[symbol, 'unrealized_plpc'] = 0
+                df_ticker.at[symbol, 'market_value'] = 0 
             
             # wash sale
             if symbol in df_wash.index:
@@ -1781,8 +1878,8 @@ def refresh_chess_board__revrec(
 
 
         df_ticker['broker_qty_delta'] = df_ticker['qty_available'] - df_ticker['broker_qty_available']
-        
         QUEEN['heartbeat']['broker_qty_delta'] = df_ticker['broker_qty_delta'].sum()
+        df_stars = adjust_star_allocations_for_broker_delta(df_stars, df_ticker, STORY_bee)
 
         waveview = df_stars.copy()
         ## updated, was removed before bc revalocation wasn't able to handle missing from STORY_bee -- fix allows since mapping is still done
@@ -1792,15 +1889,6 @@ def refresh_chess_board__revrec(
                 # print(f'{ttf} missing in story excluding from revrec')
                 ttf_errors.append(ttf)
                 continue
-        # waveview = waveview[~waveview.index.isin(ttf_errors)]
-        for ttf in ttf_errors:
-            tic, tstar, tframe = ttf.split("_")
-            star_time = f'{tstar}_{tframe}'
-            linking_ttf = f'SPY_{star_time}'
-            # waveview.loc[ttf] = waveview.loc[linking_ttf]
-            # waveview.at[ttf, 'ticker_time_frame'] = ttf
-
-            STORY_bee[ttf] = STORY_bee[linking_ttf]
 
         s = datetime.now()
         waveview = revrec_allocation(waveview, wave_blocktime)
@@ -1859,13 +1947,6 @@ def refresh_chess_board__revrec(
 
         df_storygauge = df_storygauge[cols]
         symbols_failed = [i for i in df_ticker.index if i not in df_storygauge.index]
-        if symbols_failed:
-            print("symbols missing story attempting to add back", symbols_failed)
-            story_token = calculate_wave_gauge(symbols_failed, waveview)
-            if len(story_token) > 0:
-                story_token = story_token[cols]
-                df_storygauge = pd.concat([df_storygauge, story_token])
-
         
         # Join Story to Tickers and add active orders
         active_orders_order_book = ['ticker_time_frame',   
@@ -1887,7 +1968,7 @@ def refresh_chess_board__revrec(
                                     'side', #  is this needed ?
         ]
 
-        kors_to_add = ['sell_trigbee_date', 'sell_out', 'take_profit', 'close_order_today'] #
+        kors_to_add = ['sell_trigbee_date', 'sell_out', 'take_profit', 'close_order_today', 'ignore_allocation_budget'] #
         active_orders_order_book = active_orders_order_book + kors_to_add
 
         storygauge = df_ticker.merge(df_storygauge, left_index=True, right_index=True, how='left')
@@ -1942,7 +2023,7 @@ def refresh_chess_board__revrec(
         # Join in AutoPilot
         ticker_autopilot = QUEEN_KING['king_controls_queen'].get('ticker_autopilot', [])
 
-        # ✅ Handle list of dicts instead of DataFrame
+        # Handle list of dicts instead of DataFrame
         if isinstance(ticker_autopilot, list) and len(ticker_autopilot) > 0:
             # Convert list of dicts to DataFrame for joining
             autopilot_df = pd.DataFrame(ticker_autopilot).set_index('symbol')
@@ -1965,15 +2046,34 @@ def refresh_chess_board__revrec(
             storygauge['sell_autopilot'] = False
         
         # Build a DataFrame from STORY_bee
+        if QUEEN:
+            if 'price_info_symbols' in QUEEN.keys():
+                symbols_price_info = QUEEN['price_info_symbols']['priceinfo'].to_dict()
+            else:
+                symbols_price_info = {}
+        else:
+            symbols_price_info = {}
+
         story_data = []
-        for ttf, val in STORY_bee.items():
-            symbol = ttf.split('_')[0]
-            story = val.get('story', {})
-            story_data.append({
-                'symbol': symbol,
-                'ask': story.get('current_ask', 0),
-                'bid': story.get('current_bid', 0)
-            })
+        for symbol in storygauge.index:
+            val = STORY_bee.get(f'{symbol}_1Minute_1Day', {})
+            if val:
+                story = val.get('story', {})
+                story_data.append({
+                    'symbol': symbol,
+                    'ask': story.get('current_ask', 0),
+                    'bid': story.get('current_bid', 0)
+                })
+            elif symbols_price_info.get(symbol):
+                price_info = symbols_price_info[symbol]
+                story_data.append({
+                    'symbol': symbol,
+                    'ask': price_info.get('current_ask', 0),
+                    'bid': price_info.get('current_bid', 0)
+                })
+            else:
+                print(f'ERROR !! storygauge: {symbol} missing in STORY_bee for ask/bid')
+
 
         story_df = pd.DataFrame(story_data).set_index('symbol')
         storygauge['current_ask'] = storygauge.index.map(dict(zip(story_df.index, story_df['ask'])))
@@ -2050,12 +2150,17 @@ def refresh_chess_board__revrec(
         for symbol in storygauge['symbol']:
             # Get existing rules for this symbol (empty list if none exist)
             existing_rules = symbol_to_trig_rules.get(symbol, [])
+            existing_rules_index = [rule.get('ttf') for rule in existing_rules]
             
-            # Create a new trigger rule for this symbol
-            new_rule = create_TrigRule(symbol=symbol, marker='trinity')
+            new_rules = []
+            for star in stars().keys():
+                ttf = star  # star is already in format '1Minute_1Day'
+                if ttf not in existing_rules_index:
+                    new_rule = create_TrigRule(symbol=symbol, ttf=ttf)
+                    new_rules.append(new_rule)
             
-            # Combine existing rules with the new rule
-            all_rules = existing_rules + [new_rule]
+            # Combine existing rules with the new rules
+            all_rules = existing_rules + new_rules
             
             # Join order data to each trigger rule
             for rule in all_rules:
@@ -2096,6 +2201,8 @@ def refresh_chess_board__revrec(
 
         # Map the comprehensive trigger rules to the dataframe
         storygauge['trig_data'] = storygauge['symbol'].map(comprehensive_trig_rules)
+        storygauge['broker_value_delta'] = (storygauge['market_value'] - storygauge['star_buys_at_play'])
+        storygauge['broker_value_delta_pct'] = (((storygauge['market_value'] - storygauge['star_buys_at_play']) / storygauge['market_value'])).abs()
 
         # existing_orders_df = get_existing_trigrule_orders(symbols, df_active_orders)
         # WORKERBEE JOIN Agg Numers from existing orders add to trig_data

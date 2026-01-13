@@ -696,10 +696,10 @@ def return_crypto_bars(ticker_list, chart_times, trading_days_df, s_date=False, 
 
             return_dict[charttime] = symbol_data
 
-            if timeframe == '1Min':
-                print("max date EST", symbol_data["timestamp_est"].max())
-                print("start & end dates", start_date, end_date)
-                print("king: crypto last mod time bars", ticker_list, timeframe, symbol_data.iloc[-1]["timestamp_est"])
+            # if timeframe == '1Min':
+            #     print("max date EST", symbol_data["timestamp_est"].max())
+            #     print("start & end dates", start_date, end_date)
+            #     print("king: crypto last mod time bars", ticker_list, timeframe, symbol_data.iloc[-1]["timestamp_est"])
  
         return {"resp": True, "return": return_dict, 'error_dict': error_dict}
 

@@ -96,6 +96,8 @@ if __name__ == "__main__":
     schedule.every().day.at("13:00").do(call_bishop_bees)
     schedule.every().day.at("14:00").do(call_bishop_bees)
     schedule.every().day.at("15:00").do(call_bishop_bees)
+    
+    schedule.every().day.at("16:30").do(copy_pollen_store_to_MAIN_server)
 
     # Print all scheduled jobs
     all_jobs = schedule.get_jobs()

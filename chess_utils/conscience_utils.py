@@ -277,7 +277,7 @@ def story_return(QUEEN_KING, revrec, toggle_view_selection='Queen', qk_chessboar
         storygauge_columns = df.columns.tolist()
         waveview['buy_alloc_deploy'] = waveview['allocation_long_deploy'] ## clean up buy_alloc_deploy as they are the same
         # symbol group by to join on story
-        num_cols = ['allocation_long_deploy', 'allocation_long', 'star_buys_at_play', 'star_sells_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
+        num_cols = ['allocation_long_deploy', 'allocation_long', 'star_buys_at_play', 'star_buys_at_play_allocation', 'star_sells_at_play', 'star_total_budget', 'remaining_budget', 'remaining_budget_borrow']
         for col in num_cols:
             waveview[col] = round(waveview[col])
             if col in storygauge_columns:
@@ -402,6 +402,9 @@ def story_return(QUEEN_KING, revrec, toggle_view_selection='Queen', qk_chessboar
                     # star kors
                     for star in star_names().keys():
                         ttf = f'{symbol}_{star_names(star)}'
+                        if ttf not in df_waveview.index:
+                            # print(f'{ttf} missing in waveview')
+                            continue
                         # kors per star
                         star_kors = df_waveview.at[ttf, 'kors']
                         star_kors['wave_amo'] = df_waveview.at[ttf, "allocation_long_deploy"]

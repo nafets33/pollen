@@ -633,10 +633,10 @@ async def func_update_queenking_symbol(request: Request, client_user: str= Body(
     return JSONResponse(content=json_data)
 
 @router.post("/queen_queenking_trigrule_event", status_code=status.HTTP_200_OK)
-async def func_queen_queenking_trigger_update(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), trigger_id=Body(...)): # new_data for update entire row
+async def func_queen_queenking_trigger_update(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), trigger_id=Body(...), status=Body(...)): # new_data for update entire row
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
 
-    json_data = queen_queenking_trigger_update(client_user, prod, trigger_id)
+    json_data = queen_queenking_trigger_update(client_user, prod, trigger_id, status)
     return JSONResponse(content=json_data)
 

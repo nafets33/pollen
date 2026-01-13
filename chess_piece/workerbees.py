@@ -100,8 +100,8 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
         async with session:
             try:
                 ticker, tt, tg = ticker_time_frame.split("_")
-                if 'GOLD' == ticker:
-                    print("YEEEES")
+                # if 'GOLD' == ticker:
+                #     print("YEEEES")
                 if backtesting:
                     allow_pg_migration = False
                 if allow_pg_migration:
@@ -799,7 +799,7 @@ def queen_workerbees(
         def Return_Bars_LatestDayRebuild(ticker_time):  # Iniaite Ticker Charts with Indicator Data
             # IMPROVEMENT: use Return_bars_list for Return Bars_LatestDayRebuild
             # ticker_time = "SPY_1Minute_1Day"
-            print("REBUILDING BARS for ", ticker_time)
+            # print("REBUILDING BARS for ", ticker_time)
             ticker, timeframe, days = ticker_time.split("_")
             error_dict = {}
             s = datetime.now(est)
@@ -846,7 +846,7 @@ def queen_workerbees(
             now_day = now.day
             last_day = last.day
             if now_day != last_day:
-                print(f"NOT Rebuilding {ticker_time_frame} as day has changed")
+                # print(f"NOT Rebuilding {ticker_time_frame} as day has changed")
                 return_dict[ticker_time_frame] = df
                 return return_dict, rebuild_confirmation
 
@@ -938,7 +938,7 @@ def queen_workerbees(
         try:
         # Check to see if any charts need to be Recreate as times lapsed
             if reset_only == False:
-                print("POLLEN HUNT")
+                # print("POLLEN HUNT")
                 res = ReInitiate_Charts_Past_Their_Time(df_tickers_data)
                 df_tickers_data = res.get("df_tickers_data")
                 df_tickers_data = Return_Snapshots_Rebuild(df_tickers_data=df_tickers_data)
@@ -1025,7 +1025,7 @@ def queen_workerbees(
             # WORKERBEE if backetesting no need to recall chart data
             df_all = {}
             for ticker in master_tickers:
-                print("INITIATING CHARTS for ", ticker)
+                # print("INITIATING CHARTS for ", ticker)
                 res = Return_Init_ChartData(ticker_list=[ticker], chart_times=star_times)
                 df_tickers_data = res["init_charts"]
                 df_all.update(df_tickers_data)

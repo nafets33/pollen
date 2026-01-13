@@ -8,7 +8,7 @@ import streamlit as st
 
 from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, kingdom__global_vars, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
-from chess_piece.queen_hive import stars, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, init_queenbee, kingdom__grace_to_find_a_Queen
+from chess_piece.queen_hive import stars, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, init_queenbee, kingdom__grace_to_find_a_Queen, create_QueenOrderBee
 from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import buy_button_dict_items, add_symbol_dict_items
 from chess_utils.trigrule_utils import create_trig_rule_metadata
@@ -18,6 +18,7 @@ from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
 # from streamlit_custom_api_grid import st_custom_grid, GridOptionsBuilder, JsCode
 
 from custom_graph_v1 import st_custom_graph
+from pages.orders import config_orders_cols, order_grid
 
 pd.options.mode.chained_assignment = None
 
@@ -273,6 +274,95 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
     """)      
 
 
+
+def generate_threshold_background_color_style(column_name, threshold_value, color_above="#ff3939", color_below="#fdfdfd"):
+    """
+    Generate JsCode to color cell BACKGROUNDS based on a threshold value.
+    
+    Args:
+        column_name: The column to apply coloring to
+        threshold_value: Value to compare against
+        color_above: Background color for values above threshold (default: light green)
+        color_below: Background color for values below threshold (default: light red)
+    
+    Returns:
+        JsCode object for AG Grid cellStyle
+    
+    Example:
+        # Color broker_qty_delta background: green if > 0, red if < 0
+        style = generate_threshold_background_color_style('broker_qty_delta', 0)
+        
+        # Color unrealized_plpc background with custom colors
+        style = generate_threshold_background_color_style('unrealized_plpc', 0, '#d4edda', '#f8d7da')
+    """
+    return JsCode(f"""
+function(p) {{
+    var value = p.data.{column_name};
+    var threshold = {threshold_value};
+    
+    // Handle string values that might contain special characters
+    if (typeof value === 'string') {{
+        // Try to extract numeric value if it contains $ or other characters
+        value = parseFloat(value.replace(/[^0-9.-]/g, ''));
+    }}
+    
+    // Convert to number if not already
+    value = parseFloat(value);
+    
+    // Check if value is valid
+    if (isNaN(value) || value === null || value === undefined) {{
+        return {{
+            textAlign: 'center',
+            padding: '3px',
+            boxSizing: 'border-box'
+        }};
+    }}
+    
+    // Check if this is a pinned row (subtotal/total)
+    if (p.node && p.node.rowPinned) {{
+        return {{
+            backgroundColor: '#f2f7ff',
+            fontWeight: 'bold',
+            padding: '3px',
+            boxSizing: 'border-box',
+            textAlign: 'center'
+        }};
+    }}
+    
+    // Apply background color based on threshold
+    if (value > threshold) {{
+        return {{
+            backgroundColor: '{color_above}',
+            padding: '3px',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+            fontSize: '14px',
+            border: '3px solid white'
+        }};
+    }} else if (value < threshold) {{
+        return {{
+            backgroundColor: '{color_below}',
+            padding: '3px',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+            fontSize: '14px',
+            border: '3px solid white'
+        }};
+    }} else {{
+        // Value equals threshold
+        return {{
+            backgroundColor: '#f5f5f5',
+            padding: '3px',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+            fontSize: '14px',
+            border: '3px solid white'
+        }};
+    }}
+}}
+""")
+
+
 button_suggestedallocation_style = JsCode("""
 function(p) {
     // Check if this is the last pinned subtotal row
@@ -472,6 +562,7 @@ function(color_autobuy) {
     }
 }
 """)
+
 
 
 def chunk(it, size):
@@ -774,6 +865,7 @@ def story_grid(prod, client_user,
                                                 'star_buys_at_play', 'ticker_total_budget', 
                                                 'ticker_remaining_budget', 'ticker_remaining_borrow'],
                         'editableCols': [
+                            { 'col_header': "confirm_sell", 'dtype': "checkbox", "display_name": "!Confirm Sell OR Update Order!"},
                             { 'col_header': "sell_qty", 'dtype': "number", "display_name": "Sell Qty"},
                             { 'col_header': "sell_amount", 'dtype': "number" ,"info": "This will overwrite Sell Qty"},
                             { 'col_header': "take_profit", 'dtype': "number" },
@@ -781,7 +873,6 @@ def story_grid(prod, client_user,
                             { 'col_header': "sell_trigbee_date", 'dtype': "datetime" },
                             { 'col_header': "close_order_today", 'dtype': "checkbox" },
                             { 'col_header': "ignore_allocation_budget", 'dtype': "checkbox", "display_name": "Ignore Allocation Deploy"},
-                            { 'col_header': "confirm_sell", 'dtype': "checkbox", "display_name": "Confirm Sell / Update Order"},
                             { 'col_header': "queen_order_state", 'dtype': "list", "display_name": "queen_order_state", "values": king_G.get('active_order_state_list')},
                             ],
                         'display_grid_column': 'active_orders',
@@ -859,7 +950,8 @@ def story_grid(prod, client_user,
             'current_from_yesterday': {'headerName':'% Change', 'sortable':'true',
                                     'cellStyle': honey_colors,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                    'valueFormatter': value_format_pct
+                                    'valueFormatter': value_format_pct,
+                                    'enableCellChangeFlash': False, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
                                     }, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                                      
 
             'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
@@ -878,9 +970,14 @@ def story_grid(prod, client_user,
                             "cellEditorParams": {"values": df_ticker_qcp_names},"editable":True, "cellEditor":"agSelectCellEditor",
                                                                 },
             'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
-            'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110} ,
-            'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
-            'allocation_long' : {'headerName':'Minimum Allocation Long', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
+            'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 
+                                  'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110} ,
+            'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 
+                                   'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
+                                   'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
+            'star_buys_at_play_allocation' : {'headerName':'Auto Pilot Allocation', 'sortable':'true', 
+            "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
+            'allocation_long' : {'headerName':'Advisor Minimum Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
             'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 
                             'initialWidth': 89, 'enableCellChangeFlash': True, 
                             'cellRenderer': 'agAnimateShowChangeCellRenderer', 
@@ -913,6 +1010,7 @@ def story_grid(prod, client_user,
             'remaining_budget_borrow': create_ag_grid_column(headerName='Remaining Budget Margin', initialWidth=100, type=["customNumberFormat", "numericColumn", "numberColumnFilter", ]),
             'qty_available': create_ag_grid_column(headerName='Qty Avail', initialWidth=89),
             'broker_qty_delta': create_ag_grid_column(headerName='Broker Qty Delta', initialWidth=89, cellStyle={'backgroundColor': k_colors.get('default_background_color'), 'color': k_colors.get('default_text_color'), 'font': '18px'}),
+            'broker_value_delta_pct': {'headerName': 'Broker Value Delta %', 'initialWidth': 110, 'valueFormatter': value_format_pct, 'cellStyle': generate_threshold_background_color_style('broker_value_delta_pct', .03)},
             'broker_qty_available': {},
             'trinity_deviation_from_qcp': {'headerName':"Trinity Deviation", 'cellStyle': generate_shaded_cell_style('trinity_deviation_from_qcp'), 'sortable':'true',
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
@@ -943,6 +1041,7 @@ def story_grid(prod, client_user,
                             'current_ask',
                             'pct_portfolio',
                             'star_buys_at_play',
+                            'star_buys_at_play_allocation',
                             'total_budget',
                             'allocation_long',
                             'unrealized_pl', 
@@ -992,9 +1091,10 @@ def story_grid(prod, client_user,
                 gb.configure_column(col, config)
 
         elif tab_view == 'Portfolio':
-            data  ={
+            data = {
             "filterParams": {
-            "buttons": ['apply', 'reset'], 
+            "buttons": ['apply', 'reset'],
+            "sortable": True,
             }}
             # Build toggle_view as list of "piece_name (XX%)" where XX is total portfolio_pct for that qcp
             toggle_view = []
@@ -1042,12 +1142,71 @@ def story_grid(prod, client_user,
             #         gb.configure_column(col, {'hide': True, 'sortable': 'true', 'cellEditorPopup': True, 'editable': True, 'cellEditorPopupParams': {
             #   'popupWidth': '500',
             #   'popupHeight': '300'}})
-
+    # Calculate subtotals from storygauge dataframe
+        subtotal_cols = ["queens_suggested_buy", #"Advisors Allocation",
+                        "broker_qty_delta",
+                        "allocation_long", #"Minimum Allocation Long", 
+                        "total_budget", 
+                        "qty_available", 
+                        "money", 
+                        "Day_state", 
+                        "Week_state", 
+                        "Month_state", 
+                        "Quarter_state", 
+                        "Quarters_state", 
+                        "Year_state", 
+                        'star_buys_at_play', 
+                        'remaining_budget', 
+                        'star_sells_at_play', 
+                    'remaining_budget_borrow', 
+                    'pct_portfolio', 
+                    'star_buys_at_play_allocation',
+                    'total_budget',
+                    'unrealized_pl',
+                    ]
+        subtotal_row = {"symbol": "subTotals"}  # Label in the first column
+        
+        for col in subtotal_cols:
+            if col in story_col:
+                # Handle string columns that contain $ values
+                if storygauge[col].dtype == 'object':
+                    # Try to extract numeric values from strings like "buy-5$1234"
+                    numeric_values = []
+                    for val in storygauge[col]:
+                        if isinstance(val, str) and '$' in val:
+                            parts = val.split('$')
+                            if len(parts) == 2:
+                                try:
+                                    numeric_values.append(float(parts[1]))
+                                except:
+                                    pass
+                        elif pd.notna(val):
+                            try:
+                                numeric_values.append(float(val))
+                            except:
+                                pass
+                    
+                    if numeric_values:
+                        subtotal_row[col] = sum(numeric_values)
+                else:
+                    # Numeric columns - just sum
+                    subtotal_row[col] = storygauge[col].sum()
+            else:
+                subtotal_row[col] = ""
+        
+        # Add to grid options
         toggle_views = main_toggles + toggle_view
         g_buttons = story_grid_buttons(storygauge, hf)
         go = gb.build()
+        # Add button cell styles for subtotal row
+        for button in g_buttons:
+            if button.get('col_header') and button.get('cellStyle'):
+                subtotal_row[f"{button['col_header']}_cellStyle"] = button['cellStyle']
+        
+        go['pinnedTopRowData'] = [subtotal_row]
         # go['pivotMode'] = True
-        api_ws = f"{ip_address}/api/data/ws_story"
+        if api_ws:
+            api_ws = f"{ip_address}{api_ws}"
         # api_ws = None # DEBUGGING
         if api_ws:
             refresh_sec = None
@@ -1078,25 +1237,8 @@ def story_grid(prod, client_user,
             columnOrder=story_col_order,
             refresh_success=True,
             total_col="symbol", # where total is located
-            subtotal_cols = ["queens_suggested_buy", #"Advisors Allocation",
-                                "broker_qty_delta",
-                                "allocation_long", #"Minimum Allocation Long", 
-                                "total_budget", 
-                                "qty_available", 
-                                "money", 
-                                "Day_state", 
-                                "Week_state", 
-                                "Month_state", 
-                                "Quarter_state", 
-                                "Quarters_state", 
-                                "Year_state", 
-                                'star_buys_at_play', 
-                                'remaining_budget', 
-                             'star_sells_at_play', 
-                            'remaining_budget_borrow', 
-                            'pct_portfolio', 
-                            ],
-            filter_apply=True,
+            subtotal_cols=subtotal_cols,
+            filter_apply=False,
             filter_button='piece_name',
             show_clear_all_filters=True,
             column_sets = {
@@ -1338,7 +1480,8 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                    tab_view=tab_view,
                    ui_refresh_sec=ui_refresh_sec,
                    k_colors=k_colors,
-                   seconds_to_market_close=seconds_to_market_close
+                   seconds_to_market_close=seconds_to_market_close,
+                   api_ws='/api/data/ws_story'
                    )
           
         if st.sidebar.toggle("Show Wave Grid"):
@@ -1464,7 +1607,17 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
         if st.sidebar.toggle("Show Logs"):
             log_grid(KING)
-        # print("END CONSCIENCE")
+
+        # queen_orders = pd.DataFrame([create_QueenOrderBee(queen_init=True)])
+
+        # king_G = kingdom__global_vars()
+        # active_order_state_list = king_G.get('active_order_state_list')
+        # config_cols = config_orders_cols(active_order_state_list)
+        # missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
+
+        # order_grid(client_user, config_cols, missing_cols, ip_address)
+
+
         ##### END ####
     except Exception as e:
         print('queensconscience', print_line_of_error(e))

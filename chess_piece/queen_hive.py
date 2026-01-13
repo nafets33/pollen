@@ -3586,6 +3586,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
     if QUEEN_KING:
         QUEEN_KING['dbs'] = init_pollen
         if pg_migration:
+            QUEEN_KING['prod'] = prod
             QUEEN_KING['table_name'] = table_name
             QUEEN_KING['client_user'] = client_user
             QUEEN_KING['db_root'] = db_root
@@ -3593,6 +3594,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         else:
             QUEEN_KING['last_modified'] = str(os.stat(init_pollen.get('PB_App_Pickle')).st_mtime)
     if QUEEN:
+        QUEEN['prod'] = prod
         QUEEN['dbs'] = init_pollen
         QUEEN['client_user'] = client_user
         QUEEN['table_name'] = table_name
@@ -3616,7 +3618,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
             }
 
 
-def process_order_submission(order_key, prod, broker, trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
+def process_order_submission(broker, trading_model, order, order_vars, trig, symbol, ticker_time_frame, star, portfolio_name='Jq', status_q=False, exit_order_link=False, priceinfo=False):
     # client_order_id = order["client_order_id"]
     try:
         # Create Running Order
@@ -3636,7 +3638,6 @@ def process_order_submission(order_key, prod, broker, trading_model, order, orde
         )
 
         new_queen_order['cost_basis_current'] = new_queen_order['wave_amo']
-        # new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id", drop=False)
         
         return new_queen_order
 

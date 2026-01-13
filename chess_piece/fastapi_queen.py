@@ -1484,7 +1484,7 @@ def queenking_symbol(client_user, prod, selected_row=None, default_value=None, t
     return grid_row_button_resp(description=f" {symbol} Trading Model Updated")
 
 
-def queen_queenking_trigger_update(client_user, prod, trigger_id):
+def queen_queenking_trigger_update(client_user, prod, trigger_id, status='trig_running'):
     """Update a single trigger rule by trigger_id."""
     
     QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
@@ -1505,7 +1505,7 @@ def queen_queenking_trigger_update(client_user, prod, trigger_id):
     if trigger_id in existing_by_id:
         # Hardcoded updates
         # existing_by_id[trigger_id]['save_to_db'] = False
-        existing_by_id[trigger_id]['trigrule_status'] = 'trig_running'
+        existing_by_id[trigger_id]['trigrule_status'] = status
         
         print(f"✏️  QUEEN Updated trigger: {trigger_id}")
         

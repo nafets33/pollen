@@ -27,15 +27,117 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from chess_piece.pollen_db import PollenDatabase
-from chess_piece.queen_bee import god_save_the_queen, init_broker_orders # append_queen_order, 
+from chess_piece.queen_bee import god_save_the_queen, init_broker_orders, get_priceinfo_snapshot, save_queen_order # append_queen_order, 
 from chess_piece.queen_mind import refresh_chess_board__revrec
 
-from chess_piece.fastapi_queen import get_revrec_lastmod_time
+from chess_piece.fastapi_queen import get_revrec_lastmod_time, get_bishop_cache
 
 from tqdm import tqdm
 import sys
 
 pg_migration = os.getenv('pg_migration')
+
+def update_queens_priceinfo_symbols(QUEEN, df):
+    if type(QUEEN.get('price_info_symbols')) is not pd.core.frame.DataFrame:
+        QUEEN['price_info_symbols'] = df
+    else:
+        df_main = QUEEN['price_info_symbols']
+        # fitler out incoming symbols
+        df_main = df_main[~df_main.index.isin(df.index)]
+        # join in new data
+        df_main = pd.concat([df_main, df])
+        # set data back to QUEEN
+        QUEEN['price_info_symbols'] = df_main
+    
+    return True
+
+def async_api_alpaca__snapshots_priceinfo(symbols, STORY_bee, api, QUEEN, mkhrs='open'): # re-initiate for i timeframe 
+
+    async def get_priceinfo(session, ticker, api, STORY_bee, QUEEN, crypto):
+        async with session:
+            try:
+                priceinfo = return_snap_priceinfo__pollenData(QUEEN=QUEEN, STORY_bee=STORY_bee, ticker=ticker, api=api, crypto=crypto)
+                if not priceinfo:
+                    return {}
+                return {'priceinfo': priceinfo, 'ticker': ticker}
+            except Exception as e:
+                print(e)
+                raise e
+    
+    async def main(symbols, STORY_bee, api, QUEEN):
+        async with aiohttp.ClientSession() as session:
+            return_list = []
+            tasks = []
+            # symbols = [qo['symbol'] for qo in queen_order__s]
+            for ticker in set(symbols):
+                crypto = True if ticker in crypto_currency_symbols else False
+                # Continue Only if Market Open
+                if not crypto and mkhrs != 'open':
+                    continue # markets are not open for you
+                tasks.append(asyncio.ensure_future(get_priceinfo(session, ticker, api, STORY_bee, QUEEN, crypto)))
+            original_pokemon = await asyncio.gather(*tasks)
+            for pokemon in original_pokemon:
+                return_list.append(pokemon)
+            
+            return return_list
+
+    list_return = asyncio.run(main(symbols, STORY_bee, api, QUEEN))
+
+    return list_return
+
+
+def return_snap_priceinfo__pollenData(QUEEN, STORY_bee, ticker, api, crypto):
+        # read check if ticker is active...if it is return into from db ELSE return broker data 
+        try:
+            call_snap = False
+            ttf = f'{ticker}{"_1Minute_1Day"}'
+            tic_missing = []
+            if ttf not in QUEEN['heartbeat']['available_tickers']:
+                # print(f"{ttf} NOT in Workerbees")
+                ticker, ttime, tframe = ttf.split("_")
+                if ticker not in tic_missing:
+                    tic_missing.append(ticker)
+                call_snap = True
+            
+            error_msg = []
+            if tic_missing:
+                error_msg.append(f"{tic_missing}")
+            # if error_msg:
+            #     print(f'snapshotCALL: Missing Tickers in STORYBEE {tic_missing}')
+            
+            
+            if call_snap:
+                # snap = api_alpaca__request_call(ticker, api)
+
+                # get latest pricing
+                temp = get_priceinfo_snapshot(api, ticker, crypto)
+                if not temp:
+                    logging.info(f"{ticker} ERROR in Get priceinfo SNAPSHOT")
+                    return {}
+
+                current_price = temp['price']
+                current_ask = temp['ask']
+                current_bid = temp['bid']
+
+                # best limit price
+                best_limit_price = get_best_limit_price(ask=current_ask, bid=current_bid)
+                maker_middle = best_limit_price['maker_middle']
+                ask_bid_variance = current_bid / current_ask
+            else:
+                current_price = STORY_bee[f'{ticker}_1Minute_1Day']['story']['current_mind'].get('close') #STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('current_price')
+                current_ask = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('current_ask')
+                current_bid = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('current_bid')
+                maker_middle = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('maker_middle')
+                ask_bid_variance = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('ask_bid_variance')
+            
+            priceinfo = {'ticker': ticker, 'current_price': current_price, 'current_bid': current_bid, 'current_ask': current_ask, 'maker_middle': maker_middle, 'ask_bid_variance': ask_bid_variance}
+            
+            return priceinfo
+        except Exception as e:
+            print_line_of_error(f'priceinfo queenbee {e}')
+            return {}
+
+
 
 def delete_dict_keys(object_dict):
     bishop_screens = st.selectbox("Bishop Screens", options=list(object_dict.keys()))
@@ -119,13 +221,23 @@ def find_orders_to_meet_delta(orders, broker_qty_delta, qty_field='filled_qty'):
 
     return pd.DataFrame(), 0
 
+def append_queen_order(QUEEN, new_queen_order_df, upsert_to_main_server=False):
+    client_order_id = new_queen_order_df.iloc[0]['client_order_id']
+    if client_order_id not in QUEEN['queen_orders']['client_order_id'].to_list():
+        QUEEN['queen_orders'] = pd.concat([QUEEN['queen_orders'], new_queen_order_df], axis=0) # , ignore_index=True
+        QUEEN['queen_orders']['client_order_id'] = QUEEN['queen_orders'].index
+        save_queen_order(QUEEN, prod=QUEEN['prod'], client_order_id=client_order_id, upsert_to_main_server=upsert_to_main_server)
+    else:
+        print("QUEEN ORDER ALREADY EXISTS", client_order_id)
+        return False
+    return True
 
-def sync_current_broker_account(client_user, prod, symbols=[]):
+def sync_current_broker_account(client_user, prod, symbols=[], testing=True): # WORKERBEE NEED TO FIX FOR new_queen_order, dict to df
     # Find combinations of orders where the total `filled_qty` matches the target
  
     # WORKERBEE HANDLE WHEN NOT ENOUGH ORDERS AVAILABLE 
     ## Sync current broker account
-    qb = init_queenbee(client_user=client_user, prod=prod, broker=True, queen=True, queen_king=True, api=True, revrec=True, queen_heart=True, pg_migration=pg_migration)
+    qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, broker=True, queen=True, queen_king=True, api=True, revrec=True, queen_heart=True, pg_migration=pg_migration)
     api = qb.get('api')
     QUEEN_KING = qb.get('QUEEN_KING')
     QUEEN = qb.get('QUEEN')
@@ -184,9 +296,10 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
                 god_save = True
             
         # Refresh RevRec
+        st.write("WORKER BEE NEEDS FIX TO SAVE JUST ORDERS BEFORE IMPLEMENTING")
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
         QUEEN['revrec'] = revrec
-        if god_save:
+        if not testing and god_save:
             god_save_the_queen(QUEEN, save_q=True, save_qo=True, save_rr=True)
 
     
@@ -194,6 +307,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
     god_save = False
     df = storygauge[storygauge['broker_qty_delta'] < 0].copy()
     if len(df) > 0:
+        st.write("#Handling BUY ORDERS to MATCH DELTA")
         for symbol in df.index.tolist():
             if symbols:
                 if symbol not in symbols:
@@ -206,7 +320,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
                                             ~(broker_orders.index.isin(queen_order_ids)) # not in QUEEN
                                             ].copy()
             if len(avail_orders) == 0:
-                st.write(symbol, "No Orders Available go GET MORE ORDERS")
+                st.write(symbol, "#No Orders Available go GET MORE ORDERS")
                 continue
 
             # for all Available Orders return orders to match Qty
@@ -216,7 +330,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
             found_orders, total_qty = find_orders_to_meet_delta(avail_orders, broker_qty_delta)
             # print(symbol, total_qty)
             st.write(f'{symbol} found Qty: {total_qty}')
-            reduce_adjustment_qty = broker_qty_delta - total_qty if broker_qty_delta >= total_qty else total_qty - broker_qty_delta
+            # reduce_adjustment_qty = broker_qty_delta - total_qty if broker_qty_delta >= total_qty else total_qty - broker_qty_delta
             # If Enough, create QUEEN order and attempt to use by remaining balance, if Not Skewed weight to 1 year ONLY if BUY... or BUY onlys skew evenly
             ## create QUEEN orders
             for client_order_id in found_orders.index.tolist():
@@ -261,9 +375,7 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
                 
                 order_vars['qty_order'] = order.get('filled_qty')
                 
-                new_queen_order_df = process_order_submission(
-                    order_key=QUEEN.get('db_root'),
-                    prod=prod,
+                new_queen_order = process_order_submission(
                     broker='alpaca',
                     trading_model=trading_model, 
                     order=order, 
@@ -274,16 +386,18 @@ def sync_current_broker_account(client_user, prod, symbols=[]):
                     star=star,
                     priceinfo=priceinfo_order
                 )
+                new_queen_order_df = pd.DataFrame([new_queen_order]).set_index("client_order_id", drop=False)
+                queen_order_idx = new_queen_order_df.iloc[0]['client_order_id']
 
                 # logging.info(f"SUCCESS on BUY for {ticker}")
-                # msg = (f'Ex BUY Order {trigbee} {ticker_time_frame} {round(wave_amo,2):,}')
-                # append_queen_order(QUEEN, new_queen_order_df)
-                god_save = True
+                st.write(f'SYNC BUY Order {ticker_time_frame} {round(wave_amo,2):,}')
+                if not testing:
+                    append_queen_order(QUEEN, new_queen_order_df)
 
         # Refresh RevRec
         revrec = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee, king_G.get('active_queen_order_states')) ## Setup Board
         QUEEN['revrec'] = revrec
-        if god_save:
+        if not testing and god_save:
             god_save_the_queen(QUEEN, save_q=True, save_qo=True, save_rr=True)
 
     return True
@@ -310,23 +424,39 @@ def adhoc_fix_ttf_shorts(client_user, prod):
 
 
 
-def init_account_info(client_user, prod):
-    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
-    if not broker_info.get('account_info'):
-        print("No Account Info")
-        return False
-
-
 def PlayGround():
-
+    if st.toggle("Bishop Cashe"):
+        data = get_bishop_cache()
+        if isinstance(data['ticker_info'], str):
+            # Parse JSON string to list
+            import json
+            parsed_data = json.loads(data['ticker_info'])
+            df = pd.DataFrame(parsed_data)
+        elif isinstance(data['ticker_info'], list):
+            df = pd.DataFrame(data['ticker_info'])
+        else:
+            df = data['ticker_info']
+        
+        st.write("BISHOP Ticker Info", df.head())
+    
+    
     prod = st.session_state['prod']
     if not prod:
         st.warning("SANDBOX MODE")
+
+
+    table_name = 'db' if prod else 'db_sandbox'
+    QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+    KING = kingdom__grace_to_find_a_Queen()
+    ticker_allowed = list(KING['alpaca_symbols_dict'].keys())
+
+
     client_user=st.session_state['client_user']
-    st.write("revrec last mod", get_revrec_lastmod_time(client_user, prod))
+    # st.write("revrec last mod", get_revrec_lastmod_time(client_user, prod))
+    symbols = st.multiselect("Symbols to Sync", options=ticker_allowed, help="Select symbols to sync. Leave empty to sync all.")
     if st.button("Sync Current Broker Account"):
         st.write("WORKERBEE NEED to FIX APPENDING AND SAVING AN OVERALL TESTING")
-        # sync_current_broker_account(client_user, prod, symbols=None)
+        sync_current_broker_account(client_user, prod, symbols=symbols)
     
     print("PLAYGROUND", st.session_state['client_user'])
     king_G = kingdom__global_vars()
@@ -335,22 +465,20 @@ def PlayGround():
     active_queen_order_states = king_G.get('active_queen_order_states') # = ['submitted', 'accetped', 'pending', 'running', 'running_close', 'running_open']
     CLOSED_queenorders = king_G.get('CLOSED_queenorders') # = ['completed', 'completed_alpaca']
     
-    
     db = init_swarm_dbs(prod, pg_migration=True)
-    BISHOP = read_swarm_db(prod)
-    # ticker_info = BISHOP.get('ticker_info').set_index('ticker')
-    # st.write(ticker_info.columns)
+    BISHOP = read_swarm_db(prod, 'BISHOP')
+    
+    if st.toggle("Bishop ticker info"):
+        st.write(BISHOP.keys())
+        ticker_info = BISHOP.get('ticker_info').set_index('ticker')
+        st.write(ticker_info.head())
+        st.write(ticker_info.columns.tolist())
+        # standard_AGgrid(BISHOP.get('MarketCap50000000__Volume1000000__ShortRatio2__ebitdaMargins0.25'))
+        st.write(len(BISHOP.get('2025_Screen')))
 
-    # delete_dict_keys(BISHOP)
-
-    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=True).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
-    # with st.expander("broker info"):
-    #     st.write(broker_info)
 
     # if True:
-    table_name = 'db' if prod else 'db_sandbox'
-    QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
-    KING = kingdom__grace_to_find_a_Queen()
+
     # print(QUEENBEE.keys())
     # init files needed
     # prod = False
@@ -359,7 +487,10 @@ def PlayGround():
                        main_server=False, demo=False)
     api = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, pg_migration=True, main_server=False, demo=False).get('api')
     QUEEN_KING = qb.get('QUEEN_KING')
-    st.write(QUEEN_KING['king_controls_queen']['ticker_autopilot'])
+    if st.toggle("QUEEN_KING king_controls_queen keys"):
+        st.write("QUEEN_KING king_controls_queen keys", QUEEN_KING.keys())
+    if st.toggle("QUEEN_KING buy_orders"):
+        st.write(QUEEN_KING['buy_orders'])
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     # db_root = qb.get('db_root')
     # master_conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-MASTER_CONVERSATIONAL_HISTORY')
@@ -371,27 +502,41 @@ def PlayGround():
     # st.write("QUEEN_KING", QUEEN_KING['king_controls_queen'].keys())
     QUEENsHeart = qb.get('QUEENsHeart')
     BROKER = qb.get('BROKER')
-    st.write("alpaca broker orders cols", BROKER['broker_orders'].columns.tolist())
-    standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
+    # standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
     QUEEN = qb.get('QUEEN')
-    st.write(QUEEN['portfolio'])
-    # final_orders = QUEEN['queen_orders']
-    # final_orders = final_orders[final_orders['queen_order_state'].isin(['archived'])]
-    # standard_AGgrid(final_orders, key='queen_orders_index')
-    # table_name = 'queen_orders' if prod else 'queen_orders_sandbox'
-    # st.write(f"Deleting Archived Orders from PollenDB {table_name}")
-    # for order in final_orders.index.tolist():
-    #    key = final_orders.at[order, 'key']
-    # #    PollenDatabase.delete_key(table_name=table_name, key_column=key, console="deleted")
-    # api = qb.get('api')
-    
+    st.write(QUEEN['account_info'])
 
-    st.write(f"QUEEN object size: {sys.getsizeof(QUEEN)} bytes")
+    symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
+    ticker = st.text_input("Ticker to Refresh from STORYBEE")
+    if ticker:
+        symbols.append(ticker)
+    STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+    if f'{ticker}_1Minute_1Day' in STORY_bee:
+        st.write(STORY_bee[f'{ticker}_1Minute_1Day']['story'])
+        current_price = STORY_bee[f'{ticker}_1Minute_1Day']['story']['current_mind'].get('close') #STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('current_price')
+        current_ask = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('current_ask')
+        current_bid = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('current_bid')
+        maker_middle = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('maker_middle')
+        ask_bid_variance = STORY_bee[f'{ticker}_1Minute_1Day']['story'].get('ask_bid_variance')
+        st.write(f"SPY Price Info from STORYBEE: Price {current_price}, Ask {current_ask}, Bid {current_bid}, Maker Middle {maker_middle}, Ask/Bid Variance {ask_bid_variance}")
+
+    # symbols = return_queenking_board_symbols(QUEEN_KING)
+    # snapshot_price_symbols = async_api_alpaca__snapshots_priceinfo(symbols, STORY_bee, api, QUEEN)
+    # df_priceinfo_symbols = pd.DataFrame(snapshot_price_symbols)
+    # df_priceinfo_symbols = df_priceinfo_symbols.set_index('ticker', drop=False)
+    # update_queens_priceinfo_symbols(QUEEN, df_priceinfo_symbols)
+    # st.write(QUEEN['price_info_symbols']['priceinfo'].to_dict())
+    # st.write(QUEEN['price_info_symbols'])
+    # st.write(api.get_snapshot("VALU"))
+
+    if st.toggle("show QUEEN SIZE"):
+        st.write(f"QUEEN object size: {sys.getsizeof(QUEEN)} bytes")
+    
     df=return_active_orders(QUEEN)
     active_orders = df.copy()
-    # for k, v in QUEEN.items():
-    #     print(f"{k}: {sys.getsizeof(v)} bytes")
-    queen_orders = QUEEN['queen_orders'] #['datetime'].max())
+        # for k, v in QUEEN.items():
+        #     print(f"{k}: {sys.getsizeof(v)} bytes")
+    
     # st.write(queen_orders.columns.tolist())
     ORDERS = qb.get('ORDERS')
     df = ORDERS['queen_orders']
@@ -404,7 +549,6 @@ def PlayGround():
     client_order_store = "queen_orders" if prod else 'queen_orders_sandbox'
 
 
-    print("HERE")
     symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
     STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
 
@@ -438,15 +582,6 @@ def PlayGround():
     if st.toggle("Show Broker Orders", False):
         standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
 
-    # st.write("QK", QUEEN_KING['sell_orders'])
-    # st.write(QUEEN['portfolio'])
-    # st.write(QUEEN['portfolio'].get("SPY"))
-
-    
-    # standard_AGgrid(QUEEN['queen_orders'], key='queen_orders_index')
-    # order_table = 'queen_orders' if prod else 'queen_orders_sandbox'
-    # queen_orders = PollenDatabase.retrieve_data_queen_orders(order_table, QUEEN_KING['db_root'])
-    # st.write(len(queen_orders), type(queen_orders))
     print(qb.get('CHARLIE_BEE'))
     revrec = qb.get('revrec')
     
@@ -457,13 +592,15 @@ def PlayGround():
             alpaca_symbols_dict[all_alpaca_tickers[n].symbol] = vars(
                 all_alpaca_tickers[n]
             )
-    # st.write(api.get_snapshot("GOLD"))
 
-    st.write("#ticker refresh star")
-    st.write(QUEEN_KING['king_controls_queen']['ticker_refresh_star'])
+    if st.toggle("Show king_controls_queen Type", False):
+        st.write("#ticker refresh star")
+        st.write(QUEEN_KING['king_controls_queen'].keys())
+        for k,v in QUEEN_KING['king_controls_queen'].items():
+            print(k, type(v))
 
-
-    st.write(pd.DataFrame(QUEENsHeart['heartbeat'].get('portfolio')).T)
+    if st.toggle("QUEENsHeart portfolio"):
+        st.write(pd.DataFrame(QUEENsHeart['heartbeat'].get('portfolio')).T)
 
 
     try:

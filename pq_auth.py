@@ -298,6 +298,9 @@ def signin_main(page=None):
         st.session_state['prod'] = prod
         st.session_state['client_user'] = st.session_state["username"]
         st.session_state['db_root'] = db_root
+        if not prod:
+            st.markdown("<h4 style='text-align: center; color: #d9c91c;'> SANDBOX ENVIRONMENT </h4>", unsafe_allow_html=True)
+            st.divider()
         return prod
 
     def define_authorized_user():
