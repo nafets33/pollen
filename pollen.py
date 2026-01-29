@@ -420,17 +420,13 @@ def get_portfolio_performance(_api, periods):
     return perf_dict
 
 def pollenq(sandbox=False, demo=False):
-    # st.write("pollenq", demo, sandbox)
-    # print("pollenq", demo, sandbox)
+
     pollen = 'pollen' if not demo else 'demo'
-    # check if page is sandbox and prod, if so go to pollen.py
 
     main_page_start = datetime.now()
     king_G = kingdom__global_vars()
     main_root = hive_master_root()
     load_dotenv(os.path.join(main_root, ".env"))
-    
-    # st.write(st.query_params)
 
     ##### QuantQueen #####
     print(f'>>>> pollen START >>>> {return_timestamp_string()}' )
@@ -494,27 +490,47 @@ def pollenq(sandbox=False, demo=False):
     print("PROD STATUS:", prod)
     sneak_peak = True if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] or client_user == 'stefanstapinski@yahoo.com' else False
     st.session_state['prod'] = prod
-
-    init_swarm_dbs(prod, init=True)
-    
-    if not demo and os.getenv('server', False):
-        if prod:
-            st.switch_page('pollen.py')
-        else:
-            st.switch_page('pages/sandbox.py')
+    init_swarm = st.session_state.get('init_swarm', False)
+    init_swarm_dbs(prod, init=init_swarm) ## NOT NEEDED EVERY TIME WORKERBEE
+    st.session_state['init_swarm'] = True
 
     ip_address = st.session_state['ip_address'] # return_app_ip()
     st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
-
+    
+    if 'env_button_counter' not in st.session_state:
+        st.session_state['env_button_counter'] = 0
+    
     # HEADER
     cols = st.columns((1,2,2,4))
     with cols[0]:
-        header_text = st.empty()
         height=50
         prod_name = "Switch to Sandbox" if prod else "Switch to Live"
         image__ = "misc/power.png" if prod else "misc/bitcoin_spinning.gif"
-        prod_switch = cust_Button(image__, hoverText=f'{prod_name}', key=f'switch_env', default=False, height=f'{height}px') # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
-   
+        # Use dynamic key that resets the button after each use
+        prod_switch = cust_Button(
+            image__, 
+            hoverText=f'{prod_name}', 
+            key=f'env_switch_button_{st.session_state["env_button_counter"]}', 
+            default=False, 
+            height=f'{height}px'
+        )
+
+    # Handle switch - this will only be True once per button press
+    if prod_switch:
+        with st.spinner("Switching Environments...hang tight"):
+            st.session_state['prod'], st.session_state['db_root'] = setup_instance(
+                client_username=st.session_state["username"], 
+                switch_env=True, 
+                force_db_root=False, 
+                queenKING=True
+            )
+            prod = st.session_state['prod']
+            st.session_state['env'] = prod
+            
+            # Increment counter to create a new button (resets to False)
+            st.session_state['env_button_counter'] += 1
+            st.rerun()
+
     with cols[1]:
         header_text_1 = st.empty()
 
@@ -526,15 +542,13 @@ def pollenq(sandbox=False, demo=False):
 
         # if show_acct:
         with cols[3]:
-            # with st.expander("Portfolio Performance", expanded=True):
-            # Show all portfolio history periods in columns
-            st.write("Portfolio Performance")
+            st.write("**Portfolio Performance**")
             periods = ['7D', '1M', '3M', '6M', '1A', 'YTD']
             perf_cols = st.columns(len(periods))
             perf_containers = [col.container() for col in perf_cols]
 
 
-    table_name = 'db' if prod else 'db_sandbox'
+    db_table = 'db' if prod else 'db_sandbox'
     if not demo:
         KING = kingdom__grace_to_find_a_Queen()
         users, all_users = return_all_client_users__db()
@@ -548,10 +562,12 @@ def pollenq(sandbox=False, demo=False):
                 KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
                 KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
                 if pg_migration:
-                    PollenDatabase.upsert_data(table_name, KING.get('key'), KING)
+                    PollenDatabase.upsert_data(db_table, KING.get('key'), KING)
                 else:
                     PickleData(KING.get('source'), KING)
                     st.success("KING Saved")
+    
+    
     cols = st.columns((4,2))
     with cols[0]:
         menu_id = sac_menu_buttons(pollen)
@@ -559,7 +575,6 @@ def pollenq(sandbox=False, demo=False):
         st.write(f'menu selection {menu_id}')
     if menu_id == 'PlayGround':
         from pages.playground import PlayGround
-
         print(menu_id)
         print("PLAYGROUND")
         PlayGround()
@@ -582,8 +597,12 @@ def pollenq(sandbox=False, demo=False):
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
 
         ####### Welcome to Pollen ##########
+        # if st.session_state.get('admin_queens'):
+        #     admin_send_queen_airflow(KING)
+        if st.session_state.get('admin_users'):
+            admin_queens_active(KING, all_users)
 
-
+        #### INIT USER ### QUEENBEE, QUEEN_KING, API, REVREC
         if not demo:
             qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
             api = qb.get('api')
@@ -596,6 +615,11 @@ def pollenq(sandbox=False, demo=False):
             cash = max(min(cash, 1), -1)
             QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
 
+        if 'chess_board__revrec' not in QUEEN_KING.keys():
+            print("SETUP QUEEN KING")
+            st.session_state['chessboard_setup'] = True
+            # switch_page('chessboard')
+            st.switch_page('pages/chessboard.py')
 
         if st.sidebar.button("Clear App Requests"):
             QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
@@ -606,30 +630,10 @@ def pollenq(sandbox=False, demo=False):
             cust_Button("misc/bee.jpg", hoverText='admin users', key='admin_users', height='34px')
             cust_Button("misc/bee.jpg", hoverText='send queen', key='admin_queens', height='34px')
 
-        # if st.session_state.get('admin_queens'):
-        #     admin_send_queen_airflow(KING)
-        if st.session_state.get('admin_users'):
-            admin_queens_active(KING, all_users)
-        
 
-        if sneak_peak:
-            st.info("Preview")
-            pass
-        else:
-            switch_env = f'{"Switch to Sandbox" if prod else "Switch to Prod"}'
-            live_sb_button = st.sidebar.button(switch_env, key='pollenq', use_container_width=True)
-            if live_sb_button or prod_switch:
-                st.session_state['prod'], st.session_state['db_root'] = setup_instance(client_username=st.session_state["username"], switch_env=True, force_db_root=False, queenKING=True)
-                prod = st.session_state['prod']
-                st.session_state['env'] = prod
-
-        
-
-
-        table_name = "client_user_store" if prod else 'client_user_store_sandbox'
         
         if not demo:
-            stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=table_name)
+            stop_queenbee(QUEEN_KING, sidebar=True, pg_migration=pg_migration, table_name=QUEEN_KING.get('table_name'))
         
         with st.sidebar:
             show_trig_rules = st.toggle("Show TrigRules", key='show_trig_rules', value=False)
@@ -682,11 +686,7 @@ def pollenq(sandbox=False, demo=False):
                 if st.button('API'):
                     run_pq_fastapi_server()
 
-        if 'chess_board__revrec' not in QUEEN_KING.keys():
-            print("SETUP QUEEN KING")
-            st.session_state['chessboard_setup'] = True
-            # switch_page('chessboard')
-            st.switch_page('pages/chessboard.py')
+
         
 
 
@@ -723,7 +723,6 @@ def pollenq(sandbox=False, demo=False):
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')
-    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     if admin_pq:
         if st.button("Reset Queen Controls"):
             king_controls_queen=return_queen_controls(stars)

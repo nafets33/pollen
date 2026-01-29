@@ -26,6 +26,9 @@ class PollenJsonEncoder(json.JSONEncoder):
             if isinstance(obj, pd.DataFrame):
                 return {"_type": "pd.DataFrame", "value": obj.to_dict()}
             if isinstance(obj, pd.Timestamp):
+                # Handle NaT properly
+                if pd.isna(obj):
+                    return {"_type": "pd.Timestamp", "value": "NaT"}
                 return {"_type": "pd.Timestamp", "value": obj.isoformat()}
             if isinstance(obj, pd.Series):
                 return {"_type": "pd.Series", "value": obj.to_dict()}
@@ -37,6 +40,10 @@ class PollenJsonEncoder(json.JSONEncoder):
             # Handle collections.deque
             if isinstance(obj, collections.deque):
                 return {"_type": "collections.deque", "value": list(obj)}
+            
+            # Handle pandas NaT specifically
+            if pd.isna(obj):
+                return {"_type": "pd.Timestamp", "value": "NaT"}
             
             # Default handling
             return super(PollenJsonEncoder, self).default(obj)
@@ -59,9 +66,19 @@ class PollenJsonDecoder(json.JSONDecoder):
             if item["_type"] == "pd.DataFrame":
                 return pd.DataFrame.from_dict(item["value"])
             if item["_type"] == "pd.Timestamp":
+                # Handle NaT values for pandas Timestamps
+                if item["value"] == 'NaT' or pd.isna(item["value"]):
+                    return pd.NaT
                 return pd.Timestamp(item["value"])
             if item["_type"] == "datetime.datetime":
-                return datetime.datetime.fromisoformat(item["value"])
+                # Handle NaT values for datetime objects
+                if item["value"] == 'NaT' or item["value"] is None:
+                    return None  # or pd.NaT if you prefer
+                try:
+                    return datetime.datetime.fromisoformat(item["value"])
+                except ValueError as e:
+                    print(f"Warning: Could not parse datetime '{item['value']}': {e}")
+                    return None  # or pd.NaT
             if item["_type"] == "pd.Series":
                 return pd.Series(item["value"])
             if item["_type"] == "collections.deque":
@@ -263,11 +280,21 @@ class PollenDatabase:
         return True
 
     @staticmethod
-    def upsert_multiple(table_name, data_dict):
+    def upsert_multiple(table_name, data_dict, console=False):
         """
         Bulk upsert dictionary of data into the specified table.
-        Data values are serialized with a custom JSON encoder if needed.
+        Much faster than individual upserts.
+        
+        Args:
+            table_name: Table to upsert into
+            data_dict: Dict where keys are row keys, values are data to store
+            console: Print progress
         """
+        if not data_dict:
+            return
+        
+        PollenDatabase.create_table_if_not_exists(table_name)
+        
         with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
             try:
                 # Prepare records for batch insert (key, data, last_modified)
@@ -286,13 +313,15 @@ class PollenDatabase:
                         last_modified = CURRENT_TIMESTAMP;
                 """
                 
-                
                 # Use execute_values for efficient batch inserts
-                extras.execute_values(cur, insert_query, records)
+                extras.execute_values(cur, insert_query, records, page_size=1000)
                 conn.commit()
+                
+                if console:
+                    print(f"✅ Bulk upserted {len(data_dict)} records to {table_name}")
 
             except Exception as e:
-                print("Error during bulk upsert:", e)
+                print(f"❌ Error during bulk upsert: {e}")
                 conn.rollback()
 
     @staticmethod
@@ -373,44 +402,9 @@ class PollenDatabase:
                 count += 1
         print(f"Copied {count} records from {source_table} to {target_table}")
 
-    # @staticmethod
-    # def retrieve_data_queen_orders(table_name, db_root):
-    # # def retrieve_all_story_bee_data(symbols, main_server=server):
-    #     conn = None
-    #     try:
-    #         conn = PollenDatabase.get_connection(server)
-    #         cur = conn.cursor()
-            
-    #         order_keys = PollenDatabase.get_all_keys(table_name)
-    #         user_keys = [i for i in order_keys if i.startswith(f'{db_root}___')]
-
-    #         placeholders = ','.join(['%s'] * len(user_keys))
-    #         query = f"SELECT key, data FROM {table_name} WHERE key IN ({placeholders});"
-    #         cur.execute(query, user_keys)
-    #         results = cur.fetchall()
-    #         all_data = []
-    #         for key, data in results:
-    #             decoded = json.loads(data, cls=PollenJsonDecoder)
-    #             all_data.append(decoded)
-    #         return all_data
-    #     except Exception as e:
-    #         print_line_of_error(e)
-    #     finally:
-    #         if conn:
-    #             conn.close()
-    #     return None
-
-
-
-    #     # orders = []
-    #     # for orders in user_keys:
-    #     #     order_key = 
-    #     #     orders.append(PollenDatabase.retrieve_data(client_order_store, orders, main_server=main_server))
-
-
 
     @staticmethod
-    def retrieve_all_story_bee_data(symbols, server=server):
+    def retrieve_all_story_bee_data(symbols, time_frame=None, server=server):
         conn = None
         merged_data = {"STORY_bee": {}}
 
@@ -420,22 +414,29 @@ class PollenDatabase:
 
             # Base query
             query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%';"
+            conditions = []
             
             # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
             if symbols:
                 symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
-                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%' AND ({symbol_conditions});"
+                conditions.append(f"({symbol_conditions})")
+            
+            # If time_frame is provided, filter by keys containing the time_frame pattern
+            if time_frame:
+                conditions.append(f"key LIKE '%{time_frame}%'")
+            
+            # Combine conditions
+            if conditions:
+                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%' AND {' AND '.join(conditions)};"
             
             cur.execute(query)
             results = cur.fetchall()
-            # import ipdb
-            # ipdb.set_trace()
+            
             for result in results:
                 key_name = result[0]
-                data_dict = result[1]  # Now data column is the second column
+                data_dict = result[1]
                 nested_key = key_name.replace('STORY_BEE_', '')
 
-                # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
                 if type(data_dict) == str:
                     data_dict = json.loads(data_dict)
                     merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
@@ -443,7 +444,6 @@ class PollenDatabase:
                     merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
 
             merged_data = json.dumps(merged_data)
-            # Always deserialize using custom decoder
             return json.loads(merged_data, cls=PollenJsonDecoder)
 
         except Exception as e:
@@ -456,7 +456,7 @@ class PollenDatabase:
 
 
     @staticmethod
-    def retrieve_all_pollenstory_data(symbols):
+    def retrieve_all_pollenstory_data(symbols, time_frame=None):
         conn = None
         merged_data = {"pollenstory": {}}
 
@@ -466,24 +466,29 @@ class PollenDatabase:
 
             # Base query
             query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%';"
+            conditions = []
             
             # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
             if symbols:
                 symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
-                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%' AND ({symbol_conditions});"
+                conditions.append(f"({symbol_conditions})")
+            
+            # If time_frame is provided, filter by keys containing the time_frame pattern
+            if time_frame:
+                conditions.append(f"key LIKE '%{time_frame}%'")
+            
+            # Combine conditions
+            if conditions:
+                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%' AND {' AND '.join(conditions)};"
             
             cur.execute(query)
             results = cur.fetchall()
-            # ipdb.set_trace()
 
             for result in results:
                 key_name = result[0]
-                data_dict = result[1]  # Now data column is the second column
+                data_dict = result[1]
                 nested_key = key_name.replace('POLLEN_STORY_', '')
 
-                # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
-                
-                # Assuming data_dict is a dict, but if it's a string representation of JSON, use json.loads(data_dict)
                 if type(data_dict) == str:
                     data_dict = json.loads(data_dict)
                     merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
@@ -491,7 +496,6 @@ class PollenDatabase:
                     merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
 
             merged_data = json.dumps(merged_data)
-            # Always deserialize using custom decoder
             return json.loads(merged_data, cls=PollenJsonDecoder)
 
         except Exception as e:
@@ -602,6 +606,96 @@ class PollenDatabase:
             except Exception as e:
                 print(f"Error: {e}")
                 return []
+
+
+    @staticmethod
+    def get_data_by_keys(table_name, keys, server=server):
+        """
+        Fetch data for a list of specific keys from the specified table.
+        
+        Args:
+            table_name (str): Name of the table to query
+            keys (list): List of keys to fetch data for
+            server (bool): Whether to use server connection or local
+        
+        Returns:
+            list: List of dictionaries containing decoded data with metadata
+        """
+        if not keys:
+            return []
+        
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
+            try:
+                # Create placeholders for the IN clause
+                placeholders = ','.join(['%s'] * len(keys))
+                query = f"SELECT key, data FROM {table_name} WHERE key IN ({placeholders});"
+                cur.execute(query, keys)
+                results = cur.fetchall()
+                
+                decoded_data = []
+                for key, serialized_data in results:
+                    if isinstance(serialized_data, str):
+                        serialized_data = serialized_data
+                    elif isinstance(serialized_data, dict):
+                        serialized_data = json.dumps(serialized_data)
+                    else:
+                        print(f"ERROR Unexpected data type for key {key}: {type(serialized_data)}")
+                        continue  # skip if data is not valid
+                    
+                    # Always deserialize using custom decoder
+                    data = json.loads(serialized_data, cls=PollenJsonDecoder)
+                    
+                    data['key'] = key
+                    data['table_name'] = table_name
+                    data['db_root'] = key.split("-")[0] if "-" in key else key.split("___")[0]
+                    decoded_data.append(data)
+                
+                return decoded_data
+            except Exception as e:
+                print(f"Error: {e}")
+                return []
+
+
+    @staticmethod
+    def get_keys_containing(table_name, pattern, server=server, return_data=True):
+        """
+        Get all keys (and optionally data) where key contains the pattern
+        
+        Args:
+            table_name: Table to search
+            pattern: String pattern to search for in keys
+            server: Server connection flag
+            return_data: If True, returns data; if False, returns only keys
+        
+        Returns:
+            List of dictionaries with key/data or just keys
+        """
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
+            try:
+                if return_data:
+                    query = f"SELECT key, data FROM {table_name} WHERE key LIKE %s ORDER BY key;"
+                else:
+                    query = f"SELECT key FROM {table_name} WHERE key LIKE %s ORDER BY key;"
+                
+                cur.execute(query, (f'%{pattern}%',))
+                results = cur.fetchall()
+                
+                if return_data:
+                    decoded_data = []
+                    for key, serialized_data in results:
+                        # Your existing deserialization logic here
+                        data = json.loads(serialized_data, cls=PollenJsonDecoder)
+                        data['key'] = key
+                        data['table_name'] = table_name
+                        decoded_data.append(data)
+                    return decoded_data
+                else:
+                    return [key[0] for key in results]
+                    
+            except Exception as e:
+                print(f"PostGres Error in Get Keys with Data: {pattern} ERROR == {e}")
+                return []
+
 
     @staticmethod
     def update_table_schema(table_name='pollen_store'):
@@ -831,6 +925,54 @@ class PollenDatabase:
             except Exception as e:
                 print("Error client users", e)
 
+    @staticmethod
+    def read_priceinfo_table(table_name='snapshot_priceinfo', tickers=None, crypto_only=None, limit=None, server=server):
+        """
+        Read price info data from the database with optional filters
+        """
+        try:
+            with PollenDatabase.get_connection(server=server) as conn, conn.cursor() as cur:
+                query = f"SELECT * FROM {table_name}"
+                conditions = []
+                params = []
+                
+                if tickers:
+                    placeholders = ','.join(['%s'] * len(tickers))
+                    conditions.append(f"ticker IN ({placeholders})")
+                    params.extend(tickers)
+                
+                if crypto_only is not None:
+                    conditions.append("is_crypto = %s")
+                    params.append(crypto_only)
+                
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                
+                query += " ORDER BY last_updated DESC"
+                
+                if limit:
+                    query += f" LIMIT {limit}"
+                
+                # Execute and fetch raw results
+                cur.execute(query, params)
+                results = cur.fetchall()
+                
+                if not results:
+                    return None
+                
+                # Get column names
+                columns = [desc[0] for desc in cur.description]
+                
+                # # Create DataFrame manually - NO pandas warning!
+                # df = pd.DataFrame(results, columns=columns)
+                
+                # Convert to list of dictionaries
+                return [dict(zip(columns, row)) for row in results]
+                
+        except Exception as e:
+            print(f"Error reading price info table: {e}")
+            return None
+
 
 class PostgresHandler(logging.Handler):
     def __init__(self, log_name):
@@ -933,7 +1075,7 @@ class MigratePostgres:
                 conn.commit()
 
                 if console and table_name not in console_table_ignore:
-                    print(f'{key} Upserted to {table_name}')
+                    print(f'{key} Upserted to {table_name} SERVER=TRUE')
             
             return True
         except Exception as e:
@@ -975,6 +1117,51 @@ class MigratePostgres:
                 print_line_of_error(f"GET KEYS Error: {e}")
                 return []
 
+
+    @staticmethod
+    def upsert_multiple(table_name, data_dict, console=False):
+        """
+        Bulk upsert dictionary of data into the specified table.
+        Much faster than individual upserts.
+        
+        Args:
+            table_name: Table to upsert into
+            data_dict: Dict where keys are row keys, values are data to store
+            console: Print progress
+        """
+        if not data_dict:
+            return
+        
+        MigratePostgres.create_table_if_not_exists(table_name)
+        
+        with MigratePostgres.get_server_connection() as conn, conn.cursor() as cur:
+            try:
+                # Prepare records for batch insert (key, data, last_modified)
+                records = [
+                    (key, json.dumps(value, cls=PollenJsonEncoder), datetime.datetime.now()) 
+                    for key, value in data_dict.items()
+                ]
+
+                # Use PostgreSQL's INSERT ON CONFLICT for upsert
+                insert_query = f"""
+                    INSERT INTO {table_name} (key, data, last_modified)
+                    VALUES %s
+                    ON CONFLICT (key) 
+                    DO UPDATE SET 
+                        data = EXCLUDED.data, 
+                        last_modified = CURRENT_TIMESTAMP;
+                """
+                
+                # Use execute_values for efficient batch inserts
+                extras.execute_values(cur, insert_query, records, page_size=1000)
+                conn.commit()
+                
+                if console:
+                    print(f"✅ Bulk upserted {len(data_dict)} records to {table_name}")
+
+            except Exception as e:
+                print(f"❌ Error during bulk upsert: {e}")
+                conn.rollback()
 
 
 class TestPollenDatabase:

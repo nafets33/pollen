@@ -248,7 +248,7 @@ if __name__ == '__main__':
     #             with numm.container():
     #                 st.write(idx)
 
-    tab_list = ['Tables', 'Create', 'Migrate User', 'Delete'] + tables
+    tab_list = ['Tables', 'Create', 'Migrate', 'Delete'] + tables
     tabs = st.tabs(tab_list)
 
     if admin:
@@ -256,6 +256,7 @@ if __name__ == '__main__':
             del_tables = st.selectbox("delete table", options=tables)
             if st.button(f"Delete Table {del_tables}"):
                 PollenDatabase.delete_table(del_tables)
+                st.success(f"Table {del_tables} Deleted")
             sub_tabs = st.tabs([i for i in tables])
             s_t = 0
             for table in tables:
@@ -309,13 +310,75 @@ if __name__ == '__main__':
         with tabs[1]:
             create_pg_table()
         with tabs[0]: 
-            # st.write(tables)
+            st.subheader("Migrate local-PG to PG-Server")
+            migrated_data = []
+            tables_to_migrate = st.multiselect('migrate Tables', options=tables)
+            migrate_keys_that_contain = st.text_input('migrate Keys that contain text (optional)', value='')
+            if st.button(f"Migrate PostGres Table Keys {tables_to_migrate}"):
+                # Create progress bar for tables
+                table_progress = st.progress(0)
+                table_status = st.empty()
+                
+                migrated_data = []
+                total_tables = len(tables_to_migrate)
+                
+                for table_idx, table in enumerate(tables_to_migrate):
+                    # Update table progress
+                    table_progress.progress((table_idx) / total_tables)
+                    table_status.text(f"Processing table {table_idx + 1}/{total_tables}: {table}")
+                    
+                    if table == 'client_users':
+                        copy_data_between_tables(source_table='client_users', target_table='client_users')
+                        continue
+
+                    df = pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table)).rename(columns={0: 'key', 1: 'timestamp'})
+                    
+                    if migrate_keys_that_contain:
+                        df = df[df['key'].str.contains(migrate_keys_that_contain)]
+
+                    # Filter for last 3 days if table is 'pollen_store'
+                    if table == 'pollen_store':
+                        three_days_ago = datetime.now() - timedelta(days=3)
+                        df['timestamp'] = pd.to_datetime(df['timestamp'])
+                        df = df[df['timestamp'] >= three_days_ago]
+                    
+                    st.write(f"Table: {table} - Keys to migrate: {len(df)}")
+                    
+                    # Create progress bar for keys within this table
+                    key_progress = st.progress(0)
+                    key_status = st.empty()
+                    
+                    keys = df['key'].tolist()
+                    total_keys = len(keys)
+                    
+                    for key_idx, key in enumerate(keys):
+                        # Update key progress
+                        if total_keys > 0:
+                            key_progress.progress((key_idx + 1) / total_keys)
+                            key_status.text(f"Migrating key {key_idx + 1}/{total_keys}")
+                        
+                        data = PollenDatabase.retrieve_data(table, key)
+                        if MigratePostgres.upsert_migrate_data(table, key, data):
+                            migrated_data.append({'table': table, 'key': key})
+                        else:
+                            st.error(f"Failed to migrate {key} in table {table}")
+                    
+                    # Clean up key progress bars for this table
+                    key_progress.empty()
+                    key_status.empty()
+                
+                # Complete table progress
+                table_progress.progress(1.0)
+                table_status.text("Migration completed!")
+                
+                st.success("MIGRATION COMPLETED")
+                st.write(pd.DataFrame(migrated_data))
 
             with st.sidebar:
                 table_name = st.selectbox('table_name', options=tables)
                 if st.button(f'add last mod to table: {table_name}'):
                     PollenDatabase.update_table_schema(table_name)
-            
+            st.divider()
             if st.button(f'migrate_db enviroment={prod}'):
                 swarm = init_swarm_dbs(prod=True, pg_migration=False)
                 print(swarm)
@@ -326,7 +389,7 @@ if __name__ == '__main__':
                     st.success(f'{db_name} saved')
             
             users, all_users = return_all_client_users__db()
-            grid = standard_AGgrid(all_users)
+            grid = standard_AGgrid(all_users, height=250)
             
             with tabs[2]:
                 table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
@@ -334,30 +397,6 @@ if __name__ == '__main__':
                 c_user_root = return_db_root(c_user)
                 c_user_root_name = os.path.split(c_user_root)[-1]
                 st.write(f'{c_user} <> {c_user_root} <> {c_user_root_name}')
-
-                st.subheader("Migrate PG local to PG Server")
-                tables_to_migrate = st.multiselect('migrate Tables', options=tables)
-                if st.button(f"Migrate PostGres Table Keys {tables_to_migrate}"):
-                    for table in tqdm(tables_to_migrate):
-                        if table == 'client_users':
-                            copy_data_between_tables(source_table='client_users', target_table='client_users')
-                            continue
-
-                        df = pd.DataFrame(PollenDatabase.get_all_keys_with_timestamps(table)).rename(columns={0: 'key', 1: 'timestamp'})
-                        # Filter for last 3 days if table is 'pollen_store'
-                        if table == 'pollen_store':
-                            three_days_ago = datetime.now() - timedelta(days=3)
-                            df['timestamp'] = pd.to_datetime(df['timestamp'])
-                            df = df[df['timestamp'] >= three_days_ago]
-                        st.write(f"Table: {table} - Keys to migrate: {len(df)}")
-                        for key in df['key'].tolist():
-                            data = PollenDatabase.retrieve_data(table, key)
-                            if MigratePostgres.upsert_migrate_data(table, key, data):
-                                st.write(f'{key} migrated to server table {table}')
-                    st.success("MIGRATION COMPLETED")
-
-
-
 
                 migrate_keys = ['QUEEN_KING']
                 migrate_key = st.selectbox("migrate key", options=migrate_keys)
@@ -376,38 +415,41 @@ if __name__ == '__main__':
                             st.error(f"{key_name} C error")
                 
                 st.subheader("Migrate PICKLE to PG Server")
-                if st.button(f"Migrate user {c_user_root_name} pg tables to PG Server"):
-                    st.write("PG Migration")
-                    with st.spinner("Reading Client User DB"):
-                        qb = init_queenbee(c_user, prod, queen=True, queen_king=True, orders=True, broker=True, broker_info=True, revrec=True, queen_heart=True, pg_migration=False, charlie_bee=True) # orders_final=True handle in new table
-                    for db_name in qb.keys():
-                        data = qb.get(db_name)
-                        if db_name == 'revrec':
-                            print(f'{db_name} change')
-                            db_name = 'REVREC'
-                        elif db_name == 'broker_info':
-                            print(f'{db_name} change')
-                            db_name = 'ACCOUNT_INFO'
-                            data = data.get('account_info')
+                
+                # WORKERBEE Fix OrderSv2, double check what this doing
+                # if st.button(f"Migrate user {c_user_root_name} pg tables to PG Server"):
+                #     st.write("PG Migration")
+                #     with st.spinner("Reading Client User DB"):
+                #         qb = init_queenbee(c_user, prod, queen=True, queen_king=True, orders=True, broker=True, broker_info=True, revrec=True, queen_heart=True, pg_migration=False, charlie_bee=True) # orders_final=True handle in new table
+                #     for db_name in qb.keys():
+                #         data = qb.get(db_name)
+                #         if db_name == 'revrec':
+                #             print(f'{db_name} change')
+                #             db_name = 'REVREC'
+                #         elif db_name == 'broker_info':
+                #             print(f'{db_name} change')
+                #             db_name = 'ACCOUNT_INFO'
+                #             data = data.get('account_info')
 
-                        key_name = f'{c_user_root_name}-{db_name}'
-                        st.write(f'Uploading {key_name}')
-                        if data:
-                            if not find_all_circular_references(data):
-                                if PollenDatabase.upsert_data(table_name=table_name, key=key_name, value=data):
-                                    st.success(f'{key_name} Saved')
-                            else:
-                                st.error(f"{key_name} C error")
-                    st.success("MIGRATION COMPLETED")
+                #         key_name = f'{c_user_root_name}-{db_name}'
+                #         st.write(f'Uploading {key_name}')
+                #         if data:
+                #             if not find_all_circular_references(data):
+                #                 if PollenDatabase.upsert_data(table_name=table_name, key=key_name, value=data):
+                #                     st.success(f'{key_name} Saved')
+                #             else:
+                #                 st.error(f"{key_name} C error")
+                #     st.success("MIGRATION COMPLETED")
         
-
-            st.subheader("Copy Data Between Tables")
+            st.divider()
+            st.subheader("LOCAL Copy Data Between Tables")
 
             col1, col2 = st.columns(2)
             with col1:
                 table_main1 = st.selectbox("Source Table", options=tables, key="table_main1")
             with col2:
                 table_main2 = st.selectbox("Target Table", options=tables, key="table_main2")
+
 
             if st.button(f"Copy all data from {table_main1} → {table_main2}"):
                 with st.spinner(f"Copying data from {table_main1} to {table_main2}..."):

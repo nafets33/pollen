@@ -646,8 +646,8 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                 print("SPY not in symbols")
                 symbols.append('SPY')
             STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols=symbols).get('STORY_bee')
-            # print("REVREC CALC")
-            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states, check_portfolio=False) ## Setup Board
+            st.write(f"Setting up Chess Board for {chessboard_selection}")
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, check_portfolio=False) ## Setup Board
             QUEEN_KING['revrec'] = revrec
         elif chessboard_selection == 'Bishop':
             # WORKERBEE GET
@@ -667,7 +667,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                 STORY_bee = return_QUEENs__symbols_data(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, swarmQueen=False, read_pollenstory=False).get('STORY_bee')
             
             QUEEN_KING['chess_board'] = QUEENBEE['workerbees']
-            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee, active_queen_order_states) ## Setup Board
+            revrec = refresh_chess_board__revrec(acct_info, QUEEN, QUEEN_KING, STORY_bee) ## Setup Board
             QUEEN_KING['revrec'] = revrec
         
         chess_board = copy.deepcopy(QUEEN_KING[qcp_bees_key])
@@ -743,9 +743,9 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
                     cols = st.columns(2)
                     with cols[0]:
                         if st.form_submit_button('Save Board', use_container_width=True):
-                            if authorized_user == False:
-                                st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
-                                return False
+                            # if authorized_user == False:
+                            #     st.warning("You Need your Queen First! Please contact pollenq.queen@gmail.com")
+                            #     return False
                             
                             QUEEN_KING = handle__new_tickers__AdjustTradingModels(QUEEN_KING=QUEEN_KING)
                             if pg_migration:

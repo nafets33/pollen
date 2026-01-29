@@ -360,7 +360,22 @@ def return_bars_list(api, ticker_list, chart_times, trading_days_df, crypto=Fals
         print_line_of_error("beeee worker error")
         logging.error(str(e))
 
-
+def confirm_tickers_available(alpaca_symbols_dict, symbols):
+    queens_master_tickers = []
+    errors = []
+    alpaca_symbols_dict['BTC/USD'] = {}
+    alpaca_symbols_dict['ETH/USD'] = {}
+    for i in symbols:
+        if i in alpaca_symbols_dict.keys():
+            queens_master_tickers.append(i)
+        else:
+            msg=(i, "Ticker NOT in Alpaca Ticker DB")
+            errors.append(msg)
+    if errors:
+        msg = str(errors)
+        print("MISSING TICKER NOT IN ALPACA", msg)
+    
+    return queens_master_tickers
 
 def queen_workerbees(
     qcp_s,  # =["castle", "bishop", "knight"],
@@ -1178,25 +1193,7 @@ def queen_workerbees(
             qcp_s = [qcp_s]
         queens_chess_pieces = qcp_s # pq.get("queens_chess_pieces")
 
-        def confirm_tickers_available(alpaca_symbols_dict, symbols):
-            queens_master_tickers = []
-            errors = []
-            alpaca_symbols_dict['BTC/USD'] = {}
-            alpaca_symbols_dict['ETH/USD'] = {}
-            for i in symbols:
-                if i in alpaca_symbols_dict.keys():
-                    queens_master_tickers.append(i)
-                else:
-                    msg=(i, "Ticker NOT in Alpaca Ticker DB")
-                    errors.append(msg)
-            if errors:
-                msg = str(errors)
-                # send_email(subject="Tickers Not Longer Active", body=msg)
-                print("MISSING TICKER NOT IN ALPACA", msg)
-                if streamit:
-                    st.error(f'tickers NOT in Alpaca TICKER DB {errors}')
-            
-            return queens_master_tickers
+
 
 
         alpaca_symbols_dict = return_Ticker_Universe().get('alpaca_symbols_dict')

@@ -1043,6 +1043,11 @@ def refresh_chess_board__revrec(
             symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
             STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
         
+        price_info_symbols = QUEEN.get('price_info_symbols')
+        if isinstance(price_info_symbols, pd.DataFrame):
+            price_info_symbols = price_info_symbols.to_dict(orient='index')
+
+
         rr_starttime = datetime.now()
         s = datetime.now()
 
@@ -1694,7 +1699,7 @@ def refresh_chess_board__revrec(
             # Print summary if adjustments were made
             if adjustments_log:
                 total_adjusted = sum(adj['adjustment'] for adj in adjustments_log.values())
-                print(f"Broker Delta Adjustments: ${round(total_adjusted, 2)} across Symbols {adjustment_symbols}")
+                # print(f"Broker Delta Adjustments: ${round(total_adjusted, 2)} across Symbols {adjustment_symbols}")
                 
                 # Store in QUEEN for visibility
                 QUEEN['heartbeat']['broker_delta_adjustments'] = adjustments_log
@@ -2000,6 +2005,8 @@ def refresh_chess_board__revrec(
         wave_data_num_cols = ['star_total_budget', 'remaining_budget', 'star_borrow_budget', 'remaining_budget_borrow', 'star_at_play', 'star_at_play_borrow', 'allocation_long', 'allocation_long_deploy', 'allocation_deploy']
         wave_data_str_cols = ['symbol', 'ticker_time_frame', 'macd_state']
         waveview_data = waveview[wave_data_str_cols + wave_data_num_cols].copy()
+        for col in wave_data_num_cols:
+            waveview_data[col] = round(waveview_data[col])
         kors_to_add = ['limit_price', 'take_profit', 'sell_out', 'close_order_today', 'sell_trigbee_date']
         # Add king_order_rules keys as columns
         for k in kors_to_add:
@@ -2044,36 +2051,30 @@ def refresh_chess_board__revrec(
             # No autopilot data or wrong type, set defaults
             storygauge['buy_autopilot'] = False
             storygauge['sell_autopilot'] = False
-        
-        # Build a DataFrame from STORY_bee
-        if QUEEN:
-            if 'price_info_symbols' in QUEEN.keys():
-                symbols_price_info = QUEEN['price_info_symbols']['priceinfo'].to_dict()
-            else:
-                symbols_price_info = {}
-        else:
-            symbols_price_info = {}
 
         story_data = []
+        story_symbol_errors = []
         for symbol in storygauge.index:
-            val = STORY_bee.get(f'{symbol}_1Minute_1Day', {})
-            if val:
+            if price_info_symbols.get(symbol):
+                price_info = price_info_symbols[symbol]
+                story_data.append({
+                    'symbol': symbol,
+                    'ask': price_info.get('current_ask', 0),
+                    'bid': price_info.get('current_bid', 0)
+                })
+            elif (val := STORY_bee.get(f'{symbol}_1Minute_1Day', {})):
+                # print("WARNING IF NOT IN price_info_symbols then should be in STORY_bee -->", symbol)
                 story = val.get('story', {})
                 story_data.append({
                     'symbol': symbol,
                     'ask': story.get('current_ask', 0),
                     'bid': story.get('current_bid', 0)
                 })
-            elif symbols_price_info.get(symbol):
-                price_info = symbols_price_info[symbol]
-                story_data.append({
-                    'symbol': symbol,
-                    'ask': price_info.get('current_ask', 0),
-                    'bid': price_info.get('current_bid', 0)
-                })
             else:
-                print(f'ERROR !! storygauge: {symbol} missing in STORY_bee for ask/bid')
-
+                logging.info(f'ERROR !! storygauge: {symbol} missing in STORY_bee for ask/bid')
+                story_symbol_errors.append(symbol)
+        if story_symbol_errors:
+            QUEEN['heartbeat']['storygauge_missing_symbols'] = story_symbol_errors
 
         story_df = pd.DataFrame(story_data).set_index('symbol')
         storygauge['current_ask'] = storygauge.index.map(dict(zip(story_df.index, story_df['ask'])))

@@ -2402,10 +2402,6 @@ def refresh_broker_account_portolfio(api, QUEEN):
     QUEEN['portfolio'] = portfolio
     QUEEN['account_info'] = acct_info
     
-    QUEEN['heartbeat']['account_info'] = acct_info
-    QUEEN['heartbeat']['portfolio'] = portfolio
-    
-    
     return QUEEN
     # {'asset_id': '3f3e0ff9-599f-4fec-8842-6bc53f5129a1',
     #  'symbol': 'WMT',
@@ -3284,7 +3280,7 @@ def init_swarm_dbs(prod, init=False, pg_migration=False, dbs=['KING', 'QUEEN', '
         pathname = os.path.join(db_swarm_root, f'{db_name}{envs}.pkl')
         if init:
             if os.path.exists(pathname) == False:
-                print(db_name)
+                print(f' ---INIT db_name: {db_name}')
                 if db_name == 'KING':
                     data = init_KING()
                 elif db_name == 'QUEEN':
@@ -3297,6 +3293,42 @@ def init_swarm_dbs(prod, init=False, pg_migration=False, dbs=['KING', 'QUEEN', '
     
     return db_local_path
 
+
+def return_symbols_list_from_queenbees_story(symbols=[], prod=False, all_symbols=False):
+
+    # crypto
+    crypto_currency_symbols = ['BTC/USD', 'ETH/USD']
+    alpaca_symbols_dict = return_Ticker_Universe().get('alpaca_symbols_dict')
+    ACTIVE_SYMBOLS = list(alpaca_symbols_dict.keys()) + crypto_currency_symbols
+
+    if all_symbols:
+        for table_name in ['client_user_store', 'client_user_store_sandbox']:
+            queenbee_revrecs = PollenDatabase.get_keys_containing(table_name=table_name, pattern='REVREC', return_data=True)
+            for revrec in queenbee_revrecs:
+                # print("ADDING REVREC SYMBOLS FROM QUEENBEE", revrec.get('storygauge', pd.DataFrame()).index)
+                for symbol in revrec.get('storygauge', pd.DataFrame()).index:
+                    if symbol not in ACTIVE_SYMBOLS:
+                        print("SKIPPING REVREC SYMBOL NOT IN ACTIVE SYMBOLS", symbol)
+                        continue
+                    if symbol not in symbols:
+                        # print("ADDING REVREC SYMBOL", symbol)
+                        symbols.append(symbol)
+        return symbols
+    
+    ########################prod specific####################################
+    table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+    queenbee_revrecs = PollenDatabase.get_keys_containing(table_name=table_name, pattern='REVREC', return_data=True)
+    for revrec in queenbee_revrecs:
+        # print("ADDING REVREC SYMBOLS FROM QUEENBEE", revrec.get('storygauge', pd.DataFrame()).index)
+        for symbol in revrec.get('storygauge', pd.DataFrame()).index:
+            if symbol not in ACTIVE_SYMBOLS:
+                print("SKIPPING REVREC SYMBOL NOT IN ACTIVE SYMBOLS", symbol)
+                continue
+            if symbol not in symbols:
+                # print("ADDING REVREC SYMBOL", symbol)
+                symbols.append(symbol)
+
+    return symbols
 
 def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, init=False, pg_migration=False, client_user_tables = ["QUEEN", "QUEEN_KING", "ORDERS", "ORDERS_FINAL", "QUEENsHeart", "BROKER", "ACCOUNT_INFO", "REVREC", "ENV", "CHARLIE_BEE", "CONVERSATIONAL_HISTORY", "MASTER_CONVERSATIONAL_HISTORY", "SESSION_STATE"], table_name=True):
      # db_root nEEDS to be the db__client_user_name
@@ -3550,10 +3582,10 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
                       'db_root': db_root, 
                       'table_name': table_name, 
                       'client_order_store': client_order_store}
-            print((datetime.now() - s).total_seconds(), "Seconds to read orders")
+            print("Len of Orders", len(df), ": ", (datetime.now() - s).total_seconds(), "Seconds to read orders")
         else:
             ORDERS = PollenDatabase.retrieve_data(table_name, f'{db_root}-ORDERS', main_server=main_server) if orders else {}
-
+        
         QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN', main_server=main_server) if queen else {}
 
         if queen and orders_v2:
@@ -3599,6 +3631,15 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         QUEEN['client_user'] = client_user
         QUEEN['table_name'] = table_name
         QUEEN['db_root'] = db_root
+    if BROKER:
+        if pg_migration:
+            BROKER['prod'] = prod
+            BROKER['table_name'] = table_name
+            BROKER['client_user'] = client_user
+            BROKER['db_root'] = db_root
+            BROKER['last_modified'] =str(init_pollen.get('BROKER'))
+        else:
+            BROKER['last_modified'] = str(os.stat(init_pollen.get('PB_broker_Pickle')).st_mtime)
 
     """ Keys """ 
     api = return_alpaca_user_apiKeys(QUEEN_KING=QUEEN_KING, authorized_user=True, prod=prod) if api else {}
@@ -3994,7 +4035,7 @@ def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme='nuetral'):
 
 
 def return_Ticker_Universe():  # Return Ticker and Acct Info #WORKERBEE THIS NEEDS FIXED for when New User doesn't have correct Keys to Call data I guess?
-    api = return_alpaca_api_keys(prod=False)["api"]
+    api = return_alpaca_api_keys(prod=True)["api"]
     # Initiate Code File Creation
     index_list = [
         "DJA",

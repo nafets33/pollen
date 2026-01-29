@@ -347,10 +347,9 @@ def story_return(QUEEN_KING, revrec, toggle_view_selection='Queen', qk_chessboar
                     sell_option = sell_button_dict_items(symbol)
                     df.at[symbol, 'sell_option'] = sell_option
                     status = ['active', 'not_active'] if symbol in symbols else ['not_active', 'active']
-                    # tic_star = df.at[symbol, 'refresh_star']
+                    # refresh_star is not being used anymore lets deprecate it # WORKERBEE
                     tic_star = trading_model.get('refresh_star')
                     if isinstance(tic_star, list):
-                        print(symbol, tic_star)
                         tic_star = tic_star[0]
                     tic_star_name = refresh_star_names_switched.get(tic_star)
                     refresh_star = []

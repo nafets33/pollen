@@ -55,7 +55,6 @@ db_root = os.path.join(main_root, "db")
 
 pg_migration = os.environ.get('pg_migration')
 
-# init_logging(queens_chess_piece="fastapi_queen", db_root=db_root, prod=True)
 
  ###### Helpers UTILS
 
@@ -1535,7 +1534,7 @@ def queen_queenking_trigger_update(client_user, prod, trigger_id, status='trig_r
 def get_ticker_data(symbols, toggles_selection):
   time_frame = star_names(toggles_selection)
   if pg_migration:
-     pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols).get('pollenstory')
+     pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols, time_frame).get('pollenstory')
   else:
     pollenstory = read_QUEENs__pollenstory(symbols=symbols,read_storybee=False, read_pollenstory=True,).get('pollenstory')
 
@@ -1568,18 +1567,18 @@ def get_ticker_data(symbols, toggles_selection):
 def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
   try:
     df_main=False
-    star_time = star_names(toggles_selection)
+    time_frame = star_names(toggles_selection)
     if pg_migration:
-      pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols).get('pollenstory')
+      pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols, time_frame).get('pollenstory')
     else:
       pollenstory = read_QUEENs__pollenstory(symbols=symbols,read_storybee=False, read_pollenstory=True,).get('pollenstory')
     for symbol in symbols:
-      if f'{symbol}_{star_time}' not in pollenstory.keys():
+      if f'{symbol}_{time_frame}' not in pollenstory.keys():
         #  print("Need Pollenstory Charts: ", symbol)
          continue
          
-      df = pollenstory[f'{symbol}_{star_time}']
-      if star_time == '1Minute_1Day':
+      df = pollenstory[f'{symbol}_{time_frame}']
+      if time_frame == '1Minute_1Day':
         df = add_priorday_tic_value(df)
       df = df[['timestamp_est', 'trinity_tier']] #'ticker_time_frame',
       df = df.rename(columns={'trinity_tier': symbol})

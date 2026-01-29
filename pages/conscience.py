@@ -971,34 +971,36 @@ def story_grid(prod, client_user,
                                                                 },
             'queen_wants_to_sell_qty': {'headerName': 'Suggested Sell Qty','sortable': True, 'initialWidth': 89},
             'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 
-                                  'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110} ,
+                                  'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 
+                                  'initialWidth': 110,
+                                  'enableCellChangeFlash': True,
+                                  } ,
             'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 
                                    'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
                                    'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
             'star_buys_at_play_allocation' : {'headerName':'Auto Pilot Allocation', 'sortable':'true', 
             "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
             'allocation_long' : {'headerName':'Advisor Minimum Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
-            'trinity_w_L': {'headerName': 'MACD-VWAP-RSI','sortable': True, 
+            'trinity_w_L': {'headerName': 'Trinity Weights','sortable': True, 
                             'initialWidth': 89, 'enableCellChangeFlash': True, 
                             'cellRenderer': 'agAnimateShowChangeCellRenderer', 
                             'cellStyle': generate_shaded_cell_style('trinity_w_L'), 
-                            # 'pinned': 'right',
                             'valueFormatter': value_format_pct,
                             },
-            'trinity_w_15': {'headerName': 'MACD-VWAP-RSI Day','sortable': True, 
+            'trinity_w_15': {'headerName': 'Trinity Weights Day-Week','sortable': True, 
                                 'initialWidth': 89, 'enableCellChangeFlash': True, 
                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
                             'cellStyle': generate_shaded_cell_style('trinity_w_15'),
                             'valueFormatter': value_format_pct,
                             },
-            'trinity_w_30': {'headerName': 'MACD-VWAP-RSI Quarter','sortable': True, 
+            'trinity_w_30': {'headerName': 'Trinity Weights 1Month-3Months','sortable': True, 
                                 'initialWidth': 89, 
                                 'enableCellChangeFlash': True, 
                                 'cellRenderer': 'agAnimateShowChangeCellRenderer',
                             'cellStyle': generate_shaded_cell_style('trinity_w_30'),
                             'valueFormatter': value_format_pct,
                             },
-            'trinity_w_54': {'headerName': 'MACD-VWAP-RSI Year',
+            'trinity_w_54': {'headerName': 'Trinity Weights 6months-1Year',
                                 'sortable': True, 
                                 'initialWidth': 89, 
                                 'enableCellChangeFlash': True, 
@@ -1204,6 +1206,27 @@ def story_grid(prod, client_user,
                 subtotal_row[f"{button['col_header']}_cellStyle"] = button['cellStyle']
         
         go['pinnedTopRowData'] = [subtotal_row]
+        go['getRowStyle'] = JsCode("""
+        function(params) {
+            var style = {};
+            
+            // Handle pinned rows (subtotals)
+            if (params.node && params.node.rowPinned) {
+                style.fontWeight = 'bold';
+                style.backgroundColor = '#f2f7ff';
+            }
+            
+            // Handle regular row coloring if present
+            if (params.data && params.data.color_row) {
+                style.background = params.data.color_row;
+            }
+            if (params.data && params.data.color_row_text) {
+                style.color = params.data.color_row_text;
+            }
+            
+            return Object.keys(style).length > 0 ? style : null;
+        }
+        """)
         # go['pivotMode'] = True
         if api_ws:
             api_ws = f"{ip_address}{api_ws}"
@@ -1292,73 +1315,12 @@ def story_grid(prod, client_user,
     "trinity_w_54",
     "Day_state",
     "Week_state",
-    "Month_state"
-],
-
-
-"Time Frames": [
-    "Day_state",
-    "Day_value",
-    "Week_state",
-    "Week_value",
     "Month_state",
-    "Month_value",
-    "Quarter_state",
-    "Quarter_value",
+    "Quarter_state", 
+    "Quarters_state", 
     "Year_state",
-    "Year_value"
-],
+]
 
-
-"Quick Stats": [
-    "symbol",
-    "current_ask",
-    "current_from_yesterday",
-    "qty_available",
-    "money",
-    "pct_portfolio",
-    "Day_state"
-],
-
-# "Broker Info": [
-#     "symbol",
-#     "qty_available",
-#     "broker_qty_available",
-#     "broker_qty_delta",
-#     "current_ask",
-#     "unrealized_pl",
-#     "wash_loss"
-# ],
-
-"Full Technical": [
-    "symbol",
-    "trinity_w_L",
-    "trinity_w_S",
-    "trinity_w_15",
-    "trinity_w_30",
-    "trinity_w_54",
-    "w_L_macd_tier_position",
-    "w_L_vwap_tier_position",
-    "w_L_rsi_tier_position",
-    "w_15_macd_tier_position",
-    "w_15_vwap_tier_position",
-    "w_15_rsi_tier_position",
-    "w_30_macd_tier_position",
-    "w_30_vwap_tier_position",
-    "w_30_rsi_tier_position"
-],
-
-# "All Changes": [
-#     "symbol",
-#     "current_from_open",
-#     "current_from_yesterday",
-#     "1Minute_1Day_change",
-#     "5Minute_5Day_change",
-#     "30Minute_1Month_change",
-#     "1Hour_3Month_change",
-#     "2Hour_6Month_change",
-#     "1Day_1Year_change"
-# ]
 },
 show_cell_content=True,
 

@@ -1249,7 +1249,7 @@ const AgGrid = (props: Props) => {
 
 
         <div className="d-flex justify-content-between align-items-center">
-          {(refresh_sec == undefined || refresh_sec == 0) && (
+          {!kwargs['api_ws'] && (refresh_sec == undefined || refresh_sec == 0) && (
             <div style={{ display: "flex" }}>
               <div style={{ margin: "5px 5px 5px 2px" }}>
                 <button
@@ -1478,6 +1478,7 @@ const AgGrid = (props: Props) => {
                     if (gridRef.current && gridRef.current.api) {
                       gridRef.current.api.setFilterModel({});
                     }
+                    setActiveFilter(null);
                   }}
                   style={{
                     background: "rgb(194, 194, 194)",

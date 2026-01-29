@@ -421,7 +421,50 @@ def adhoc_fix_ttf_shorts(client_user, prod):
     QUEEN['queen_orders'] = queen_orders
     god_save_the_queen(QUEEN, save_q=True, save_qo=True)
 
+def confirm_tickers_available(alpaca_symbols_dict, symbols):
+    queens_master_tickers = []
+    errors = []
+    alpaca_symbols_dict['BTC/USD'] = {}
+    alpaca_symbols_dict['ETH/USD'] = {}
+    for i in symbols:
+        if i in alpaca_symbols_dict.keys():
+            queens_master_tickers.append(i)
+        else:
+            msg=(i, "Ticker NOT in Alpaca Ticker DB")
+            errors.append(msg)
+    if errors:
+        msg = str(errors)
+        print("MISSING TICKER NOT IN ALPACA", msg)
+    
+    return queens_master_tickers
 
+
+# def queenbee_get_priceinfo(QUEEN, active_queen_order_states, info="assumes revrec"):
+#     active_order_symbols =  QUEEN['queen_orders'][QUEEN['queen_orders']['queen_order_state'].isin(active_queen_order_states)]['symbol'].unique().tolist()
+#     story_symbols = QUEEN['revrec']['storygauge'].index.tolist()
+#     read_symbols = list(set(active_order_symbols + story_symbols))
+#     price_info_symbols = PollenDatabase.read_priceinfo_table(tickers=read_symbols)
+#     price_info_symbols = pd.DataFrame(price_info_symbols).set_index('ticker', drop=False).T.to_dict()
+#     QUEEN['price_info_symbols'] = price_info_symbols
+
+#     return QUEEN
+
+
+def queenbee_get_priceinfo(QUEEN, active_queen_order_states, info="assumes revrec"):
+    symbols = []
+    if len(QUEEN['queen_orders']) > 0:
+        active_order_symbols =  QUEEN['queen_orders'][QUEEN['queen_orders']['queen_order_state'].isin(active_queen_order_states)]['symbol'].unique().tolist()
+        symbols.extend(active_order_symbols)
+    
+    story_symbols = QUEEN['revrec']['storygauge'].index.tolist()
+    if story_symbols:
+        symbols.extend(story_symbols)
+
+    read_symbols = list(set(symbols))
+    price_info_symbols = PollenDatabase.read_priceinfo_table(tickers=read_symbols)
+    price_info_symbols_df = pd.DataFrame(price_info_symbols).set_index('ticker', drop=False)
+
+    return price_info_symbols_df
 
 
 def PlayGround():
@@ -448,15 +491,16 @@ def PlayGround():
     table_name = 'db' if prod else 'db_sandbox'
     QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
     KING = kingdom__grace_to_find_a_Queen()
+    # st.write(pd.DataFrame(KING['alpaca_symbols_dict']))
     ticker_allowed = list(KING['alpaca_symbols_dict'].keys())
 
 
     client_user=st.session_state['client_user']
     # st.write("revrec last mod", get_revrec_lastmod_time(client_user, prod))
-    symbols = st.multiselect("Symbols to Sync", options=ticker_allowed, help="Select symbols to sync. Leave empty to sync all.")
-    if st.button("Sync Current Broker Account"):
-        st.write("WORKERBEE NEED to FIX APPENDING AND SAVING AN OVERALL TESTING")
-        sync_current_broker_account(client_user, prod, symbols=symbols)
+    # symbols = st.multiselect("Symbols to Sync", options=ticker_allowed, help="Select symbols to sync. Leave empty to sync all.")
+    # if st.button("Sync Current Broker Account"):
+    #     st.write("WORKERBEE NEED to FIX APPENDING AND SAVING AN OVERALL TESTING")
+    #     sync_current_broker_account(client_user, prod, symbols=symbols)
     
     print("PLAYGROUND", st.session_state['client_user'])
     king_G = kingdom__global_vars()
@@ -482,29 +526,42 @@ def PlayGround():
     # print(QUEENBEE.keys())
     # init files needed
     # prod = False
-    # client_user = 'stapinskiststefan@gmail.com'
+    # client_user = 'stapinskistefan@gmail.com'
+    main_server = True
     qb = init_queenbee(client_user=client_user, prod=prod, queen=True, orders=True, orders_v2=True, queen_king=True, api=True, broker=True, init=True, pg_migration=True, charlie_bee=True, revrec=True, 
-                       main_server=False, demo=False)
-    api = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, pg_migration=True, main_server=False, demo=False).get('api')
+                       main_server=main_server, demo=False)
+    api = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, pg_migration=True, main_server=main_server, demo=False).get('api')
     QUEEN_KING = qb.get('QUEEN_KING')
     if st.toggle("QUEEN_KING king_controls_queen keys"):
         st.write("QUEEN_KING king_controls_queen keys", QUEEN_KING.keys())
     if st.toggle("QUEEN_KING buy_orders"):
         st.write(QUEEN_KING['buy_orders'])
+    QUEENsHeart = qb.get('QUEENsHeart')
+    BROKER = qb.get('BROKER')
+    # standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
+    QUEEN = qb.get('QUEEN')
+    # st.write(QUEEN['account_info'])
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
     # db_root = qb.get('db_root')
     # master_conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-MASTER_CONVERSATIONAL_HISTORY')
     # conversation_history = PollenDatabase.retrieve_data(table_name, f'{db_root}-CONVERSATIONAL_HISTORY')
     # session_state = PollenDatabase.retrieve_data(table_name, f'{db_root}-SESSION_STATE')
     # st.write(master_conversation_history, conversation_history, session_state)
-    
-    # st.write("QUEEN_KING", QUEEN_KING.keys())
-    # st.write("QUEEN_KING", QUEEN_KING['king_controls_queen'].keys())
-    QUEENsHeart = qb.get('QUEENsHeart')
-    BROKER = qb.get('BROKER')
-    # standard_AGgrid(BROKER['broker_orders'], key='broker_orders_index')
-    QUEEN = qb.get('QUEEN')
-    st.write(QUEEN['account_info'])
+
+
+
+    alpaca_symbols_dict = return_Ticker_Universe().get('alpaca_symbols_dict')
+    print("READING MASTER QUEEN")
+    if pg_migration:
+        table_name = 'db' if prod else 'db_sandbox'
+        QUEENBEE = PollenDatabase.retrieve_data(table_name, key='QUEEN')
+    else:
+        QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
+    queens_chess_pieces = [k for k,v in QUEENBEE['workerbees'].items()]
+    list_of_lists = [i.get('tickers') for qcp, i in QUEENBEE['workerbees'].items() if qcp in queens_chess_pieces]
+    symbols = [item for sublist in list_of_lists for item in sublist]
+    symbols = confirm_tickers_available(alpaca_symbols_dict, symbols)
+
 
     symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
     ticker = st.text_input("Ticker to Refresh from STORYBEE")
@@ -528,7 +585,134 @@ def PlayGround():
     # st.write(QUEEN['price_info_symbols']['priceinfo'].to_dict())
     # st.write(QUEEN['price_info_symbols'])
     # st.write(api.get_snapshot("VALU"))
+    # alpaca_symbols_dict = return_Ticker_Universe().get('alpaca_symbols_dict')
+    # st.write(alpaca_symbols_dict['GSHD'])
 
+
+    if st.toggle("Set Queen with New Price Info Symbols", False):
+        df = PollenDatabase.read_priceinfo_table()
+        df = pd.DataFrame(df)
+        st.write("Price Info Table", df)
+        active_order_symbols =  QUEEN['queen_orders'][QUEEN['queen_orders']['queen_order_state'].isin(active_queen_order_states)]['symbol'].unique().tolist()
+        story_symbols = QUEEN['revrec']['storygauge'].index.tolist()
+        price_info_symbols = PollenDatabase.read_priceinfo_table(tickers=active_order_symbols + story_symbols)
+        # price_info_symbols = pd.DataFrame(price_info_symbols).set_index('ticker', drop=False).T.to_dict()
+        st.write("Active Order Symbols Price Info", price_info_symbols)
+        # ipdb.set_trace()
+        QUEEN['price_info_symbols'] = queenbee_get_priceinfo(QUEEN, active_queen_order_states)
+        QUEEN = refresh_broker_account_portolfio(api, QUEEN)
+        ############# Refresh Board ############
+        QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee) ## Setup Board
+
+
+
+    from chess_piece.pollen_db import MigratePostgres
+
+    def copy_pollen_store_by_symbol_to_MAIN_server(pollen_store='pollen_store'):
+        try:
+            s = datetime.now()
+            symbols = return_symbols_list_from_queenbees_story(all_symbols=True)
+            # send_email(subject="Pollen Store Server Sync RUNNING")
+            retrieve_all_pollenstory_data = PollenDatabase.retrieve_all_pollenstory_data(symbols).get('pollenstory')
+            st.write("Pollen Story Data", retrieve_all_pollenstory_data.keys())
+
+            # Extract the nested dict and add proper key prefixes
+            bulk_data = {
+                f'POLLEN_STORY_{key}': value 
+                for key, value in retrieve_all_pollenstory_data.items()
+            }
+            # Bulk upsert
+            MigratePostgres.upsert_multiple('pollen_store', bulk_data, console=True)
+
+            retrieve_all_story_bee_data = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
+            st.write("Story Bee Data", retrieve_all_story_bee_data.keys())
+            bulk_data = {
+                f'STORY_BEE_{key}': value
+                for key, value in retrieve_all_story_bee_data.items()
+            }
+            MigratePostgres.upsert_multiple('pollen_store', bulk_data, console=True)
+
+            time_delta = (datetime.now() - s).total_seconds()
+            send_email(subject=f"Pollen Store Server Sync COMPLETED {round(time_delta)} seconds", body=f"Migrated {len(symbols)} symbols in {round(time_delta)} seconds.")
+        except Exception as e:
+            print(e)
+            send_email(subject=f"Pollen Store Server Sync FAILED", body=str(e))
+        
+    if st.button("Migrate Pollen Store to MAIN Server"):
+        copy_pollen_store_by_symbol_to_MAIN_server()
+
+    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+    st.write("Trading Model SPY", trading_model)
+
+
+
+        # st.write("Index", QUEEN['price_info_symbols'].index)
+    symbols = ['SPY', 'GSHD']
+    symbols_str = ','.join(symbols)
+    if st.toggle("Alpaca API Snapshots Comparison"):
+        snapshots = api.get_snapshots(symbols)
+        cols = st.columns(2)
+        with cols[0]:
+            st.write("Snapshots from Alpaca API", snapshots)
+            st.write(vars(snapshots['GSHD']))
+
+        # url = f"https://data.alpaca.markets/v2/stocks/snapshots?symbols=GSHD&feed=sip"
+        url = f"https://data.alpaca.markets/v2/stocks/snapshots?symbols={symbols_str}&feed=sip"
+        api_key_id = QUEEN_KING["users_secrets"]["APCA_API_KEY_ID"]
+        api_secret = QUEEN_KING["users_secrets"]["APCA_API_SECRET_KEY"]
+        def get_alpaca_snapshots_safe(symbols, headers):
+            symbols_str = ','.join(symbols)
+            url = f"https://data.alpaca.markets/v2/stocks/snapshots?symbols={symbols_str}&feed=sip"
+            
+            try:
+                response = requests.get(url, headers=headers, timeout=10)
+                
+                # st.write(f"Status Code: {response.status_code}")
+                # st.write(f"Response Headers: {dict(response.headers)}")
+                
+                if response.status_code == 200:
+                    if response.text and response.text.strip():
+                        return response.json()
+                    else:
+                        st.warning("Empty response body")
+                        return None
+                elif response.status_code == 401:
+                    st.error("Authentication failed - check API keys")
+                    return None
+                elif response.status_code == 422:
+                    st.error("Invalid symbols or parameters")
+                    st.write("Response:", response.text)
+                    return None
+                else:
+                    st.error(f"API Error {response.status_code}")
+                    st.write("Response:", response.text)
+                    return None
+                    
+            except Exception as e:
+                st.error(f"Request failed: {e}")
+                return None
+
+        # Use it:
+        symbols = ['SPY', 'GSHD']
+        key_id = "APCA_API_KEY_ID" if prod else "APCA_API_KEY_ID_PAPER"
+        key_id = QUEEN_KING["users_secrets"][key_id]
+        secret_key = "APCA_API_SECRET_KEY" if prod else "APCA_API_SECRET_KEY_PAPER"
+        secret_key = QUEEN_KING["users_secrets"][secret_key]
+        # st.write("Using Keys:", key_id, secret_key)
+        headers = {
+            "APCA-API-KEY-ID": key_id,
+            "APCA-API-SECRET-KEY": secret_key
+        }
+
+        data = get_alpaca_snapshots_safe(symbols, headers)
+        with cols[1]:
+            st.write(data['GSHD'])
+        st.write(f"vars(snapshots['GSHD']) == data['GSHD']: {str(vars(snapshots['GSHD'])) == str(data['GSHD'])}")
+        if data:
+            st.write("Snapshots from Alpaca API via Requests", data)
+
+
+    
     if st.toggle("show QUEEN SIZE"):
         st.write(f"QUEEN object size: {sys.getsizeof(QUEEN)} bytes")
     
@@ -685,12 +869,12 @@ def PlayGround():
                 else:
                     PickleData(BISHOP.get('source'), BISHOP, console=True)        
         
-        if 'queen_story_symbol_stats' in BISHOP.keys():
+        if st.toggle("Show Queen Story Symbol Yahoo Stats"):
             st.header("QK Yahoo Stats")
             st.write(BISHOP['queen_story_symbol_stats'])
             standard_AGgrid(BISHOP['queen_story_symbol_stats'])
         
-        if 'ticker_info' in BISHOP.keys():
+        if st.toggle("Bishop Stock Screener"):
             cols = st.columns(3)
             with cols[0]:
                 market_cap = st.number_input("marker cap >=", value=50000000)
