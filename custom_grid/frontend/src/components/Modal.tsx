@@ -638,15 +638,59 @@ const MyModal: React.FC<MyModalProps> = ({
                   </div>
                   {showButtonColData && (() => {
                     const ordersToRender = selectedRow[display_grid_column];
+
+                    // ✅ Helper function to calculate cumulative left position for pinned columns
+                    const getPinnedColumnLeftPosition = (colIndex: number): number => {
+                      let leftOffset = 0;
+                      for (let i = 0; i < colIndex; i++) {
+                        const col = allCols[i];
+                        const editableCol = editableCols.find((ec: { col_header: string }) => ec.col_header === col);
+                        if (editableCol?.pinned) {
+                          // Use the column's width or default based on input type
+                          const colWidth = editableCol.width || (editableCol.dtype === "datetime" ? 140 : 100);
+                          leftOffset += colWidth;
+                        }
+                      }
+                      return leftOffset;
+                    };
+
+                    // ✅ Helper function for conditional coloring
+                    const getCellBackgroundColor = (col: string, idx: number, order: any) => {
+                      const editableCol = editableCols.find((ec: { col_header: string }) => ec.col_header === col);
+                      if (!editableCol) return "white";
+
+                      // Static background color
+                      if (editableCol.backgroundColor) {
+                        return editableCol.backgroundColor;
+                      }
+
+                      // Conditional coloring
+                      if (editableCol.conditionalColor) {
+                        const cond = editableCol.conditionalColor;
+                        const cellValue = editableValues[col]?.[idx] ?? order[col];
+                        const compareValue = cond.compare_to ? order[cond.compare_to] : cond.value;
+
+                        if (cond.operator === ">=" && cellValue >= compareValue) return cond.trueColor;
+                        if (cond.operator === ">" && cellValue > compareValue) return cond.trueColor;
+                        if (cond.operator === "<" && cellValue < compareValue) return cond.trueColor;
+                        if (cond.operator === "<=" && cellValue <= compareValue) return cond.trueColor;
+                        if (cond.operator === "==" && cellValue == compareValue) return cond.trueColor;
+                        return cond.falseColor;
+                      }
+
+                      return "white";
+                    };
+
                     return (
                       <div style={{ overflowX: "auto" }}>
                         <table className="table table-bordered table-sm" style={{ fontSize: "0.6rem" }}>
                           <thead>
                             <tr>
-                              {allCols.map((col) => {
+                              {allCols.map((col, colIndex) => {
                                 const editableCol = editableCols.find(
                                   (ec: { col_header: string }) => ec.col_header === col
                                 );
+                                const colWidth = editableCol?.width || (editableCol?.dtype === "datetime" ? 140 : 100);
 
                                 return (
                                   <th
@@ -654,13 +698,16 @@ const MyModal: React.FC<MyModalProps> = ({
                                     style={{
                                       whiteSpace: "normal",
                                       wordWrap: "break-word",
-                                      backgroundColor: "#fafcff", // Light background
-                                      color: "black", // Black text
-                                      textAlign: "center", // Center align text
+                                      backgroundColor: editableCol?.backgroundColor || "#fafcff",
+                                      color: "black",
+                                      textAlign: "center",
+                                      position: editableCol?.pinned ? "sticky" : "relative",
+                                      left: editableCol?.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
+                                      zIndex: editableCol?.pinned ? 10 : 1,
+                                      minWidth: `${colWidth}px`,
                                     }}
                                   >
                                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                      {/* Use display_name if available, otherwise fallback to col */}
                                       {editableCol?.display_name || col.replace(/_/g, " ")}
                                       {editableCol?.info && (
                                         <span
@@ -670,7 +717,7 @@ const MyModal: React.FC<MyModalProps> = ({
                                             color: "#007bff",
                                             fontSize: "0.8rem",
                                           }}
-                                          title={editableCol.info} // Tooltip text from the "info" key
+                                          title={editableCol.info}
                                         >
                                           ❓
                                         </span>
@@ -684,17 +731,27 @@ const MyModal: React.FC<MyModalProps> = ({
                           <tbody>
                             {ordersToRender.map((order: any, idx: number) => (
                               <tr key={idx}>
-                                {allCols.map((col) => {
+                                {allCols.map((col, colIndex) => {
                                   const editableCol = editableCols.find((ec: { col_header: string; }) => ec.col_header === col);
+                                  const colWidth = editableCol?.width || (editableCol?.dtype === "datetime" ? 140 : 100);
+
                                   // WORKERBEE Create func to handle column logic / updates sell qty ex below
                                   if (col === "sell_qty") {
-                                    // Handle sell_qty column logic
                                     return (
-                                      <td key={col}>
+                                      <td
+                                        key={col}
+                                        style={{
+                                          backgroundColor: getCellBackgroundColor(col, idx, order),
+                                          position: editableCol?.pinned ? "sticky" : "relative",
+                                          left: editableCol?.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
+                                          zIndex: editableCol?.pinned ? 5 : 1,
+                                          minWidth: `${colWidth}px`,
+                                        }}
+                                      >
                                         <input
                                           type="number"
                                           min={0}
-                                          max={order.qty_available} // Limit to qty_available
+                                          max={order.qty_available}
                                           value={editableValues[col]?.[idx] || ""}
                                           onChange={(e) => {
                                             let value = e.target.value;
@@ -706,26 +763,19 @@ const MyModal: React.FC<MyModalProps> = ({
                                               return;
                                             }
                                             let num = Number(value);
-                                            if (num < 0) num = 0; // Ensure no negative values
-                                            if (
-                                              order.qty_available !== undefined &&
-                                              num > order.qty_available
-                                            )
-                                              num = order.qty_available; // Limit to max qty_available
+                                            if (num < 0) num = 0;
+                                            if (order.qty_available !== undefined && num > order.qty_available)
+                                              num = order.qty_available;
 
                                             setEditableValues((prev) => ({
                                               ...prev,
                                               [col]: { ...prev[col], [idx]: num },
                                             }));
 
-                                            // Update the promptText with the updated sell_qty
                                             const updatedOrders = ordersToRender.map(
                                               (ord: any, i: number) => ({
                                                 ...ord,
-                                                sell_qty:
-                                                  i === idx
-                                                    ? String(num)
-                                                    : editableValues[col]?.[i] || "",
+                                                sell_qty: i === idx ? String(num) : editableValues[col]?.[i] || "",
                                               })
                                             );
                                             setPromptText({
@@ -733,17 +783,24 @@ const MyModal: React.FC<MyModalProps> = ({
                                               active_orders_with_qty: updatedOrders,
                                             });
                                           }}
-                                          style={{ width: "80px", fontSize: "0.8rem" }}
+                                          style={{ width: "100%", fontSize: "0.8rem" }}
                                         />
                                       </td>
                                     );
                                   } else if (editableCol) {
-
                                     if (editableCol.dtype === "list") {
-                                      // Render dropdown for dtype: "list"
-                                      const options = editableCol.values || []; // Use editable dictionary for dropdown options
+                                      const options = editableCol.values || [];
                                       return (
-                                        <td key={col}>
+                                        <td
+                                          key={col}
+                                          style={{
+                                            backgroundColor: getCellBackgroundColor(col, idx, order),
+                                            position: editableCol.pinned ? "sticky" : "relative",
+                                            left: editableCol.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
+                                            zIndex: editableCol.pinned ? 5 : 1,
+                                            minWidth: `${colWidth}px`,
+                                          }}
+                                        >
                                           <select
                                             value={editableValues[col]?.[idx] || ""}
                                             onChange={(e) => {
@@ -753,26 +810,27 @@ const MyModal: React.FC<MyModalProps> = ({
                                                 [col]: { ...prev[col], [idx]: value },
                                               }));
                                             }}
-                                            style={{ width: "100%", fontSize: "0.8rem", padding: "4px", minWidth: "80px", }}
+                                            style={{ width: "100%", fontSize: "0.8rem", padding: "4px" }}
                                           >
-                                            <option value="" disabled>
-                                              Select...
-                                            </option>
+                                            <option value="" disabled>Select...</option>
                                             {options.map((option: string, i: number) => (
-                                              <option key={i} value={option}>
-                                                {option}
-                                              </option>
+                                              <option key={i} value={option}>{option}</option>
                                             ))}
                                           </select>
                                         </td>
                                       );
-                                    }
-
-
-                                    // Render input for editable column
-                                    else if (editableCol.dtype === "checkbox") {
+                                    } else if (editableCol.dtype === "checkbox") {
                                       return (
-                                        <td key={col}>
+                                        <td
+                                          key={col}
+                                          style={{
+                                            backgroundColor: getCellBackgroundColor(col, idx, order),
+                                            position: editableCol.pinned ? "sticky" : "relative",
+                                            left: editableCol.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
+                                            zIndex: editableCol.pinned ? 5 : 1,
+                                            minWidth: `${colWidth}px`,
+                                          }}
+                                        >
                                           <input
                                             type="checkbox"
                                             checked={!!editableValues[col]?.[idx]}
@@ -786,9 +844,18 @@ const MyModal: React.FC<MyModalProps> = ({
                                           />
                                         </td>
                                       );
-                                    } else if (editableCol.dtype === "number") {
+                                    } else if (editableCol.dtype === "number" || editableCol.dtype === "float" || editableCol.dtype === "int") {
                                       return (
-                                        <td key={col}>
+                                        <td
+                                          key={col}
+                                          style={{
+                                            backgroundColor: getCellBackgroundColor(col, idx, order),
+                                            position: editableCol.pinned ? "sticky" : "relative",
+                                            left: editableCol.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
+                                            zIndex: editableCol.pinned ? 5 : 1,
+                                            minWidth: `${colWidth}px`,
+                                          }}
+                                        >
                                           <input
                                             type="number"
                                             value={editableValues[col]?.[idx] || ""}
@@ -799,13 +866,22 @@ const MyModal: React.FC<MyModalProps> = ({
                                                 [col]: { ...prev[col], [idx]: value }
                                               }));
                                             }}
-                                            style={{ width: "80px", fontSize: "0.8rem" }}
+                                            style={{ width: "100%", fontSize: "0.8rem" }}
                                           />
                                         </td>
                                       );
                                     } else if (editableCol.dtype === "datetime") {
                                       return (
-                                        <td key={col}>
+                                        <td
+                                          key={col}
+                                          style={{
+                                            backgroundColor: getCellBackgroundColor(col, idx, order),
+                                            position: editableCol.pinned ? "sticky" : "relative",
+                                            left: editableCol.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
+                                            zIndex: editableCol.pinned ? 5 : 1,
+                                            minWidth: `${colWidth}px`,
+                                          }}
+                                        >
                                           <input
                                             type="datetime-local"
                                             value={editableValues[col]?.[idx] || ""}
@@ -816,14 +892,23 @@ const MyModal: React.FC<MyModalProps> = ({
                                                 [col]: { ...prev[col], [idx]: value }
                                               }));
                                             }}
-                                            style={{ width: "140px", fontSize: "0.8rem" }}
+                                            style={{ width: "100%", fontSize: "0.8rem" }}
                                           />
                                         </td>
                                       );
                                     } else {
-                                      // text
+                                      // text or str
                                       return (
-                                        <td key={col}>
+                                        <td
+                                          key={col}
+                                          style={{
+                                            backgroundColor: getCellBackgroundColor(col, idx, order),
+                                            position: editableCol.pinned ? "sticky" : "relative",
+                                            left: editableCol.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
+                                            zIndex: editableCol.pinned ? 5 : 1,
+                                            minWidth: `${colWidth}px`,
+                                          }}
+                                        >
                                           <input
                                             type="text"
                                             value={editableValues[col]?.[idx] || ""}
@@ -834,7 +919,7 @@ const MyModal: React.FC<MyModalProps> = ({
                                                 [col]: { ...prev[col], [idx]: value }
                                               }));
                                             }}
-                                            style={{ width: "80px", fontSize: "0.8rem" }}
+                                            style={{ width: "100%", fontSize: "0.8rem" }}
                                           />
                                         </td>
                                       );
@@ -842,7 +927,7 @@ const MyModal: React.FC<MyModalProps> = ({
                                   } else {
                                     // Render plain text for non-editable columns
                                     return (
-                                      <td key={col}>
+                                      <td key={col} style={{ minWidth: `${colWidth}px` }}>
                                         {order && order[col] !== undefined
                                           ? typeof order[col] === "number"
                                             ? Number(order[col]).toLocaleString(undefined, { maximumFractionDigits: 2 })
@@ -859,12 +944,10 @@ const MyModal: React.FC<MyModalProps> = ({
                             <tr>
                               {allCols.map((col) => {
                                 try {
-                                  // Only sum numeric columns
                                   const sum = ordersToRender.reduce((acc: number, order: any) => {
                                     const val = order[col];
                                     return typeof val === "number" && !isNaN(val) ? acc + val : acc;
                                   }, 0);
-                                  // Show subtotal only if at least one value was numeric
                                   const hasNumeric = ordersToRender.some((order: any) => typeof order[col] === "number" && !isNaN(order[col]));
                                   return (
                                     <td key={col} style={{ fontWeight: "bold", background: "#f7f7f7" }}>
@@ -881,6 +964,8 @@ const MyModal: React.FC<MyModalProps> = ({
                       </div>
                     );
                   })()}
+
+
                 </div>
               )}
           </div>
@@ -888,7 +973,14 @@ const MyModal: React.FC<MyModalProps> = ({
 
 
         {/* Modal Footer */}
-        <div className="modal-footer d-flex justify-content-center" style={{ position: "sticky", bottom: 0, }}>
+        <div className="modal-footer d-flex justify-content-center" style={{
+          position: "sticky",
+          bottom: 0,
+          backgroundColor: "#fff", // ✅ Add solid background
+          zIndex: 20, // ✅ Higher than table content
+          boxShadow: "0 -2px 10px rgba(0,0,0,0.1)", // ✅ Optional: adds subtle shadow above
+          padding: "12px" // ✅ Ensure padding
+        }}>
           <button type="button" className="btn btn-primary mx-2"
             onClick={handleOkSecond}
             ref={ref}>
@@ -902,6 +994,7 @@ const MyModal: React.FC<MyModalProps> = ({
             Cancel
           </button>
         </div>
+
       </div>
     </ReactModal>
   );

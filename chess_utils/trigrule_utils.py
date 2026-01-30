@@ -78,37 +78,42 @@ def create_trig_rule_metadata(symbols, qcp_s, star_list):
             "display_name": "Save Buy Trigger",
             "col_header": "save_to_db",
             "dtype": "checkbox",
-            "values": [True, False]
+            "values": [True, False],
+            "pinned": True,  # ✅ Pin this column
+            "backgroundColor": "#e8f5e9",  # ✅ Light green background
         },
         "ttf": {
             "display_name": "Ticker Model Time",
             "col_header": "ttf",
             "dtype": "list",
-            "values": star_list,#list(stars().keys())  # Use keys from stars function
+            "values": star_list,
+            "pinned": True,  # ✅ Pin this column
         },
-        # "symbol": {
-        #     "display_name": "Symbol",
-        #     "col_header": "symbol",
-        #     "dtype": "str",
-        #     # "values": symbols  # Single list because dtype is 'list'
-        # },
         "trigrule_type": {
             "display_name": "Trigger Rule Type",
             "col_header": "trigrule_type",
             "dtype": "list",
-            "values": ["wave_trinity", "trading_pairs"]  # Multiple options for 'str'
+            "values": ["wave_trinity", "trading_pairs"]
         },
         "trigrule_status": {
             "display_name": "Trigger Rule Status",
             "col_header": "trigrule_status",
             "dtype": "list",
-            "values": ["active", "not_active", "trig_running", "expired"]
+            "values": ["active", "not_active", "trig_running", "expired"],
+            "conditionalColor": {  # ✅ Color based on status
+                "type": "threshold",
+                "field": "trigrule_status",
+                "operator": "==",
+                "value": "active",
+                "trueColor": "#c8e6c9",  # Green when active
+                "falseColor": "#ffcdd2"  # Red when not active
+            }
         },
         "expire_date": {
             "display_name": "Trigger Expiration Date",
             "col_header": "expire_date",
             "dtype": "datetime",
-            "values": []  # No predefined values for datetime
+            "values": []
         },
         "user_accept": {
             "display_name": "User Acceptance",
@@ -120,7 +125,15 @@ def create_trig_rule_metadata(symbols, qcp_s, star_list):
             "display_name": "Buy Amount",
             "col_header": "wave_amo",
             "dtype": "float",
-            "values": [50.0, 100.0, 500.0]
+            "values": [50.0, 100.0, 500.0],
+            "conditionalColor": {  # ✅ Color based on amount threshold
+                "type": "threshold",
+                "field": "wave_amo",
+                "operator": ">",
+                "value": 100,
+                "trueColor": "#fff9c4",  # Yellow when > 100
+                "falseColor": "white"
+            }
         },
         "marker": {
             "display_name": "Marker",
@@ -144,7 +157,7 @@ def create_trig_rule_metadata(symbols, qcp_s, star_list):
             "display_name": "Deviation Symbol",
             "col_header": "deviation_symbols",
             "dtype": "list",
-            "values": symbols  # Single list because dtype is 'list'
+            "values": symbols
         },
         "deviation_group": {
             "display_name": "Deviation From Budget Group",
@@ -156,35 +169,42 @@ def create_trig_rule_metadata(symbols, qcp_s, star_list):
             "display_name": "Block Times",
             "col_header": "block_times",
             "dtype": "list",
-            "values": ["morning_9-11", "lunch_11-2", "afternoon_2-4"]  # Single list because dtype is 'list'
+            "values": ["morning_9-11", "lunch_11-2", "afternoon_2-4"]
         },
         "take_profit": {
             "display_name": "Take Profit",
             "col_header": "take_profit",
             "dtype": "float",
-            # "values": [0.0, 0.5, 1.0, 1.5, 2.0]
+            "backgroundColor": "#e8f5e9",  # ✅ Light green for profit targets
+            "conditionalColor": {  # ✅ Color based on profit level
+                "type": "threshold",
+                "field": "take_profit",
+                "operator": ">",
+                "value": 0.02,  # More than 2%
+                "trueColor": "#c8e6c9",  # Darker green
+                "falseColor": "#fff9c4"  # Yellow for lower targets
+            }
         },
         "sell_out": {
             "display_name": "Sell Out",
             "col_header": "sell_out",
             "dtype": "float",
-            # "values": [0.0, 0.5, 1.0, 1.5, 2.0]
+            "backgroundColor": "#ffebee",  # ✅ Light red for stop loss
         },
         "sell_trigbee_date": {
             "display_name": "Auto Pilot Sell on Sell Signal",
             "col_header": "sell_trigbee_date",
             "dtype": "datetime",
-            # "values": []  # No predefined values for datetime
         },
         "max_order_nums": {
             "display_name": "Max Num of Active Triggers",
             "col_header": "max_order_nums",
             "dtype": "int",
-            # "values": [1, 2, 3, 5, 10]
         },
     }
 
     return trig_rule_keys
+
 
 def get_existing_trigrule_orders(symbols, active_orders):
     """
