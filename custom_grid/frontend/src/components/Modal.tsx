@@ -639,7 +639,7 @@ const MyModal: React.FC<MyModalProps> = ({
                   {showButtonColData && (() => {
                     const ordersToRender = selectedRow[display_grid_column];
 
-                    // ✅ Helper function to calculate cumulative left position for pinned columns
+                    // Helper function to calculate cumulative left position for pinned columns
                     const getPinnedColumnLeftPosition = (colIndex: number): number => {
                       let leftOffset = 0;
                       for (let i = 0; i < colIndex; i++) {
@@ -654,22 +654,53 @@ const MyModal: React.FC<MyModalProps> = ({
                       return leftOffset;
                     };
 
-                    // ✅ Helper function for conditional coloring
+                    // Helper function for conditional coloring
                     const getCellBackgroundColor = (col: string, idx: number, order: any) => {
                       const editableCol = editableCols.find((ec: { col_header: string }) => ec.col_header === col);
                       if (!editableCol) return "white";
 
-                      // Static background color
                       if (editableCol.backgroundColor) {
                         return editableCol.backgroundColor;
                       }
 
-                      // Conditional coloring
                       if (editableCol.conditionalColor) {
                         const cond = editableCol.conditionalColor;
                         const cellValue = editableValues[col]?.[idx] ?? order[col];
                         const compareValue = cond.compare_to ? order[cond.compare_to] : cond.value;
 
+    // ✅ Handle 'in' operator for checking if value is in a list
+    if (cond.operator === "in") {
+      const valueList = Array.isArray(compareValue) ? compareValue : [compareValue];
+      return valueList.includes(cellValue) ? cond.trueColor : cond.falseColor;
+    }
+    
+    // ✅ Handle '!in' operator (not in list)
+    if (cond.operator === "!in") {
+      const valueList = Array.isArray(compareValue) ? compareValue : [compareValue];
+      return !valueList.includes(cellValue) ? cond.trueColor : cond.falseColor;
+    }
+
+    // Existing string operations
+    if (cond.operator === "contains") {
+      return String(cellValue).toLowerCase().includes(String(compareValue).toLowerCase()) 
+        ? cond.trueColor : cond.falseColor;
+    }
+    
+
+                        if (cond.operator === "contains") {
+                          return String(cellValue).toLowerCase().includes(String(compareValue).toLowerCase())
+                            ? cond.trueColor : cond.falseColor;
+                        }
+                        if (cond.operator === "!contains") {
+                          return !String(cellValue).toLowerCase().includes(String(compareValue).toLowerCase())
+                            ? cond.trueColor : cond.falseColor;
+                        }
+                        if (cond.operator === "startsWith") {
+                          return String(cellValue).toLowerCase().startsWith(String(compareValue).toLowerCase())
+                            ? cond.trueColor : cond.falseColor;
+                        }
+
+                        // Existing numeric comparisons
                         if (cond.operator === ">=" && cellValue >= compareValue) return cond.trueColor;
                         if (cond.operator === ">" && cellValue > compareValue) return cond.trueColor;
                         if (cond.operator === "<" && cellValue < compareValue) return cond.trueColor;
@@ -682,7 +713,12 @@ const MyModal: React.FC<MyModalProps> = ({
                     };
 
                     return (
-                      <div style={{ overflowX: "auto" }}>
+                      <div style={{
+                        maxHeight: "400px",      // ✅ Set a max height
+                        overflowY: "auto",       // ✅ Enable vertical scrolling
+                        overflowX: "auto",       // ✅ Keep horizontal scrolling
+                        border: "1px solid #ddd" // Optional: visual boundary
+                      }}>
                         <table className="table table-bordered table-sm" style={{ fontSize: "0.6rem" }}>
                           <thead>
                             <tr>
@@ -701,9 +737,10 @@ const MyModal: React.FC<MyModalProps> = ({
                                       backgroundColor: editableCol?.backgroundColor || "#fafcff",
                                       color: "black",
                                       textAlign: "center",
-                                      position: editableCol?.pinned ? "sticky" : "relative",
+                                      position: "sticky",
+                                      top: 0,
                                       left: editableCol?.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
-                                      zIndex: editableCol?.pinned ? 10 : 1,
+                                      zIndex: editableCol?.pinned ? 20 : 15,
                                       minWidth: `${colWidth}px`,
                                     }}
                                   >
@@ -753,6 +790,7 @@ const MyModal: React.FC<MyModalProps> = ({
                                           min={0}
                                           max={order.qty_available}
                                           value={editableValues[col]?.[idx] || ""}
+                                          placeholder={order.qty_available ? `${order.qty_available} available` : ""}
                                           onChange={(e) => {
                                             let value = e.target.value;
                                             if (value === "") {

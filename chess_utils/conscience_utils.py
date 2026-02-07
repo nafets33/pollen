@@ -125,7 +125,7 @@ def buy_button_dict_items(queen_handles_trade=True,
                           ignore_refresh_star=False, 
                           sell_at_vwap=None,
                           sell_trigbee_date=datetime.now(est).strftime('%m/%d/%YT%H:%M'), 
-                          broker =['queens_choice', 'alpaca', 'robinhood'],
+                          broker =['auto', 'alpaca', 'robinhood'],
                           ):
     column = {
                 'queen_handles_trade': queen_handles_trade,

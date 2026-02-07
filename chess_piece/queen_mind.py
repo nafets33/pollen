@@ -2003,7 +2003,7 @@ def refresh_chess_board__revrec(
         # Join Wave Data
         wave_data = {}
         wave_data_num_cols = ['star_total_budget', 'remaining_budget', 'star_borrow_budget', 'remaining_budget_borrow', 'star_at_play', 'star_at_play_borrow', 'allocation_long', 'allocation_long_deploy', 'allocation_deploy']
-        wave_data_str_cols = ['symbol', 'ticker_time_frame', 'macd_state']
+        wave_data_str_cols = ['ticker_time_frame', 'macd_state']
         waveview_data = waveview[wave_data_str_cols + wave_data_num_cols].copy()
         for col in wave_data_num_cols:
             waveview_data[col] = round(waveview_data[col])
@@ -2183,7 +2183,6 @@ def refresh_chess_board__revrec(
                     rule['total_qty_available'] = float(order_data['total_qty_available'])
                     rule['total_money'] = float(order_data['total_money'])
                     rule['total_honey'] = float(order_data['total_honey'])
-                    rule['has_active_orders'] = True
                 else:
                     # No active orders for this trigger_id
                     rule['num_orders'] = 0
@@ -2192,7 +2191,6 @@ def refresh_chess_board__revrec(
                     rule['total_qty_available'] = 0.0
                     rule['total_money'] = 0.0
                     rule['total_honey'] = 0.0
-                    rule['has_active_orders'] = False
                 
                 # clean up // TEMP until fix via QUEEN update
                 if rule['trigrule_status'] == 'trig_running' and rule['num_orders'] == 0:

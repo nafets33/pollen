@@ -100,13 +100,11 @@ def create_trig_rule_metadata(symbols, qcp_s, star_list):
             "col_header": "trigrule_status",
             "dtype": "list",
             "values": ["active", "not_active", "trig_running", "expired"],
-            "conditionalColor": {  # ✅ Color based on status
-                "type": "threshold",
-                "field": "trigrule_status",
-                "operator": "==",
-                "value": "active",
-                "trueColor": "#c8e6c9",  # Green when active
-                "falseColor": "#ffcdd2"  # Red when not active
+            "conditionalColor": {
+                "operator": "in",
+                "value": ["active", "trig_running"],
+                "trueColor": "#c8e6c9",
+                "falseColor": "#ffcdd2"
             }
         },
         "expire_date": {
@@ -337,7 +335,7 @@ def check_trigrule_conditions(symbol, storygauge, QUEEN_KING, existing_orders_df
                         rule_dict['trigger_id'] = trigger_id
                         return rule_dict
                     else:
-                        logging.info(f"[TRIGRULE DEBUG] TrigRule NOT PASSED for {symbol} (condition not met)")
+                        logging.info(f"[TRIGRULE DEBUG] TrigRule NOT PASSED for {symbol} (condition not met) story value: {story_field_value} marker_value: {marker_value} marker_direction: {marker_direction}")
 
             # Check trading_pairs Rule
             elif trigrule_type == 'trading_pairs':  # WORKERBEE NEED TO REDO THIS LOGIC

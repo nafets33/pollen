@@ -456,12 +456,12 @@ class PollenDatabase:
 
 
     @staticmethod
-    def retrieve_all_pollenstory_data(symbols, time_frame=None):
+    def retrieve_all_pollenstory_data(symbols, time_frame=None, server=server):
         conn = None
         merged_data = {"pollenstory": {}}
 
         try:
-            conn = PollenDatabase.get_connection()
+            conn = PollenDatabase.get_connection(server)
             cur = conn.cursor()
 
             # Base query

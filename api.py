@@ -23,7 +23,8 @@ async def lifespan(app: FastAPI):
     # ✅ STARTUP - Load BISHOP
     print("🚀 Loading BISHOP cache...")
     try:
-        ticker_info = load_bishop_data(prod)
+        # ticker_info = load_bishop_data(prod)
+        ticker_info = {}
         print(f"BISHOP ticker_info loaded: {len(ticker_info)} records")
         CACHE['BISHOP'] = {'ticker_info': ticker_info}
         print(f"BISHOP loaded: {list(CACHE['BISHOP'].keys())}")

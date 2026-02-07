@@ -579,14 +579,27 @@ function(ppp) {
     if (ppp.data.Broker === 'Alpaca') {
         return {
             backgroundColor: '#f5f55b', // Yellow background for Alpaca
+            color: '#000000', // White text
         };
     } else if (ppp.data.Broker === 'RobinHood') {
         return {
             backgroundColor: '#9fe899', // Green background for Robinhood
+            color: '#000000', // White text
+        };
+    } else if (ppp.data.Broker === 'Interactive Brokers') {
+        return {
+            backgroundColor: '#000000', // Black background for Interactive Brokers
+            color: '#ff0000', // Red text
+        };
+    } else if (ppp.data.Broker === 'Etrade') {
+        return {
+            backgroundColor: '#6a1b9a', // Purple background for Etrade
+            color: '#ffffff', // White text
         };
     } else {
         return {
             backgroundColor: 'white', // White background for other cases
+            color: '#000000', // Black text
         };
     }
 }
@@ -659,7 +672,8 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             gb.configure_column(col, config)
         
         go = gb.build()
-
+        # go['pinnedBottomRowData'] = [subtotal_row]
+        grid_height = '153px' if st.session_state.get('sneak_peak') else '133px'
         
         st_custom_grid(
             client_user=client_user,
@@ -676,10 +690,11 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             prompt_field = None, #"symbol", # "current_macd_tier", # for signle value
             api_key=os.environ.get("fastAPI_key"),
             buttons=[],
-            grid_height='133px',
+            grid_height=grid_height,
             toggle_views=[],
             allow_unsafe_jscode=True,
             grid_type='account_header',
+            subtotal_cols=[i for i in cols if i != 'Broker'], # columns to sum for subtotal
             # total_col="Broker",
             # subtotal_cols=['Cash', 'Long', 'Short',  'Portfolio Value', 'Buying Power'],
             # nestedGridEnabled = True,
@@ -699,7 +714,55 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
         print_line_of_error(e)
 
 
-
+def calculate_subtotal_row(df, subtotal_cols, label="Totals", label_col="symbol"):
+    """
+    Calculate subtotal row for AG Grid from a pandas DataFrame.
+    
+    Args:
+        df: pandas DataFrame containing the data
+        subtotal_cols: list of column names to calculate subtotals for
+        label: label to display in the first column (default: "subTotals")
+        label_col: column name to use for the label (default: "symbol")
+    
+    Returns:
+        dict: subtotal row data with calculated sums
+    
+    Example:
+        subtotal_cols = ["allocation_long", "total_budget", "unrealized_pl"]
+        subtotal_row = calculate_subtotal_row(storygauge, subtotal_cols)
+    """
+    subtotal_row = {label_col: label}
+    story_col = df.columns.tolist()
+    
+    for col in subtotal_cols:
+        if col in story_col:
+            # Handle string columns that contain $ values
+            if df[col].dtype == 'object':
+                # Try to extract numeric values from strings like "buy-5$1234"
+                numeric_values = []
+                for val in df[col]:
+                    if isinstance(val, str) and '$' in val:
+                        parts = val.split('$')
+                        if len(parts) == 2:
+                            try:
+                                numeric_values.append(float(parts[1]))
+                            except:
+                                pass
+                    elif pd.notna(val):
+                        try:
+                            numeric_values.append(float(val))
+                        except:
+                            pass
+                
+                if numeric_values:
+                    subtotal_row[col] = sum(numeric_values)
+            else:
+                # Numeric columns - just sum
+                subtotal_row[col] = df[col].sum()
+        else:
+            subtotal_row[col] = ""
+    
+    return subtotal_row
 
 def story_grid(prod, client_user, 
                ip_address, revrec, symbols, 
@@ -768,6 +831,7 @@ def story_grid(prod, client_user,
                                                 },
 
         }
+        
         def story_grid_buttons(storygauge, hf=False):
             # try:
             active_orders_order_book = ['ticker_time_frame', 'side', 'wave_amo', 'filled_qty', 'qty_available', 'qty', 'money', 'honey', 'trigname', 'order_rules']
@@ -777,7 +841,7 @@ def story_grid(prod, client_user,
             # }}
             buttons = []
             exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
-            trig_data = create_trig_rule_metadata(list(storygauge.index), list(set(storygauge['qcp'])), list(stars().keys()))
+            trig_data = create_trig_rule_metadata(list(storygauge.index), list(set(storygauge['piece_name'])), list(stars().keys()))
             trig_editableCols = []
             for trig in trig_data.keys():
                 trig_dict = trig_data.get(trig)
@@ -836,7 +900,7 @@ def story_grid(prod, client_user,
                                     'col_header': "confirm_buy", 
                                     'dtype': "checkbox",
                                     'pinned': True,  # ✅ Pin this important column
-                                    'backgroundColor': "#d0ffc4",  # ✅ Yellow highlight for confirmation
+                                    'backgroundColor': "#a5f092",  # ✅ Yellow highlight for confirmation
                                 },
                                 { 
                                     'col_header': "ignore_allocation_budget", 
@@ -899,6 +963,18 @@ def story_grid(prod, client_user,
                                     'dtype': "datetime",
                                     # 'backgroundColor': "#f3e5f5",  # ✅ Light purple for date fields
                                 },
+                                                            { 
+                                    'col_header': "macd_state", 
+                                    'dtype': "string",
+                                    # 'backgroundColor': "#ffcdd2",  # ✅ Light red for stop loss
+                                    'conditionalColor': {
+                                        'operator': 'contains',
+                                        'value': 'buy',  # ✅ Green if cell contains "buy"
+                                        'trueColor': '#c8e6c9',  # Green
+                                        'falseColor': '#ffcdd2'   # Red (when it doesn't contain "buy")
+                                    }
+                                },
+
                             ],
                         },
 
@@ -951,7 +1027,7 @@ def story_grid(prod, client_user,
                                 'col_header': "sell_amount", 
                                 'dtype': "number",
                                 "info": "This will overwrite Sell Qty",
-                                'backgroundColor': "transparent", #"#ef5350",  # ✅ Dark red warning (overwrites qty)
+                                # 'backgroundColor': "transparent", #"#ef5350",  # ✅ Dark red warning (overwrites qty)
                             },
                             { 
                                 'col_header': "take_profit", 
@@ -1293,68 +1369,41 @@ def story_grid(prod, client_user,
                     'total_budget',
                     'unrealized_pl',
                     ]
-        subtotal_row = {"symbol": "subTotals"}  # Label in the first column
-        
-        for col in subtotal_cols:
-            if col in story_col:
-                # Handle string columns that contain $ values
-                if storygauge[col].dtype == 'object':
-                    # Try to extract numeric values from strings like "buy-5$1234"
-                    numeric_values = []
-                    for val in storygauge[col]:
-                        if isinstance(val, str) and '$' in val:
-                            parts = val.split('$')
-                            if len(parts) == 2:
-                                try:
-                                    numeric_values.append(float(parts[1]))
-                                except:
-                                    pass
-                        elif pd.notna(val):
-                            try:
-                                numeric_values.append(float(val))
-                            except:
-                                pass
-                    
-                    if numeric_values:
-                        subtotal_row[col] = sum(numeric_values)
-                else:
-                    # Numeric columns - just sum
-                    subtotal_row[col] = storygauge[col].sum()
-            else:
-                subtotal_row[col] = ""
+        # subtotal_row = {"symbol": "subTotals"}  # Label in the first column
+        subtotal_row = calculate_subtotal_row(storygauge, subtotal_cols)
         
         # Add to grid options
         toggle_views = main_toggles + toggle_view
         g_buttons = story_grid_buttons(storygauge, hf)
         go = gb.build()
         # Add button cell styles for subtotal row
-        for button in g_buttons:
-            if button.get('col_header') and button.get('cellStyle'):
-                subtotal_row[f"{button['col_header']}_cellStyle"] = button['cellStyle']
+        # for button in g_buttons:
+        #     if button.get('col_header') and button.get('cellStyle'):
+        #         subtotal_row[f"{button['col_header']}_cellStyle"] = button['cellStyle']
         
-        go['pinnedTopRowData'] = [subtotal_row]
-        go['getRowStyle'] = JsCode("""
-        function(params) {
-            var style = {};
+        # go['pinnedTopRowData'] = [subtotal_row]
+        # go['getRowStyle'] = JsCode("""
+        # function(params) {
+        #     var style = {};
             
-            // Handle pinned rows (subtotals)
-            if (params.node && params.node.rowPinned) {
-                style.fontWeight = 'bold';
-                style.backgroundColor = '#f2f7ff';
-            }
+        #     // Handle pinned rows (subtotals)
+        #     if (params.node && params.node.rowPinned) {
+        #         style.fontWeight = 'bold';
+        #         style.backgroundColor = '#f2f7ff';
+        #     }
             
-            // Handle regular row coloring if present
-            if (params.data && params.data.color_row) {
-                style.background = params.data.color_row;
-            }
-            if (params.data && params.data.color_row_text) {
-                style.color = params.data.color_row_text;
-            }
+        #     // Handle regular row coloring if present
+        #     if (params.data && params.data.color_row) {
+        #         style.background = params.data.color_row;
+        #     }
+        #     if (params.data && params.data.color_row_text) {
+        #         style.color = params.data.color_row_text;
+        #     }
             
-            return Object.keys(style).length > 0 ? style : null;
-        }
-        """)
-        # go['pivotMode'] = True
+        #     return Object.keys(style).length > 0 ? style : null;
+        # }
+        # """)
+        # # go['pivotMode'] = True
         if api_ws:
             api_ws = f"{ip_address}{api_ws}"
         # api_ws = None # DEBUGGING

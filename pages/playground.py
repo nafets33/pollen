@@ -484,8 +484,7 @@ def PlayGround():
     
     
     prod = st.session_state['prod']
-    if not prod:
-        st.warning("SANDBOX MODE")
+
 
 
     table_name = 'db' if prod else 'db_sandbox'
@@ -604,7 +603,8 @@ def PlayGround():
         ############# Refresh Board ############
         QUEEN['revrec'] = refresh_chess_board__revrec(QUEEN['account_info'], QUEEN, QUEEN_KING, STORY_bee) ## Setup Board
 
-
+    # retrieve_all_pollenstory_data = PollenDatabase.retrieve_all_pollenstory_data(['SPY'], server=True).get('pollenstory')
+    # st.write("Pollen Story Data", retrieve_all_pollenstory_data)
 
     from chess_piece.pollen_db import MigratePostgres
 
@@ -618,7 +618,7 @@ def PlayGround():
 
             # Extract the nested dict and add proper key prefixes
             bulk_data = {
-                f'POLLEN_STORY_{key}': value 
+                f'POLLEN_STORY_{key}': {"pollen_story": value} 
                 for key, value in retrieve_all_pollenstory_data.items()
             }
             # Bulk upsert
@@ -627,12 +627,13 @@ def PlayGround():
             retrieve_all_story_bee_data = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
             st.write("Story Bee Data", retrieve_all_story_bee_data.keys())
             bulk_data = {
-                f'STORY_BEE_{key}': value
+                f'STORY_BEE_{key}': {"STORY_bee": value}
                 for key, value in retrieve_all_story_bee_data.items()
             }
             MigratePostgres.upsert_multiple('pollen_store', bulk_data, console=True)
 
             time_delta = (datetime.now() - s).total_seconds()
+            st.write(f"Pollen Store Server Sync COMPLETED in {round(time_delta)} seconds for {len(symbols)} symbols.")
             send_email(subject=f"Pollen Store Server Sync COMPLETED {round(time_delta)} seconds", body=f"Migrated {len(symbols)} symbols in {round(time_delta)} seconds.")
         except Exception as e:
             print(e)
@@ -641,10 +642,20 @@ def PlayGround():
     if st.button("Migrate Pollen Store to MAIN Server"):
         copy_pollen_store_by_symbol_to_MAIN_server()
 
-    trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
-    st.write("Trading Model SPY", trading_model)
+    if st.toggle("Show Trading Model SPY"):
+        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get("SPY")
+        st.write("Trading Model SPY", trading_model)
 
 
+    if st.toggle("Test Main Server API Connection"):
+        API_URL = os.getenv('main_fastAPI_url')
+        # client_user = ''
+        endpoint = f"{API_URL}/api/data/ws_status/{'stapinskistefan@gmail.com'}?prod={'true' if prod else 'false'}"
+        response = requests.get(endpoint, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            st.write("Websocket Status from Main Server", data)
 
         # st.write("Index", QUEEN['price_info_symbols'].index)
     symbols = ['SPY', 'GSHD']

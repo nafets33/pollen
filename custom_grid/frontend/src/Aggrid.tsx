@@ -161,6 +161,7 @@ toastr.options = {
 
 
 
+
 const AgGrid = (props: Props) => {
   const BtnCellRenderer = (props: any) => {
     const btnClickedHandler = () => {
@@ -284,7 +285,6 @@ const AgGrid = (props: Props) => {
     }
   };
 
-  // Replace lines 282-408 (the entire WebSocket useEffect)
 
   useEffect(() => {
     if (!kwargs.api_ws) {
@@ -380,43 +380,8 @@ const AgGrid = (props: Props) => {
                 log(`✅ Updated ${rowsToUpdate.length} rows`);
 
                 // ✅ Recalculate and update pinned bottom row
-                if (kwargs.subtotal_cols && kwargs.subtotal_cols.length > 0 && gridRef.current?.api) {
-                  const api = gridRef.current.api;
-                  let filteredRows: any[] = [];
-                  api.forEachNodeAfterFilterAndSort((node) => {
-                    if (node.data && !node.rowPinned) filteredRows.push(node.data);
-                  });
-
-                  let subtotal: any = { [index]: "subTotals" };
-
-                  kwargs.subtotal_cols.forEach((col: string) => {
-                    const sum = filteredRows.reduce((sum, row) => {
-                      let val = row[col];
-                      if (typeof val === "string" && val.includes("$")) {
-                        const match = val.match(/\$([\d,.\-]+)/);
-                        if (match && match[1]) {
-                          val = match[1].replace(/,/g, "");
-                        }
-                      }
-                      const num = Number(val);
-                      return sum + (isNaN(num) ? 0 : num);
-                    }, 0);
-                    subtotal[col] = isNaN(sum) ? "" : sum;
-                  });
-
-                  // ✅ Determine pin location from grid_options
-                  const hasPinnedTop = grid_options.pinnedTopRowData && grid_options.pinnedTopRowData.length > 0;
-                  const hasPinnedBottom = grid_options.pinnedBottomRowData && grid_options.pinnedBottomRowData.length > 0;
-
-                  // Update the pinned row at the correct location
-                  if (hasPinnedTop) {
-                    api.setPinnedTopRowData([subtotal]);
-                  } else if (hasPinnedBottom) {
-                    api.setPinnedBottomRowData([subtotal]);
-                  } else {
-                    // Default to bottom if not specified
-                    api.setPinnedBottomRowData([subtotal]);
-                  }
+                if (gridRef.current?.api) {
+                  calculateAndUpdateSubtotals(gridRef.current.api);
                 }
               }
             }
@@ -506,7 +471,7 @@ const AgGrid = (props: Props) => {
         ws.close();
       }
     };
-  }, [kwargs.api_ws, index, viewId, username, api_key, toggle_views]);
+  }, [kwargs.api_ws, index, viewId, username, api_key]);
 
   const checkLastModified = async (): Promise<boolean> => {
     try {
@@ -792,6 +757,88 @@ const AgGrid = (props: Props) => {
     })
   }, [])
 
+
+  // Reusable function to calculate and update subtotals
+  const calculateAndUpdateSubtotals = useCallback((api: any) => {
+    if (!kwargs.subtotal_cols || kwargs.subtotal_cols.length === 0 || !api) return;
+
+    let filteredRows: any[] = [];
+    api.forEachNodeAfterFilterAndSort((node: any) => {
+      if (node.data && !node.rowPinned) filteredRows.push(node.data);
+    });
+
+    let subtotal: any = { [index]: "Totals" };
+
+    kwargs.subtotal_cols.forEach((col: string) => {
+      const sum = filteredRows.reduce((sum, row) => {
+        let val = row[col];
+        const originalVal = val
+
+        // Skip undefined, null, or empty string
+        if (val === undefined || val === null || val === "") {
+          return sum;
+        }
+
+        // Handle string values with special formatting
+        if (typeof val === "string") {
+          // ✅ Detect button format: "buy(4) $19,690" or "sell(3) $5,000"
+          const buttonMatch = val.match(/(buy|sell)\(\d+\)\s*\$([0-9,.\-]+)/i);
+
+          if (buttonMatch && buttonMatch[2]) {
+            // Extract ONLY the dollar amount from button format
+            val = buttonMatch[2].replace(/,/g, "");
+          } else {
+            // Standard currency/number formatting
+            val = val.replace(/[$,]/g, "");
+
+            // Handle percentage values
+            if (val.includes("%")) {
+              val = val.replace(/%/g, "");
+            }
+
+            // Remove any other non-numeric characters except decimal point and minus
+            val = val.replace(/[^0-9.\-]/g, "");
+          }
+        }
+
+        const num = Number(val);
+        return sum + (isNaN(num) ? 0 : num);
+      }, 0);
+
+      // Check if invalid
+      if (isNaN(sum) || !isFinite(sum)) {
+        subtotal[col] = "";
+        return;
+      }
+
+      // ✅ Check if column has a valueFormatter - if yes, store raw number, otherwise format
+      const columnDef = api.getColumnDef(col);
+      const hasFormatter = columnDef && (columnDef.valueFormatter || columnDef.type);
+
+      if (hasFormatter) {
+        // Store raw number - let column's valueFormatter handle formatting
+        subtotal[col] = sum;
+      } else {
+        // No formatter - format with commas ourselves
+        subtotal[col] = sum.toLocaleString('en-US');
+      }
+    });
+
+    // ✅ Determine pin location from grid_options
+    const hasPinnedTop = grid_options.pinnedTopRowData && grid_options.pinnedTopRowData.length > 0;
+    const hasPinnedBottom = grid_options.pinnedBottomRowData && grid_options.pinnedBottomRowData.length > 0;
+
+    // Update the pinned row at the correct location
+    if (hasPinnedTop) {
+      api.setPinnedTopRowData([subtotal]);
+    } else if (hasPinnedBottom) {
+      api.setPinnedBottomRowData([subtotal]);
+    } else {
+      // Default to bottom if not specified
+      api.setPinnedBottomRowData([subtotal]);
+    }
+  }, [kwargs.subtotal_cols, index, grid_options]);
+
   const onGridReady = useCallback(async (params: GridReadyEvent) => {
     setTimeout(async () => {
       try {
@@ -802,6 +849,10 @@ const AgGrid = (props: Props) => {
         setRowData(array);
         g_rowdata = array;
 
+        // ✅ Calculate subtotals if subtotal_cols is provided
+        if (kwargs.subtotal_cols && kwargs.subtotal_cols.length > 0) {
+          calculateAndUpdateSubtotals(params.api);
+        }
 
         // Autosize all columns after data is set
         autoSizeAll(true);

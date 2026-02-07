@@ -2446,7 +2446,7 @@ def check_order_status(broker, api, client_order_id):  # return raw dict form
             print("ERROR: No broker specified default to alpaca")
             broker = 'alpaca'  # default to alpaca if not specified
         
-        if broker == 'alpaca' or broker == 'queens_choice': #WORKERBEE remove queens_choice
+        if broker in ['auto', 'queens_choice', 'alpaca']: #WORKERBEE remove queens_choice
             order = api.get_order_by_client_order_id(client_order_id=client_order_id)
             order = vars(order)["_raw"]
         # elif broker == 'robinhood': # WORKERBEE HANDLE ROBINHOOD
@@ -3201,7 +3201,7 @@ def ttf_grid_names(ttf_name, symbol=True):
        return ttf_name
 
 
-def sell_button_dict_items(symbol="SPY", sell_qty=0, sell_amount=0, limit_price=0, broker=['queens_choice', 'alpaca', 'robinhood']):
+def sell_button_dict_items(symbol="SPY", sell_qty=0, sell_amount=0, limit_price=0, broker=['auto', 'alpaca', 'robinhood', 'interactivebrokers', 'etrade']):
     var_s = {
                 'symbol': symbol,
                 'sell_qty':sell_qty,
@@ -3677,8 +3677,6 @@ def process_order_submission(broker, trading_model, order, order_vars, trig, sym
         exit_order_link=exit_order_link, 
         priceinfo=priceinfo,
         )
-
-        new_queen_order['cost_basis_current'] = new_queen_order['wave_amo']
         
         return new_queen_order
 

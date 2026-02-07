@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import pytz
-import ipdb
+import random
 import copy
 from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_data, 
                               kingdom__global_vars, ReadPickleData, streamlit_config_colors, 
@@ -1305,6 +1305,7 @@ def header_account(client_user, prod):
   QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=pg_migration).get('QUEENsHeart')
   broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
 
+  demo = True if client_user == 'stapinskistefan@gmail.com' else False
 
   if 'charlie_bee' not in QUEENsHeart.keys():
     df = pd.DataFrame()
@@ -1327,7 +1328,7 @@ def header_account(client_user, prod):
      short = 0
 
   df = pd.DataFrame()
-  brokers = ['Alpaca', 'RobinHood']
+  brokers = ['Alpaca', 'RobinHood', 'Interactive Brokers', 'Etrade']
   for broker in brokers:
     crypto_value = 0
 
@@ -1343,16 +1344,26 @@ def header_account(client_user, prod):
                   'last_equity': 100000,
                   'portfolio_value': 100000,}
 
-    if broker == 'RobinHood':
-      crypto_value = 98289
-      long = 138689
-      short = 0
+    if broker != 'Alpaca':
+      crypto_value = random.randint(20000, 80000) # fake crypto value for non-alpaca brokers  
+      long = random.randint(50000, 100000)
+      short = random.randint(0, 26000)
+      portfolio_value = long + short + crypto_value
+      buying_power = random.randint(50, 10000)
+      if not demo:
+        print("DEMO MODE - Randomizing values for non-Alpaca brokers")
+        crypto_value = 0
+        long = 0
+        short = 0
+        portfolio_value = 1
+        buying_power = 0
+      
       acct_info = {'accrued_fees': 0.0,
-              'buying_power': 150852,
-              'cash': 30000,
+              'buying_power': buying_power,
+              'cash': portfolio_value - long,
               'daytrade_count': 0,
-              'last_equity': 139524,
-              'portfolio_value': 139524,}
+              'last_equity': portfolio_value,
+              'portfolio_value': portfolio_value,}
 
 
     # format
