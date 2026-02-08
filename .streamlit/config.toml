@@ -1,5 +1,5 @@
-# Streamlit version: 1.13.0
 [global]
+# Streamlit version: 1.13.0
 # By default, Streamlit checks if the Python watchdog module is available and, if not, prints a warning asking for you to install it. The watchdog module is not required, but highly recommended. It improves Streamlit's ability to detect changes to files in your filesystem.
 # If you'd like to turn off this warning, set this to True.
 # Default: false
@@ -114,14 +114,13 @@ showfileUploaderEncoding = true
 # Default: true
 showPyplotGlobalUse = true
 [theme]
-primaryColor = "#2d5161"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#E6F4FA"
+primaryColor="#37925aff"
+backgroundColor="#FFFFFF"
+secondaryBackgroundColor="#F0FFF4"
+textColor="#1A202C"
+font="sans serif"
 
 # Color used for almost all text
-textColor = '#003366'
-
 # Font family for all text in the app, except code blocks
 # Accepted values (serif | sans serif | monospace) 
 # Default: "sans serif"
-font = "sans serif"

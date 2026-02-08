@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import os
 import requests
 
+from pages.chessboard import chessboard
 import streamlit as st
 from pq_auth import signin_main
 import time
@@ -24,7 +25,7 @@ from pages.conscience import queens_conscience
 
 from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator, standard_AGgrid
 from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData, return_app_ip
-from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee
+from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee, pollen_themes
 from chess_piece.queen_mind import kings_order_rules
 from chess_utils.trigrule_utils import create_TrigRule
 
@@ -219,15 +220,7 @@ def sneak_peak_form():
     # if cust_Button("misc/bee.png", hoverText='SneakPeak', key='SneakQueen', default=False, height=f'53px'): # "https://cdn.onlinewebfonts.com/svg/img_562964.png"
     with st.form("Sneak Peak Access"):
         st.session_state["sneak_peak"] = True
-        # sneak_name = st.text_input("Your Name", key='sneak_name')
-        # sneak_pw = st.text_input("Sneak Key", key='sneak_key')
         if st.form_submit_button("Watch a Live Bot", use_container_width=True):
-            # if len(sneak_name) == 0:
-            #     st.error("Enter Your Name To Get In")
-            #     st.stop()
-            # if sneak_pw.lower() != os.environ.get("quantqueen_pw"):
-            #     st.error("Incorrect Password")
-            #     st.stop()
             st.session_state['sneak_pw'] = os.environ.get("quantqueen_pw")
             st.switch_page("pages/LiveBot.py")
             
@@ -368,7 +361,6 @@ def clean_out_app_requests(QUEEN, QUEEN_KING, request_buckets, prod):
     
     return True
 
-
 def fetch_portfolio_history(_api, period='3M', timeframe='1D'):
     try:
         # Fetch portfolio history
@@ -417,12 +409,16 @@ def get_portfolio_performance(_api, periods):
                 perf_dict[period] = portfolio_perf
             else:
                 perf_dict[period] = None
+
     return perf_dict
 
 def pollenq(sandbox=False, demo=False):
 
     pollen = 'pollen' if not demo else 'demo'
-
+    if demo:
+        st.session_state['sneak_key'] = 'family'
+        st.session_state['sneak_peak'] = True
+    
     main_page_start = datetime.now()
     king_G = kingdom__global_vars()
     main_root = hive_master_root()
@@ -441,50 +437,17 @@ def pollenq(sandbox=False, demo=False):
         pq_buttons['chess_board'] = True
 
     with st.spinner("Checking Your Keys...hang tight"):
-        # print(st.session_state)
-        if demo:
-            admin_pq = False
-            st.session_state['admin_pq'] = admin_pq
-            client_user = 'stapinskistefan@gmail.com'
-            prod = False
-            KING = kingdom__grace_to_find_a_Queen()
-            st.session_state['sneak_peak'] = True
-            st.info("Welcome, feel free to place trades, every trade is handled and management by the AI using TimeSeries Weighted Averages...TimeValueMoney")
-            st.session_state['sneak_peak'] = False
-            st.session_state["ip_address"] = return_app_ip()
-            st.session_state["username"] = client_user
-            st.session_state['db_root'] = 'db__stapinskistefan_99757341'
-            st.session_state['authorized_user'] = True
-            st.session_state['authentication_status'] = True
-            st.session_state['prod'] = False
-            qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, 
-                            queen_king=True, api=True, init=True, 
-                            revrec=True, 
-                            demo=True)
-            QUEEN_KING = qb.get('QUEEN_KING')
-            api = qb.get('api')
-            revrec = qb.get('revrec')
-        else:
-            authenticator = signin_main(page="pollenq")
+        authenticator = signin_main(page="pollenq")
 
     authorized_user = st.session_state['authorized_user']
     client_user = st.session_state["username"]
     prod = st.session_state['prod']
-    
-    if authorized_user != True:
-        st.error("Your Account is Not Yet Authorized by a pollenq admin")
-        authenticator.logout("Logout", location='sidebar')
-        if sneak_peak_form():
-            pass
-        else:
-            st.stop()
 
     admin_pq = st.session_state.get('admin', False)
     if st.session_state['authentication_status'] != True: ## None or False
         st.warning("Sign In")
         display_for_unAuth_client_user()
         st.stop()
-    # check if main
     # use API keys from user            
     prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] or sandbox else prod
     print("PROD STATUS:", prod)
@@ -493,9 +456,7 @@ def pollenq(sandbox=False, demo=False):
     init_swarm = st.session_state.get('init_swarm', False)
     init_swarm_dbs(prod, init=init_swarm) ## NOT NEEDED EVERY TIME WORKERBEE
     st.session_state['init_swarm'] = True
-
     ip_address = st.session_state['ip_address'] # return_app_ip()
-    st.session_state['sneak_name'] = ' ' if 'sneak_name' not in st.session_state else st.session_state['sneak_name']
     
     if 'env_button_counter' not in st.session_state:
         st.session_state['env_button_counter'] = 0
@@ -549,23 +510,23 @@ def pollenq(sandbox=False, demo=False):
 
 
     db_table = 'db' if prod else 'db_sandbox'
-    if not demo:
-        KING = kingdom__grace_to_find_a_Queen()
-        users, all_users = return_all_client_users__db()
-        admin_check(admin_pq, all_users['email'].tolist())
-        if 'admin__client_user' in st.session_state:
-            client_user = st.session_state['admin__client_user']
+    # if not demo:
+    KING = kingdom__grace_to_find_a_Queen()
+    users, all_users = return_all_client_users__db()
+    admin_check(admin_pq, all_users['email'].tolist())
+    if 'admin__client_user' in st.session_state:
+        client_user = st.session_state['admin__client_user']
 
-        if st.session_state['admin']:
-            if st.sidebar.button("Refresh Ticker Universe to KING"):
-                ticker_universe = return_Ticker_Universe()
-                KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
-                KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
-                if pg_migration:
-                    PollenDatabase.upsert_data(db_table, KING.get('key'), KING)
-                else:
-                    PickleData(KING.get('source'), KING)
-                    st.success("KING Saved")
+    if st.session_state['admin']:
+        if st.sidebar.button("Refresh Ticker Universe to KING"):
+            ticker_universe = return_Ticker_Universe()
+            KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
+            KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
+            if pg_migration:
+                PollenDatabase.upsert_data(db_table, KING.get('key'), KING)
+            else:
+                PickleData(KING.get('source'), KING)
+                st.success("KING Saved")
     
     
     cols = st.columns((4,2))
@@ -590,8 +551,9 @@ def pollenq(sandbox=False, demo=False):
     if menu_id == 'Trading Models':
         st.switch_page('pages/trading_models.py')
 
-    if menu_id == 'Portfolio Allocations':
-        st.switch_page('pages/chessboard.py')
+    # if menu_id == 'Portfolio Allocations':
+    #     st.switch_page('pages/chessboard.py')
+
 
     print("WORKING")
     with st.spinner("Trade Carefully And Trust the Queens Trades"):
@@ -603,17 +565,25 @@ def pollenq(sandbox=False, demo=False):
             admin_queens_active(KING, all_users)
 
         #### INIT USER ### QUEENBEE, QUEEN_KING, API, REVREC
-        if not demo:
-            qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, pg_migration=pg_migration)
-            api = qb.get('api')
-            revrec = qb.get('revrec')
-            # QUEEN = qb.get('QUEEN')
-            QUEEN_KING = qb.get('QUEEN_KING')
+        # if not demo:
+        qb = init_queenbee(client_user=client_user, 
+                           prod=prod, 
+                           queen_king=True, 
+                           api=True, 
+                           init=True, 
+                           revrec=True, 
+                           pg_migration=pg_migration,
+                           demo=demo,
+                           )
+        api = qb.get('api')
+        revrec = qb.get('revrec')
+        # QUEEN = qb.get('QUEEN')
+        QUEEN_KING = qb.get('QUEEN_KING')
 
-        with cols[1]:
-            cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
-            cash = max(min(cash, 1), -1)
-            QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
+        # with cols[1]:
+        #     cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
+        #     cash = max(min(cash, 1), -1)
+        #     QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
 
         if 'chess_board__revrec' not in QUEEN_KING.keys():
             print("SETUP QUEEN KING")
@@ -716,10 +686,21 @@ def pollenq(sandbox=False, demo=False):
                 mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
                 mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
 
+    # QUEENS CONSCIENCE Account, Story, Graphs
+        # with cols[1]:
 
-    if 'pollen' in menu_id:
-        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 63000
-        queens_conscience(prod, revrec, KING, QUEEN_KING, api)
+    if menu_id in ['pollen', 'demo']:
+        st.divider()
+        cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
+        cash = max(min(cash, 1), -1)
+        QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
+        queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=st.session_state.get('sneak_peak'))
+    
+    if menu_id == 'Portfolio Allocations':
+        crypto_symbols__tickers_avail = ['BTC/USD', 'ETH/USD']
+        themes = list(pollen_themes(KING).keys())
+        ticker_allowed = KING['alpaca_symbols_df'].index.tolist() + crypto_symbols__tickers_avail
+        chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=admin_pq)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')

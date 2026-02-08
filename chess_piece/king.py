@@ -508,10 +508,10 @@ def print_line_of_error(e='print_error_message'):
 def streamlit_config_colors():
     # read config file and parse from there
     k_colors = {
-        "default_text_color": "#055A6E",
-        "default_font": "sans serif",
+        "default_text_color": "#1A202C",
+        "default_font": "monospace",
         "default_yellow_color": "#E6C93B",
-        "default_background_color": '#FFFFFF',
+        "default_background_color": "#FFFFFF",
     }
 
     return k_colors

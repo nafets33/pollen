@@ -673,7 +673,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
         
         go = gb.build()
         # go['pinnedBottomRowData'] = [subtotal_row]
-        grid_height = '153px' if st.session_state.get('sneak_peak') else '133px'
+        grid_height = '200px' if st.session_state.get('sneak_peak') else '133px'
         
         st_custom_grid(
             client_user=client_user,
@@ -1434,7 +1434,7 @@ def story_grid(prod, client_user,
             toggle_views = toggle_views,
             allow_unsafe_jscode=True,
             columnOrder=story_col_order,
-            refresh_success=True,
+            refresh_success=False,
             total_col="symbol", # where total is located
             subtotal_cols=subtotal_cols,
             filter_apply=False,
@@ -1588,14 +1588,14 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
 
         # with story_tab:
-        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else None
-        refresh_sec = 365 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
+        refresh_sec = 8 if seconds_to_market_close > 0 and mkhrs == 'open' else 899
+        refresh_sec = 899 if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
         ui_refresh_sec = st.sidebar.number_input('story grid refresh sec', value=refresh_sec, min_value=0)
         if ui_refresh_sec != ui_refresh_sec:
             print("UI REFRESH SEC NOT EQUAL", ui_refresh_sec, refresh_sec)
             refresh_sec = ui_refresh_sec
 
-        refresh_sec = None if not refresh_grids else refresh_sec
+        refresh_sec = 899 if not refresh_grids else refresh_sec
 
 
         k_colors = streamlit_config_colors()
@@ -1660,7 +1660,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                             "showInLegend": True,
                             "showInLegendPerLine": True,
                         },
-                refresh_button=True,
+                refresh_button=False,
                 
                 #kwrags
                 username=client_user,
@@ -1720,7 +1720,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                         "showInLegend": True,
                         "showInLegendPerLine": True,
                     },
-                refresh_button=True,
+                refresh_button=False,
                 
                 #kwrags
                 username=client_user,

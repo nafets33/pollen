@@ -1575,36 +1575,82 @@ def get_ticker_data(symbols, toggles_selection):
   return json_data
 
 ### GRAPH
-def get_ticker_time_frame(symbols=['SPY'],  toggles_selection=False):
-  try:
-    df_main=False
-    time_frame = star_names(toggles_selection)
-    if pg_migration:
-      pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols, time_frame).get('pollenstory')
-    else:
-      pollenstory = read_QUEENs__pollenstory(symbols=symbols,read_storybee=False, read_pollenstory=True,).get('pollenstory')
-    for symbol in symbols:
-      if f'{symbol}_{time_frame}' not in pollenstory.keys():
-        #  print("Need Pollenstory Charts: ", symbol)
-         continue
-         
-      df = pollenstory[f'{symbol}_{time_frame}']
-      if time_frame == '1Minute_1Day':
-        df = add_priorday_tic_value(df)
-      df = df[['timestamp_est', 'trinity_tier']] #'ticker_time_frame',
-      df = df.rename(columns={'trinity_tier': symbol})
-
-      if type(df_main) == bool:
-        df_main = df
-      else:
-        df_main = df_main.merge(df, how='inner', on='timestamp_est')
+def get_ticker_time_frame(symbols=['SPY'], toggles_selection=False):
+    """
+    Merge ticker time frame data for multiple symbols.
     
-    json_data = df_main.to_json(orient='records')
-
-    return json_data
-  except Exception as e:
-     print_line_of_error("trinity revrec fastapi")
-     return pd.DataFrame([{'error': 'list'}]).to_json()
+    Args:
+        symbols: List of ticker symbols
+        toggles_selection: Time frame selection
+        
+    Returns:
+        JSON string of merged DataFrame
+    """
+    try:
+        time_frame = star_names(toggles_selection)
+        
+        # Load pollenstory data
+        if pg_migration:
+            pollenstory = PollenDatabase.retrieve_all_pollenstory_data(symbols, time_frame).get('pollenstory')
+        else:
+            pollenstory = read_QUEENs__pollenstory(
+                symbols=symbols, 
+                read_storybee=False, 
+                read_pollenstory=True
+            ).get('pollenstory')
+        
+        df_main = None
+        
+        for symbol in symbols:
+            ttf_key = f'{symbol}_{time_frame}'
+            
+            # Skip if symbol data not available
+            if ttf_key not in pollenstory:
+                print(f"⚠️  Missing pollenstory data for {ttf_key}")
+                continue
+            
+            # Extract and prepare symbol data
+            df = pollenstory[ttf_key][['timestamp_est', 'trinity_tier']].copy()
+            
+            if time_frame == '1Minute_1Day':
+                df = add_priorday_tic_value(df)
+            
+            df = df.rename(columns={'trinity_tier': symbol})
+            
+            if df.empty:
+                print(f"⚠️  Empty DataFrame for {symbol}")
+                continue
+            
+            # Initialize or merge
+            if df_main is None:
+                df_main = df
+            else:
+                # Validate timestamp alignment before merge
+                if not df.iloc[0]['timestamp_est'] == df_main.iloc[0]['timestamp_est']:
+                    print(f"❌ {symbol} timestamp[0] MISMATCH!")
+                    print(f"   Expected: {df_main.iloc[0]['timestamp_est']}")
+                    print(f"   Got:      {df.iloc[0]['timestamp_est']}")
+                    print(f"   Skipping {symbol}")
+                    continue
+                
+                # Merge on matching timestamps
+                before_len = len(df_main)
+                df_main = df_main.merge(df, how='inner', on='timestamp_est')
+                after_len = len(df_main)
+                
+                if after_len == 0:
+                    print(f"❌ Merge resulted in empty DataFrame for {symbol}")
+                    return pd.DataFrame([{'error': 'merge_failed', 'symbol': symbol}]).to_json()        
+        # Return empty DataFrame if no data was merged
+        if df_main is None:
+            print("❌ No data available for any symbols")
+            return pd.DataFrame([{'error': 'no_data'}]).to_json()
+        
+        return df_main.to_json(orient='records')
+        
+    except Exception as e:
+        print_line_of_error("trinity revrec fastapi")
+        return pd.DataFrame([{'error': str(e)}]).to_json()
 
 
 

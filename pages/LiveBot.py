@@ -10,6 +10,7 @@ from pollen import get_portfolio_performance
 import streamlit as st
 import pytz
 from datetime import datetime
+from pollen import pollenq
 
 est = pytz.timezone("US/Eastern")
 
@@ -20,7 +21,7 @@ def demo_bot():
     with cols[3]:
         with st.expander("Portfolio Performance", expanded=True):
         # Show all portfolio history periods in columns
-            periods = ['7D', '1M', '3M', '6M', '1A']
+            periods = ['7D', '1M', '3M', '6M', '1A', 'YTD']
             perf_cols = st.columns(len(periods))
             perf_containers = [col.container() for col in perf_cols]
 
@@ -29,9 +30,8 @@ def demo_bot():
     client_user = 'stapinskistefan@gmail.com'
     prod = False
     KING = kingdom__grace_to_find_a_Queen()
-    st.session_state['sneak_peak'] = True
     st.info("Welcome, This Portoflio is currently being managed by James-CFP, an AI Agentic Trader, FEEL free to utilize the Trading Tool, James will manage all Trades you Place")
-    st.session_state['sneak_peak'] = False
+    st.session_state['sneak_peak'] = True
     st.session_state["ip_address"] = return_app_ip()
     st.session_state["username"] = client_user
     st.session_state["client_user"] = client_user
@@ -91,5 +91,6 @@ def demo_bot():
     queens_conscience(api, revrec, KING, QUEEN_KING, api, sneak_peak=True, show_acct=True)
 if __name__ == '__main__':
     set_streamlit_page_config_once()
-    demo_bot()
+    # demo_bot()
+    pollenq(sandbox=True, demo=True)
     # pollenq(sandbox=True, demo=True)

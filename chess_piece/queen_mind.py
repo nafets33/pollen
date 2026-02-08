@@ -2003,7 +2003,7 @@ def refresh_chess_board__revrec(
         # Join Wave Data
         wave_data = {}
         wave_data_num_cols = ['star_total_budget', 'remaining_budget', 'star_borrow_budget', 'remaining_budget_borrow', 'star_at_play', 'star_at_play_borrow', 'allocation_long', 'allocation_long_deploy', 'allocation_deploy']
-        wave_data_str_cols = ['ticker_time_frame', 'macd_state']
+        wave_data_str_cols = ['symbol', 'ticker_time_frame', 'macd_state']
         waveview_data = waveview[wave_data_str_cols + wave_data_num_cols].copy()
         for col in wave_data_num_cols:
             waveview_data[col] = round(waveview_data[col])
@@ -2015,7 +2015,7 @@ def refresh_chess_board__revrec(
         
         waveview_data['sell_trigbee_date'] = waveview_data['sell_trigbee_date'].apply(to_iso_datetime)
         # print(waveview_data['sell_trigbee_date'])
-
+        print(storygauge.index)
         for symbol in storygauge.index:
             token = waveview_data[waveview_data['symbol'] == symbol]
             if not token.empty:

@@ -260,7 +260,7 @@ def read_user_db(cur):
     except Exception as e:
         raise f'AUTH ERROR READ USERS{e}'
 
-def signin_main(page=None):
+def signin_main(page='demo'):
     """Return True or False if the user is signed in"""
     ip_address = return_app_ip()
     st.session_state['ip_address'] = ip_address
@@ -335,25 +335,23 @@ def signin_main(page=None):
             preauthorized={"emails": "na"},
         )
         
-        # st.write(st.session_state)
-        # if 'stefanstapinski@gmail.com' in st.session_state['auth_email']:
-        #     print("YESSS")
-        #     authentication_status = True
-        #     # st.session_state['name'] = 'stefanstapinski@yahoo.com'
-        #     # st.session_state['auth_email'] = "stefanstapinski@yahoo.com"
-        #     # st.session_state['auth_name'] = "Kings Guest"
-        #     # st.session_state['auth_pw'] = os.environ.get("quantqueen_pw")
-        #     name, authentication_status, email = authenticator.direct_login(st.session_state['auth_email'], os.environ.get("quantqueen_pw"))
-        #     return authenticator
-
 
         # Check login. Automatically gets stored in session state
         if 'sneak_key' in st.session_state and st.session_state['sneak_key'].lower() == 'family':
+            st.info("Welcome, This Portoflio is currently being managed by James-CFP, an AI Agentic Trader, FEEL free to utilize the Trading Tool, James will manage all Trades you Place")
             authentication_status = True
-            st.session_state['name'] = 'stefanstapinski@yahoo.com'
-            st.session_state['auth_email'] = "stefanstapinski@yahoo.com"
+            client_user = 'stapinskistefan@gmail.com'
+            st.session_state['name'] = client_user
+            st.session_state['auth_email'] = client_user
             st.session_state['auth_name'] = "Kings Guest"
             st.session_state['auth_pw'] = os.environ.get("quantqueen_pw")
+            st.session_state['sneak_peak'] = True
+            st.session_state["username"] = client_user
+            st.session_state["client_user"] = client_user
+            st.session_state['db_root'] = 'db__stapinskistefan_99757341'
+            st.session_state['prod'] = False
+            st.session_state['authentication_status'] = False
+
             name, authentication_status, email = authenticator.direct_login(st.session_state['auth_email'], os.environ.get("quantqueen_pw"))
             st.session_state['authentication_status'] = True
             authenticator.logout("Logout", location='sidebar')

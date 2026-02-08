@@ -1583,6 +1583,12 @@ const AgGrid = (props: Props) => {
             headerHeight={30}
             rowHeight={30}
             onGridReady={onGridReady}
+            onFilterChanged={() => {
+              // ✅ Recalculate subtotals when filters change
+              if (gridRef.current?.api && kwargs.subtotal_cols?.length > 0) {
+                calculateAndUpdateSubtotals(gridRef.current.api);
+              }
+            }}
             autoGroupColumnDef={autoGroupColumnDef}
             animateRows={true}
             suppressAggFuncInHeader={true}

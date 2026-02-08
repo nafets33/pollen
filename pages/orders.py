@@ -147,6 +147,8 @@ if __name__ == '__main__':
 
     
     signin_main(page="pollenq")
+    if st.button("Return HOME", use_container_width=True):
+        st.switch_page('pollen.py')
 
     seconds_to_market_close = st.session_state['seconds_to_market_close'] if 'seconds_to_market_close' in st.session_state else 0
     # mkhrs = st.session_state['mkhrs']
