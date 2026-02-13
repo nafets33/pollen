@@ -25,7 +25,7 @@ def workerbees_multiprocess_pool(prod, qcp_s, num_workers=5, reset_only=False):
     #     print("Only Allowed 10 Processes to Run At Once")
     #     num_workers = 10
 
-    send_email(subject=f"WorkerBees Online Production is {prod}_{num_workers}")
+    # send_email(subject=f"WorkerBees Online Production is {prod}_{num_workers}")
 
     def runpool(qcp_s):
         x = []
@@ -77,4 +77,4 @@ if __name__ == "__main__":
             time.sleep(3)
         else:
             break
-    workerbees_multiprocess_pool(prod, qcp_s, num_workers=5, reset_only=False)
+    workerbees_multiprocess_pool(prod, qcp_s, num_workers=4, reset_only=False)

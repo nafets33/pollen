@@ -23,7 +23,7 @@ import argparse
 # from pages.orders import order_grid, config_orders_cols
 from pages.conscience import queens_conscience
 
-from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator, standard_AGgrid
+from chess_piece.app_hive import mark_down_text, sac_menu_buttons, set_streamlit_page_config_once, admin_queens_active, stop_queenbee, pollenq_button_source, trigger_airflow_dag, queen__account_keys, page_line_seperator, standard_AGgrid, pollebDB_connections_status
 from chess_piece.king import hive_master_root_db, kingdom__global_vars, hive_master_root, ReadPickleData, return_QUEENs__symbols_data, PickleData, return_app_ip
 from chess_piece.queen_hive import return_all_client_users__db, init_swarm_dbs, kingdom__grace_to_find_a_Queen, return_queen_controls, stars, return_timestamp_string, refresh_account_info, setup_instance, add_key_to_app, init_queenbee, hive_dates, return_market_hours, return_Ticker_Universe, init_charlie_bee, pollen_themes
 from chess_piece.queen_mind import kings_order_rules
@@ -439,15 +439,15 @@ def pollenq(sandbox=False, demo=False):
     with st.spinner("Checking Your Keys...hang tight"):
         authenticator = signin_main(page="pollenq")
 
-    authorized_user = st.session_state['authorized_user']
-    client_user = st.session_state["username"]
-    prod = st.session_state['prod']
-
     admin_pq = st.session_state.get('admin', False)
     if st.session_state['authentication_status'] != True: ## None or False
         st.warning("Sign In")
         display_for_unAuth_client_user()
         st.stop()
+    
+    authorized_user = st.session_state['authorized_user']
+    client_user = st.session_state["username"]
+    prod = st.session_state['prod']
     # use API keys from user            
     prod = False if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] or sandbox else prod
     print("PROD STATUS:", prod)
@@ -705,6 +705,7 @@ def pollenq(sandbox=False, demo=False):
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')
     if admin_pq:
+        st.warning("Admin Controls Below - Use with Caution")
         if st.button("Reset Queen Controls"):
             king_controls_queen=return_queen_controls(stars)
             QUEEN_KING['king_controls_queen'] = king_controls_queen
@@ -738,5 +739,7 @@ if __name__ == '__main__':
     # namespace = parser.parse_args()
     # admin_pq = namespace.admin
     set_streamlit_page_config_once()
+    PollenDatabase.init_connection_pool(minconn=3, maxconn=50)
     pollenq()
-    # st.write(st.session_state.items())
+    if st.session_state.get('admin', False):
+        pollebDB_connections_status()

@@ -3572,7 +3572,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         if orders_v2:
             s = datetime.now()
             client_order_store = "queen_orders" if prod else 'queen_orders_sandbox'
-            order_rows = PollenDatabase.get_keys_by_db_root(client_order_store, db_root)
+            order_rows = PollenDatabase.get_keys_by_db_root(client_order_store, db_root, server=main_server)
             print("ORDER ROWS", len(order_rows))
             if len(order_rows) == 0:
                 print("No Orders Found for", db_root)

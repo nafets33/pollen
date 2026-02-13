@@ -16,6 +16,8 @@ import json
 import requests
 from email.message import EmailMessage
 import smtplib
+import toml
+
 
 
 from dotenv import load_dotenv
@@ -505,17 +507,43 @@ def print_line_of_error(e='print_error_message'):
     print(e, exc_type, exc_tb.tb_lineno)
     return exc_type, exc_tb.tb_lineno
 
+# def streamlit_config_colors():
+    # # read config file and parse from there
+    # return {
+    #     "default_text_color": "#1A202C",
+    #     "default_font": "sans serif",
+    #     "default_yellow_color": "#E6C93B",
+    #     "default_background_color": "#FFFFFF",
+    # }
+
+
 def streamlit_config_colors():
-    # read config file and parse from there
-    k_colors = {
-        "default_text_color": "#1A202C",
-        "default_font": "monospace",
-        "default_yellow_color": "#E6C93B",
-        "default_background_color": "#FFFFFF",
-    }
-
-    return k_colors
-
+    try:
+        # Path to your Streamlit config file
+        config_path = os.path.join(hive_master_root(), ".streamlit", "config.toml")
+        
+        # Read the TOML file
+        config = toml.load(config_path)
+        
+        # Extract theme colors
+        theme = config.get("theme", {})
+        
+        return {
+            "default_text_color": theme.get("textColor", "#1A202C"),
+            "default_font": theme.get("font", "sans serif"),
+            "default_yellow_color": theme.get("primaryColor", "#E6C93B"),
+            "default_background_color": theme.get("backgroundColor", "#FFFFFF"),
+            "secondary_background_color": theme.get("secondaryBackgroundColor", "#F0F2F6"),
+        }
+    except Exception as e:
+        print(f"Error reading config.toml: {e}")
+        # Return defaults if config can't be read
+        return {
+            "default_text_color": "#1A202C",
+            "default_font": "sans serif",
+            "default_yellow_color": "#E6C93B",
+            "default_background_color": "#FFFFFF",
+        }
 
 def copy_directory(src, dst):
     # Check if the source directory exists

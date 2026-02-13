@@ -163,6 +163,112 @@ def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, 
     return True
 
 
+### TESTING ASYNCIO BATCH WRITE
+# def write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting=False, backtesting_star=None, pg_migration=False, upsert_to_main_server=upsert_to_main_server):
+#     s = datetime.now(est)
+#     table_name = "pollen_store" if not backtesting else "pollen_store_backtesting"
+
+#     def process_batch(batch_data, allow_pg_migration):
+#         """Process a batch of data - either to database or pickle files"""
+#         try:
+#             if allow_pg_migration:
+#                 # Batch database write
+#                 data_dict = {item['key']: item['data'] for item in batch_data}
+#                 PollenDatabase.upsert_multiple(table_name, data_dict, console=False, main_server=upsert_to_main_server)
+#             else:
+#                 # Individual pickle writes (file I/O is already fast)
+#                 for item in batch_data:
+#                     PickleData(item['pickle_file'], item['data'], console=False)
+#             return len(batch_data)
+#         except Exception as e:
+#             print_line_of_error(f"Batch processing error: {e}")
+#             # Try individual writes as fallback
+#             success_count = 0
+#             for item in batch_data:
+#                 try:
+#                     if allow_pg_migration:
+#                         PollenDatabase.upsert_data(table_name, item['key'], item['data'], console=False, main_server=upsert_to_main_server)
+#                     else:
+#                         PickleData(item['pickle_file'], item['data'], console=False)
+#                     success_count += 1
+#                 except Exception as e2:
+#                     print(f"Failed to write {item['key']}: {e2}")
+#             return success_count
+
+#     try:
+#         symbols_pollenstory_dbs = workerbee_dbs_backtesting_root() if backtesting else workerbee_dbs_root()
+#         symbols_STORY_bee_root = workerbee_dbs_backtesting_root__STORY_bee() if backtesting else workerbee_dbs_root__STORY_bee()
+#         macd_part_fname = "__{}-{}-{}".format(MACD_settings["fast"], MACD_settings["slow"], MACD_settings["smooth"]) if backtesting else ""
+        
+#         allow_pg_migration = pg_migration and not backtesting
+        
+#         # Collect all pollen_story data
+#         pollen_story_batch = []
+#         for ticker_time_frame in pollens_honey["pollen_story"]:
+#             ticker, ttime, tframe = ticker_time_frame.split("_")
+#             if ticker not in pollenstory_tickers:
+#                 continue
+            
+#             key = f"POLLEN_STORY_{ticker_time_frame}{macd_part_fname}"
+#             pickle_file = os.path.join(symbols_pollenstory_dbs, f"{ticker_time_frame}{macd_part_fname}.pkl")
+#             data = {"pollen_story": pollens_honey["pollen_story"][ticker_time_frame]}
+            
+#             pollen_story_batch.append({
+#                 'key': key,
+#                 'pickle_file': pickle_file,  # ✅ FIXED: Added pickle_file
+#                 'data': data,
+#                 'ticker_time_frame': ticker_time_frame
+#             })
+        
+#         # Collect all STORY_bee data
+#         story_bee_batch = []
+#         for ticker_time_frame in pollens_honey["conscience"]["STORY_bee"]:
+#             ticker, ttime, tframe = ticker_time_frame.split("_")
+#             # Apply same filter as pollen_story for consistency
+#             if ticker not in pollenstory_tickers:
+#                 continue
+                
+#             key = f"STORY_BEE_{ticker_time_frame}{macd_part_fname}"
+#             pickle_file = os.path.join(symbols_STORY_bee_root, f"{ticker_time_frame}{macd_part_fname}.pkl")
+#             data = {"STORY_bee": pollens_honey["conscience"]["STORY_bee"][ticker_time_frame]}
+            
+#             story_bee_batch.append({
+#                 'key': key,
+#                 'pickle_file': pickle_file,  # ✅ FIXED: Added pickle_file
+#                 'data': data,
+#                 'ticker_time_frame': ticker_time_frame
+#             })
+        
+#         # Check if there's data to process
+#         if len(pollen_story_batch) == 0 and len(story_bee_batch) == 0:
+#             print("No data to write")
+#             return False
+        
+#         # Process batches
+#         BATCH_SIZE = 50
+#         ps_success = 0
+#         sb_success = 0
+        
+#         # Process pollen_story in batches
+#         for i in range(0, len(pollen_story_batch), BATCH_SIZE):
+#             batch = pollen_story_batch[i:i + BATCH_SIZE]
+#             ps_success += process_batch(batch, allow_pg_migration)
+        
+#         # Process STORY_bee in batches
+#         for i in range(0, len(story_bee_batch), BATCH_SIZE):
+#             batch = story_bee_batch[i:i + BATCH_SIZE]
+#             sb_success += process_batch(batch, allow_pg_migration)
+        
+#         e = datetime.now(est)
+#         msg = f"Wrote {ps_success}/{len(pollen_story_batch)} pollen_story and {sb_success}/{len(story_bee_batch)} STORY_bee records in {(e - s).total_seconds():.2f}s"
+#         print(msg)
+        
+#         return True
+        
+#     except Exception as e:
+#         print_line_of_error(f"write_pollenstory_storybee error: {e}")
+#         return False
+
 
 def update_speed_gauges(pollens_honey, speed_gauges=None):
     # for each star append last macd state
@@ -1103,19 +1209,21 @@ def queen_workerbees(
 
         pollens_honey = update_speed_gauges(pollens_honey, speed_gauges)
         s = datetime.now()
-        write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration=pg_migration, upsert_to_main_server=upsert_to_main_server)
-        write_time = (datetime.now() - s).total_seconds()
-        
-        print(f'{queens_chess_piece}: hunt {hunt_time} : story {story_time} : write {write_time}')
-        
-        qcp_hunt = (datetime.now(est) - start_time).total_seconds()
+        if write_pollenstory_storybee(pollens_honey, MACD_settings, backtesting, backtesting_star, pg_migration=pg_migration, upsert_to_main_server=upsert_to_main_server):
+            write_time = (datetime.now() - s).total_seconds()
+            
+            print(f'{queens_chess_piece}: hunt {hunt_time} : story {story_time} : write {write_time}')
+            
+            qcp_hunt = (datetime.now(est) - start_time).total_seconds()
 
-        betty_bee[f"{queens_chess_piece}_cycle_time.pkl"] = qcp_hunt
-        # WORKERBEE add deque([], 89)
-        if f"{queens_chess_piece}_avg_cycle_time.pkl" not in betty_bee.keys():
-           betty_bee[f"{queens_chess_piece}_avg_cycle_time"] = deque([], 1500)
+            betty_bee[f"{queens_chess_piece}_cycle_time.pkl"] = qcp_hunt
+            # WORKERBEE add deque([], 89)
+            if f"{queens_chess_piece}_avg_cycle_time.pkl" not in betty_bee.keys():
+                betty_bee[f"{queens_chess_piece}_avg_cycle_time"] = deque([], 1500)
+            else:
+                betty_bee[f"{queens_chess_piece}_avg_cycle_time"].append(qcp_hunt)
         else:
-            betty_bee[f"{queens_chess_piece}_avg_cycle_time"].append(qcp_hunt)
+            return False
 
         # PickleData(
         #     pickle_file=os.path.join(db_root, f"{queens_chess_piece}_betty_bee.pkl"),
@@ -1383,17 +1491,17 @@ def queen_workerbees(
                             # print(qcp, "workbee too fast")
                             continue
                         WORKERBEE[qcp]['last_modified'] = now_time
-                        ticker_star_hunter_bee(
+                        if ticker_star_hunter_bee(
                             WORKERBEE=WORKERBEE,
                             QUEENBEE=QUEENBEE,
                             queens_chess_piece=qcp,
                             speed_gauges=speed_gauges,
                             MACD_WAVES=MACD_WAVES,
-                        )
-                        e = datetime.now(est)
-                        print(f"Worker Refreshed {qcp} : {(e - s)} seconds : {QUEENBEE['workerbees'][qcp].get('tickers')}")
-                        # else:
-                        #     print("star Frequency not Met")
+                        ):
+                            e = datetime.now(est)
+                            print(f"Worker Refreshed {qcp} : {(e - s)} seconds : {QUEENBEE['workerbees'][qcp].get('tickers')}")
+                        else:
+                            print(f"ERROR Worker NOT Refreshed {qcp} : {QUEENBEE['workerbees'][qcp].get('tickers')}")
 
                 except Exception as e:
                     print("qtf", e, print_line_of_error())
@@ -1455,6 +1563,8 @@ if __name__ == "__main__":
             
 
     print("printing qcp_s:\n", qcp_s)
+    PollenDatabase.init_connection_pool(minconn=1, maxconn=2)
+
     queen_workerbees(qcp_s=qcp_s, prod=prod, reset_only=reset_only, pg_migration=pg_migration)
 
 #### >>>>>>>>>>>>>>>>>>> END <<<<<<<<<<<<<<<<<<###

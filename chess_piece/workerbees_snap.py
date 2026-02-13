@@ -215,13 +215,13 @@ def get_bulk_snapshots_priceinfo(api, symbols, max_symbols_per_api_call=89):
                                 all_priceinfo.append(priceinfo)
                     
                     chunk_results = len(snapshots) if snapshots else 0
-                    print(f"Successfully processed, symbols in this chunk {chunk_results} ")
+                    print(f"Successfully processed, symbols in this chunk {chunk_results} :: {datetime.now(est).strftime('%Y-%m-%d %H:%M:%S')}")
                                 
                 except Exception as e:
                     print(f"Error fetching bulk snapshots for chunk: {e}")
                     
                 # Small delay between API calls to be respectful
-                time.sleep(0.1)
+                time.sleep(0.33)
         
         # Handle crypto separately (with type conversion too)
         if crypto_symbols:
@@ -521,6 +521,7 @@ def main_workerbees_snap(prod=True, awake=False, save_to_db=True, loglevel='WARN
     if awake:
         last_print_time = datetime.now()  # Add this
         while True:
+            time.sleep(.3)
             mkhrs = return_market_hours(trading_days=trading_days)
             if mkhrs != 'open':
                 # print("Market is closed.")

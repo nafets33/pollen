@@ -787,6 +787,7 @@ def chessboard(revrec, QUEEN_KING, ticker_allowed, themes, admin=False, qcp_bees
 # update board
 
 if __name__ == '__main__':
+    PollenDatabase.init_connection_pool(minconn=3, maxconn=15)
 
     signin_main()
 

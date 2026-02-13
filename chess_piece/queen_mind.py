@@ -2014,8 +2014,7 @@ def refresh_chess_board__revrec(
 
         
         waveview_data['sell_trigbee_date'] = waveview_data['sell_trigbee_date'].apply(to_iso_datetime)
-        # print(waveview_data['sell_trigbee_date'])
-        print(storygauge.index)
+
         for symbol in storygauge.index:
             token = waveview_data[waveview_data['symbol'] == symbol]
             if not token.empty:

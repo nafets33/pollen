@@ -1761,6 +1761,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         print('queensconscience', print_line_of_error(e))
 
 if __name__ == '__main__':
+    PollenDatabase.init_connection_pool(minconn=3, maxconn=15)
 
 
     signin_main(page="pollenq")

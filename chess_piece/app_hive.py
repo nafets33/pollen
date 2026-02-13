@@ -176,14 +176,14 @@ def sac_menu_buttons(main='pollen'):
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
             # sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
-        ], format_func='title', align='left')
+        ], format_func='title', align='left', color='#E6C93B')
     elif main == 'Account':
         menu_buttons = sac.buttons([
             sac.ButtonsItem(label='account', icon='key'),
 
             sac.ButtonsItem(label='Queen', icon='house'),
             # sac.ButtonsItem(label='Log Out', icon='key'),
-        ], format_func='title', align='center')
+        ], format_func='title', align='center', color='#E6C93B')
 
     elif main == 'demo':
             menu_buttons = sac.buttons([
@@ -196,7 +196,8 @@ def sac_menu_buttons(main='pollen'):
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
             # sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
-            ])
+            ],
+            format_func='title', align='left', color='#E6C93B')
     return menu_buttons
 
 def sac_tabs(tab_names=["Tab 1", "Tab 2", "Tab 3"], key="tabs"):
@@ -2451,6 +2452,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_m
     default_text_color = k_colors['default_text_color'] # = '#59490A'
     default_font = k_colors['default_font'] # = "sans serif"
     default_yellow_color = k_colors['default_yellow_color'] # = '#C5B743'
+    over_theme = {'option_active':'#E6C93B'} # {'txc_inactive': '#FB070A'} #'txc_active':'#59490A','option_active':'#FB6464'} #'menu_background':'black',
     
 
 
@@ -2484,6 +2486,7 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_m
 
         menu_id = hc.nav_bar(
             menu_definition=menu_data,
+            # override_theme=over_theme,
             home_name=f'pollen {prod_name}',
             login_name='Account',
             hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
@@ -2491,13 +2494,11 @@ def menu_bar_selection(prod_name_oppiste, prod_name, prod, menu,hide_streamlit_m
             sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
         )
     else:
-        over_theme = {'option_active':'#B7C8D6'} # {'txc_inactive': '#FB070A'} #'txc_active':'#59490A','option_active':'#FB6464'} #'menu_background':'black',
         # over_font = {'font-class':'h2','font-size':'100%'}
         # over_theme = {'txc_inactive': "#0D93FB"}
         menu_id = hc.nav_bar(
             menu_definition=menu_data,
-            override_theme=over_theme,
-            # font_styling=over_font,
+            # override_theme=over_theme,
             home_name=f'pollen {prod_name}',
             login_name='Account',
             hide_streamlit_markers=hide_streamlit_markers, #will show the st hamburger as well as the navbar now!
@@ -2620,3 +2621,22 @@ def wave_grid(client_user, revrec, symbols, ip_address, prompt_order_rules, togg
     ) 
 
 
+def pollebDB_connections_status():
+    with st.sidebar:
+        if st.button("Check DB Connections"):
+            stats = PollenDatabase.check_pg_connections(server=True)
+            
+            st.write("### PostgreSQL Connection Stats")
+            st.metric("Current Connections", stats['total'])
+            st.metric("Max Connections", stats['max'])
+            st.metric("% Used", f"{stats['total']/stats['max']*100:.1f}%")
+            
+            st.write("**By State:**")
+            for state, count in stats['by_state']:
+                st.write(f"- {state}: {count}")
+            
+            st.write("**Local Pool:**")
+            st.write(f"Used: {stats['pool_local']['used']}/{stats['pool_local']['max']}")
+            
+            st.write("**Server Pool:**")
+            st.write(f"Used: {stats['pool_server']['used']}/{stats['pool_server']['max']}")

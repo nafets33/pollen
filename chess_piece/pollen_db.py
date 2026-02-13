@@ -10,6 +10,7 @@ import json
 import psycopg2
 from psycopg2 import sql
 from psycopg2 import extras
+from psycopg2 import pool
 
 server = os.getenv("server", False)
 
@@ -85,19 +86,175 @@ class PollenJsonDecoder(json.JSONDecoder):
                 return collections.deque(item["value"])
         return item
 
+class PooledConnection:
+    """
+    Wrapper to ensure pooled connections are returned to pool, not closed.
+    Transparent to calling code - works exactly like a normal connection.
+    """
+    def __init__(self, conn, pool):
+        self._conn = conn
+        self._pool = pool
+    
+    def __enter__(self):
+        # Return the actual connection for use in 'with' block
+        return self._conn
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Return connection to pool instead of closing it
+        if exc_type is not None:
+            self._conn.rollback()  # Rollback on error
+        self._pool.putconn(self._conn)  # Put back in pool
+        return False
+    
+    def __getattr__(self, name):
+        # Delegate all other method calls to the real connection
+        # This makes it transparent - conn.cursor() works normally
+        return getattr(self._conn, name)
+
+    def cursor(self, *args, **kwargs):
+        # Explicit cursor method for clarity
+        return self._conn.cursor(*args, **kwargs)
+    
+    def commit(self):
+        return self._conn.commit()
+    
+    def rollback(self):
+        return self._conn.rollback()
 
 class PollenDatabase:
-    @staticmethod
-    def get_connection(server=server):
+    # Connection pools - shared across all instances
+    _connection_pool_server = None
+    _connection_pool_local = None
+    _pool_initialized = False
+    
+    @classmethod
+    def init_connection_pool(cls, minconn=2, maxconn=10, server=server):
+        """
+        Initialize connection pools once at application startup.
+        Call this before any database operations.
+        """
+        if cls._pool_initialized:
+            return
+        
+        try:
+            if server:
+                # Server pool initialization
+                DATABASE_HOST_SERVER = os.getenv("POLLEN_DATABASE_host_server")
+                DATABASE_PORT_SERVER = os.getenv("POLLEN_DATABASE_port_server")
+                DATABASE_NAME_SERVER = os.getenv("POLLEN_DATABASE_name_server")
+                DATABASE_USER_SERVER = os.getenv("POLLEN_DATABASE_user_server")
+                DATABASE_PASS_SERVER = os.getenv("POLLEN_DATABASE_pass_server")
+            
+                cls._connection_pool_server = pool.ThreadedConnectionPool(
+                    minconn, maxconn,
+                    host=DATABASE_HOST_SERVER,
+                    port=DATABASE_PORT_SERVER,
+                    dbname=DATABASE_NAME_SERVER,
+                    user=DATABASE_USER_SERVER,
+                    password=DATABASE_PASS_SERVER,
+                    connect_timeout=10
+                )
+                print(f"✓ Server connection pool initialized (min={minconn}, max={maxconn})")
+            else:
+                # Local pool initialization
+                DATABASE_HOST = os.getenv("POLLEN_DATABASE_host", "localhost")
+                DATABASE_PORT = os.getenv("POLLEN_DATABASE_port", "5432")
+                DATABASE_NAME = os.getenv("POLLEN_DATABASE_name", "pollen")
+                DATABASE_USER = os.getenv("POLLEN_DATABASE_user", "postgres")
+                DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass", "12345")
+                
+                cls._connection_pool_local = pool.ThreadedConnectionPool(
+                    minconn, maxconn,
+                    host=DATABASE_HOST,
+                    port=DATABASE_PORT,
+                    dbname=DATABASE_NAME,
+                    user=DATABASE_USER,
+                    password=DATABASE_PASS,
+                    connect_timeout=10
+                )
+                print(f"✓ Local connection pool initialized (min={minconn}, max={maxconn})")
+                
+                cls._pool_initialized = True
+            
+        except Exception as e:
+            print(f"❌ Error initializing connection pool: {e}")
+            print_line_of_error()
+            cls._pool_initialized = False
+    
+    @classmethod
+    def return_connection(cls, conn, server=server):
+        """
+        Return a connection back to the pool. Call this if you get a connection
+        without using 'with' statement. Usually not needed as 'with' handles this.
+        """
+        if conn is None:
+            return
+        
+        try:
+            # Handle PooledConnection wrapper
+            if isinstance(conn, PooledConnection):
+                conn._pool.putconn(conn._conn)
+            elif server and cls._connection_pool_server:
+                cls._connection_pool_server.putconn(conn)
+            elif not server and cls._connection_pool_local:
+                cls._connection_pool_local.putconn(conn)
+            else:
+                conn.close()  # Only close if not from pool
+        except Exception as e:
+            print(f"Error returning connection: {e}")
+            try:
+                if isinstance(conn, PooledConnection):
+                    conn._conn.close()
+                else:
+                    conn.close()
+            except:
+                pass
+    
+    @classmethod
+    def close_all_connections(cls):
+        """
+        Close all pooled connections. Call this on application shutdown.
+        """
+        try:
+            if cls._connection_pool_server:
+                cls._connection_pool_server.closeall()
+                print("✓ Server connection pool closed")
+            if cls._connection_pool_local:
+                cls._connection_pool_local.closeall()
+                print("✓ Local connection pool closed")
+            cls._pool_initialized = False
+        except Exception as e:
+            print(f"Error closing connection pools: {e}")
+
+    @classmethod
+    def get_connection(cls, server=server):
+        """
+        Get a connection from the pool with proper context management.
+        Returns a connection that will be returned to pool (not closed) when used with 'with'.
+        """
+        if not cls._pool_initialized:
+            cls.init_connection_pool()
+        
+        # Try to get from pool
+        try:
+            if server and cls._connection_pool_server:
+                conn = cls._connection_pool_server.getconn()
+                # Wrap to ensure it returns to pool instead of closing
+                return PooledConnection(conn, cls._connection_pool_server)
+            elif not server and cls._connection_pool_local:
+                conn = cls._connection_pool_local.getconn()
+                return PooledConnection(conn, cls._connection_pool_local)
+        except Exception as e:
+            print(f"⚠ Pool connection failed, using direct connection: {e}")
+        
+        # Fallback to direct connection
         if server:
-            # Reading connection details from environment variables
             DATABASE_HOST = os.getenv("POLLEN_DATABASE_host_server")
             DATABASE_PORT = os.getenv("POLLEN_DATABASE_port_server")
             DATABASE_NAME = os.getenv("POLLEN_DATABASE_name_server")
             DATABASE_USER = os.getenv("POLLEN_DATABASE_user_server")
             DATABASE_PASS = os.getenv("POLLEN_DATABASE_pass_server")
         else:
-            # Reading connection details from environment variables
             DATABASE_HOST = os.getenv("POLLEN_DATABASE_host", "localhost")
             DATABASE_PORT = os.getenv("POLLEN_DATABASE_port", "5432")
             DATABASE_NAME = os.getenv("POLLEN_DATABASE_name", "pollen")
@@ -112,9 +269,74 @@ class PollenDatabase:
             password=DATABASE_PASS,
         )
 
+
+    @classmethod
+    def check_pg_connections(cls, server=True):
+        """Check current PostgreSQL connection statistics"""
+        queries = {
+            'total_connections': """
+                SELECT count(*) as total_connections 
+                FROM pg_stat_activity 
+                WHERE datname = current_database();
+            """,
+            'max_connections': """
+                SELECT setting::int as max_connections 
+                FROM pg_settings 
+                WHERE name = 'max_connections';
+            """,
+            'connections_by_state': """
+                SELECT state, count(*) as count 
+                FROM pg_stat_activity 
+                WHERE datname = current_database()
+                GROUP BY state;
+            """,
+            'pool_stats': f"""
+                Pool Status (Local):
+                - Used: {cls._connection_pool_local._used if cls._connection_pool_local else 'N/A'}
+                - Max: {cls._connection_pool_local.maxconn if cls._connection_pool_local else 'N/A'}
+                
+                Pool Status (Server):
+                - Used: {cls._connection_pool_server._used if cls._connection_pool_server else 'N/A'}
+                - Max: {cls._connection_pool_server.maxconn if cls._connection_pool_server else 'N/A'}
+            """
+        }
+        
+        results = {}
+        with cls.get_connection(server=server) as conn:
+            cursor = conn.cursor()
+            
+            # Total connections
+            cursor.execute(queries['total_connections'])
+            results['total'] = cursor.fetchone()[0]
+            
+            # Max connections
+            cursor.execute(queries['max_connections'])
+            results['max'] = cursor.fetchone()[0]
+            
+            # By state
+            cursor.execute(queries['connections_by_state'])
+            results['by_state'] = cursor.fetchall()
+            
+            cursor.close()
+        
+        # Pool stats (doesn't need DB query)
+        results['pool_local'] = {
+            'used': len(cls._connection_pool_local._used) if cls._connection_pool_local else 0,
+            'max': cls._connection_pool_local.maxconn if cls._connection_pool_local else 0
+        }
+        results['pool_server'] = {
+            'used': len(cls._connection_pool_server._used) if cls._connection_pool_server else 0,
+            'max': cls._connection_pool_server.maxconn if cls._connection_pool_server else 0
+        }
+        
+        return results
+
     @staticmethod
     def return_db_conn(return_curser=False):
-        
+        """
+        DEPRECATED: Returns raw connection that caller must close manually.
+        Consider using 'with PollenDatabase.get_connection()' instead.
+        """
         con = PollenDatabase.get_connection()
         cur = con.cursor()
         if return_curser:
@@ -136,6 +358,7 @@ class PollenDatabase:
         con.commit()
         
         return con, cur
+
 
     @staticmethod
     def create_table_if_not_exists(table_name):
@@ -180,24 +403,19 @@ class PollenDatabase:
         :param key: The key to check for.
         :return: True if the key exists, False otherwise.
         """
-        conn = None
         try:
-            conn = PollenDatabase.get_connection()
-            cur = conn.cursor()
+            with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+                # Query to check if the key exists in the table
+                query = f"SELECT EXISTS (SELECT 1 FROM {table_name} WHERE key = %s);"
+                cur.execute(query, (key,))
+                result = cur.fetchone()
 
-            # Query to check if the key exists in the table
-            query = f"SELECT EXISTS (SELECT 1 FROM {table_name} WHERE key = %s);"
-            cur.execute(query, (key,))
-            result = cur.fetchone()
-
-            # Return True if the key exists, False otherwise
-            return result[0]
+                # Return True if the key exists, False otherwise
+                return result[0]
 
         except Exception as e:
             return False
-        finally:
-            if conn:
-                conn.close()
+    
 
     @staticmethod
     def get_table_name():
@@ -241,19 +459,7 @@ class PollenDatabase:
         """
         # Ensure the table exists before attempting to upsert data
         PollenDatabase.create_table_if_not_exists(table_name)
-        try:
-            # print(f"saving {key}  size: {sys.getsizeof(value)}")
-            # Check if 'last_modified' column exists
-            # with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
-            #     cur.execute(f"""
-            #         SELECT column_name 
-            #         FROM information_schema.columns 
-            #         WHERE table_name = %s AND column_name = 'last_modified'
-            #     """, (table_name,))
-            #     has_last_modified = cur.fetchone() is not None
-            # if not has_last_modified:
-            #     PollenDatabase.update_table_schema(table_name)
-            
+        try:            
             with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
                 value_json = json.dumps(value, cls=PollenJsonEncoder)
 
@@ -280,7 +486,7 @@ class PollenDatabase:
         return True
 
     @staticmethod
-    def upsert_multiple(table_name, data_dict, console=False):
+    def upsert_multiple(table_name, data_dict, console=False, main_server=False):
         """
         Bulk upsert dictionary of data into the specified table.
         Much faster than individual upserts.
@@ -289,13 +495,14 @@ class PollenDatabase:
             table_name: Table to upsert into
             data_dict: Dict where keys are row keys, values are data to store
             console: Print progress
+            main_server: Whether to use main server connection
         """
         if not data_dict:
             return
         
         PollenDatabase.create_table_if_not_exists(table_name)
         
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+        with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
             try:
                 # Prepare records for batch insert (key, data, last_modified)
                 records = [
@@ -318,63 +525,61 @@ class PollenDatabase:
                 conn.commit()
                 
                 if console:
-                    print(f"✅ Bulk upserted {len(data_dict)} records to {table_name}")
+                    print(f"✅ Bulk upserted {len(data_dict)} records to {table_name} server={main_server}")
 
             except Exception as e:
                 print(f"❌ Error during bulk upsert: {e}")
                 conn.rollback()
+                raise  # Re-raise to let caller handle the error
+
 
     @staticmethod
     def retrieve_data(table_name, key, main_server=server):
-        conn = None
         try:
-            conn = PollenDatabase.get_connection(main_server)
-            cur = conn.cursor()
+            with PollenDatabase.get_connection(main_server) as conn, conn.cursor() as cur:
+                # Retrieve using the configured table name
+                cur.execute(
+                    f"SELECT data FROM {table_name} WHERE key = %s;",
+                    (key,),
+                )
+                result = cur.fetchone()
 
-            # Retrieve using the configured table name
-            cur.execute(
-                f"SELECT data FROM {table_name} WHERE key = %s;",
-                (key,),
-            )
-            result = cur.fetchone()
+                if result:
+                    # Check the type of the result
+                    if isinstance(result[0], str):
+                        serialized_data = result[0]
+                    elif isinstance(result[0], dict):
+                        serialized_data = json.dumps(result[0])
 
-            if result:
-                # Check the type of the result
-                if isinstance(result[0], str):
-                    serialized_data = result[0]
-                elif isinstance(result[0], dict):
-                    serialized_data = json.dumps(result[0])
-
-                # Always deserialize using custom decoder
-                data = json.loads(serialized_data, cls=PollenJsonDecoder)
-                if len(data) == 0:
-                    print('NO DATA AVAIL for ', key)
-                    return None
-                
-                if isinstance(data, dict):
-                    data['key'] = key
-                    data['table_name'] = table_name
-                    data['db_root'] = key.split("-")[0]
-                    return data
-                elif isinstance(data, list):
-                    # Optionally wrap in a dict, or just return the list
-                    return {
-                        "key": key,
-                        "table_name": table_name,
-                        "db_root": key.split("-")[0],
-                        "data": data
-                    }
-                else:
-                    print(f"Unexpected data type for key {key}: {type(data)}")
-                    return data
+                    # Always deserialize using custom decoder
+                    data = json.loads(serialized_data, cls=PollenJsonDecoder)
+                    if len(data) == 0:
+                        print('NO DATA AVAIL for ', key)
+                        return None
+                    
+                    if isinstance(data, dict):
+                        data['key'] = key
+                        data['table_name'] = table_name
+                        data['db_root'] = key.split("-")[0]
+                        return data
+                    elif isinstance(data, list):
+                        # Optionally wrap in a dict, or just return the list
+                        return {
+                            "key": key,
+                            "table_name": table_name,
+                            "db_root": key.split("-")[0],
+                            "data": data
+                        }
+                    else:
+                        print(f"Unexpected data type for key {key}: {type(data)}")
+                        return data
 
         except Exception as e:
-            print_line_of_error(f'ERROR RETERIVING DATA PG {e}')
-        finally:
-            if conn:
-                conn.close()
+            print_line_of_error(f'ERROR RETRIEVING DATA PG {e}')
+        
         print(f"Key '{key}' not found in table '{table_name}'.")
         return None
+
 
     @staticmethod
     def copy_table_to_table(source_table, target_table, show_progress=True):
@@ -405,107 +610,93 @@ class PollenDatabase:
 
     @staticmethod
     def retrieve_all_story_bee_data(symbols, time_frame=None, server=server):
-        conn = None
         merged_data = {"STORY_bee": {}}
 
         try:
-            conn = PollenDatabase.get_connection(server)
-            cur = conn.cursor()
+            with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
+                # Base query
+                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%';"
+                conditions = []
+                
+                # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
+                if symbols:
+                    symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
+                    conditions.append(f"({symbol_conditions})")
+                
+                # If time_frame is provided, filter by keys containing the time_frame pattern
+                if time_frame:
+                    conditions.append(f"key LIKE '%{time_frame}%'")
+                
+                # Combine conditions
+                if conditions:
+                    query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%' AND {' AND '.join(conditions)};"
+                
+                cur.execute(query)
+                results = cur.fetchall()
+                
+                for result in results:
+                    key_name = result[0]
+                    data_dict = result[1]
+                    nested_key = key_name.replace('STORY_BEE_', '')
 
-            # Base query
-            query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%';"
-            conditions = []
-            
-            # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
-            if symbols:
-                symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
-                conditions.append(f"({symbol_conditions})")
-            
-            # If time_frame is provided, filter by keys containing the time_frame pattern
-            if time_frame:
-                conditions.append(f"key LIKE '%{time_frame}%'")
-            
-            # Combine conditions
-            if conditions:
-                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'STORY_BEE%' AND {' AND '.join(conditions)};"
-            
-            cur.execute(query)
-            results = cur.fetchall()
-            
-            for result in results:
-                key_name = result[0]
-                data_dict = result[1]
-                nested_key = key_name.replace('STORY_BEE_', '')
+                    if type(data_dict) == str:
+                        data_dict = json.loads(data_dict)
+                        merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
+                    else:
+                        merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
 
-                if type(data_dict) == str:
-                    data_dict = json.loads(data_dict)
-                    merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
-                else:
-                    merged_data["STORY_bee"][nested_key] = data_dict["STORY_bee"]
-
-            merged_data = json.dumps(merged_data)
-            return json.loads(merged_data, cls=PollenJsonDecoder)
+                merged_data = json.dumps(merged_data)
+                return json.loads(merged_data, cls=PollenJsonDecoder)
 
         except Exception as e:
             print_line_of_error(e)
-        finally:
-            if conn:
-                conn.close()
 
         return None
-
 
     @staticmethod
     def retrieve_all_pollenstory_data(symbols, time_frame=None, server=server):
-        conn = None
         merged_data = {"pollenstory": {}}
 
         try:
-            conn = PollenDatabase.get_connection(server)
-            cur = conn.cursor()
+            with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
+                # Base query
+                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%';"
+                conditions = []
+                
+                # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
+                if symbols:
+                    symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
+                    conditions.append(f"({symbol_conditions})")
+                
+                # If time_frame is provided, filter by keys containing the time_frame pattern
+                if time_frame:
+                    conditions.append(f"key LIKE '%{time_frame}%'")
+                
+                # Combine conditions
+                if conditions:
+                    query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%' AND {' AND '.join(conditions)};"
+                
+                cur.execute(query)
+                results = cur.fetchall()
 
-            # Base query
-            query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%';"
-            conditions = []
-            
-            # If symbols are provided, filter by the 3rd underscore value (symbol) in the key
-            if symbols:
-                symbol_conditions = " OR ".join([f"split_part(key, '_', 3) = '{symbol}'" for symbol in symbols])
-                conditions.append(f"({symbol_conditions})")
-            
-            # If time_frame is provided, filter by keys containing the time_frame pattern
-            if time_frame:
-                conditions.append(f"key LIKE '%{time_frame}%'")
-            
-            # Combine conditions
-            if conditions:
-                query = f"SELECT key, data FROM {PollenDatabase.get_table_name()} WHERE key LIKE 'POLLEN_STORY%' AND {' AND '.join(conditions)};"
-            
-            cur.execute(query)
-            results = cur.fetchall()
+                for result in results:
+                    key_name = result[0]
+                    data_dict = result[1]
+                    nested_key = key_name.replace('POLLEN_STORY_', '')
 
-            for result in results:
-                key_name = result[0]
-                data_dict = result[1]
-                nested_key = key_name.replace('POLLEN_STORY_', '')
+                    if type(data_dict) == str:
+                        data_dict = json.loads(data_dict)
+                        merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
+                    else:
+                        merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
 
-                if type(data_dict) == str:
-                    data_dict = json.loads(data_dict)
-                    merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
-                else:
-                    merged_data["pollenstory"][nested_key] = data_dict["pollen_story"]
-
-            merged_data = json.dumps(merged_data)
-            return json.loads(merged_data, cls=PollenJsonDecoder)
+                merged_data = json.dumps(merged_data)
+                return json.loads(merged_data, cls=PollenJsonDecoder)
 
         except Exception as e:
             print_line_of_error(e)
-        finally:
-            if conn:
-                conn.close()
-
+        
         return None
-
 
     @staticmethod
     def get_all_tables():
@@ -813,48 +1004,45 @@ class PollenDatabase:
                     print_line_of_error(f"GET KEYS Error: {e}")
                 return []
 
-
     @staticmethod
-    def get_key_timestamp(table_name='db', server=server):
-        """
-        Return only the last modified timestamp for the given key object table.
-        If db_root is provided, returns the latest last_modified for that db_root.
-        Otherwise, returns the latest last_modified in the table.
-        """
+    def get_specific_keys_timestamps(table_name, keys, server=server):
+        """Fetch timestamps for specific keys only"""
         with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
-            try:
-                query = f"""
-                    SELECT last_modified
-                    FROM {table_name}
-                    ORDER BY last_modified DESC
-                    LIMIT 1;
-                """
-                cur.execute(query)
-                result = cur.fetchone()
-                return result[0] if result else None
-
-            except Exception as e:
-                if table_name != 'client_users':
-                    print_line_of_error(f"GET KEYS Error: {e}")
-                return None
+            placeholders = ','.join(['%s'] * len(keys))
+            query = f"""
+                SELECT key, last_modified
+                FROM {table_name}
+                WHERE key IN ({placeholders});
+            """
+            cur.execute(query, keys)
+            return cur.fetchall()
 
     @staticmethod
     def vacuum_table(table_name='db'):
         try:
-            conn = PollenDatabase.get_connection()  # Get connection
-            conn.autocommit = True  # Ensure autocommit is enabled
+            # Get connection without pooling wrapper for autocommit
+            conn = PollenDatabase.get_connection()
             
-            with conn.cursor() as cur:
+            # For PooledConnection, access the underlying connection
+            if isinstance(conn, PooledConnection):
+                actual_conn = conn._conn
+            else:
+                actual_conn = conn
+                
+            actual_conn.autocommit = True  # Ensure autocommit is enabled
+            
+            with actual_conn.cursor() as cur:
                 cur.execute(f"VACUUM FULL ANALYZE {table_name};")
                 print(f"VACUUM FULL completed for table: {table_name}")
+            
+            # Return connection to pool
+            if isinstance(conn, PooledConnection):
+                conn._pool.putconn(actual_conn)
+            else:
+                actual_conn.close()
 
         except Exception as e:
             print(f"Error running VACUUM FULL: {e}")
-
-        finally:
-            if conn:
-                conn.close()  # Ensure connection is closed
-
 
     @staticmethod
     def delete_table(table_name):
@@ -978,23 +1166,19 @@ class PostgresHandler(logging.Handler):
     def __init__(self, log_name):
         super().__init__()
         self.log_name = log_name
-        self.conn = None
 
     def emit(self, record):
         # Get a new connection for each emit to ensure thread safety
         try:
-            self.conn = PollenDatabase.get_connection()
-            log_message = self.format(record)
-            log_level = record.levelname
-            value = f'{log_message, log_level}'
+            with PollenDatabase.get_connection() as conn:
+                log_message = self.format(record)
+                log_level = record.levelname
+                value = f'{log_message, log_level}'
 
-            PollenDatabase.upsert_data("logging_store", self.log_name, value)
+                PollenDatabase.upsert_data("logging_store", self.log_name, value)
 
         except Exception as e:
             print(f"Failed to insert log into PostgreSQL: {e}")
-        finally:
-            if self.conn:
-                self.conn.close()
 
 class MigratePostgres:
     @staticmethod

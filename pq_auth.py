@@ -14,6 +14,8 @@ from datetime import datetime
 from chess_piece.pollen_db import PollenDatabase
 from custom_button import cust_Button
 import ipdb
+import requests
+
 
 main_root = hive_master_root()
 load_dotenv(os.path.join(main_root, ".env"))
@@ -115,6 +117,7 @@ def forgot_password(authenticator):
 
         if email_forgot_pw:
             # notify user and update password
+            print("resetting password for: ", email_forgot_pw)
             send_email(
                 recipient=email_forgot_pw,
                 subject="Pollen. Forgot Password",
@@ -134,29 +137,49 @@ Pollen
 
         elif email_forgot_pw == False:
             st.error("Email not found")
+        else:
+            st.info("Please enter your email to reset your password")
     except Exception as e:
         st.error(e)
 
 
+# def send_email(recipient, subject, body):
+#     try:
+#         pollenq_gmail = os.environ.get("pollenq_gmail")
+#         pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
+
+#         em = EmailMessage()
+#         em["From"] = pollenq_gmail
+#         em["To"] = recipient
+#         em["Subject"] = subject
+#         em.set_content(body)
+
+#         context = ssl.create_default_context()
+
+#         # Use port 587 with STARTTLS (more firewall-friendly)
+#         with smtplib.SMTP("smtp.gmail.com", 587, timeout=30) as smtp:
+#             smtp.starttls(context=context)
+#             smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
+#             smtp.sendmail(pollenq_gmail, recipient, em.as_string())
+#             print(f"Email sent successfully to {recipient}")
+#     except Exception as e:
+#         print(f"Error sending email to {recipient}, error: {e}")
+#         import traceback
+#         traceback.print_exc()
+#         return False
+
+#     return True
+
+
 def send_email(recipient, subject, body):
+  	return requests.post(
+  		"https://api.mailgun.net/v3/divergent-thinkers.com/messages",
+  		auth=("api", os.environ.get("mail_gun_key")),
+  		data={"from": "Divergent Thinkers <postmaster@divergent-thinkers.com>",
+			"to": f"Stefan Stapinski <{recipient}>",
+  			"subject": subject,
+  			"text": body})
 
-    # Define email sender and receiver
-    pollenq_gmail = os.environ.get("pollenq_gmail")
-    pollenq_gmail_app_pw = os.environ.get("pollenq_gmail_app_pw")
-
-    em = EmailMessage()
-    em["From"] = pollenq_gmail
-    em["To"] = recipient
-    em["Subject"] = subject
-    em.set_content(body)
-
-    # Add SSL layer of security
-    context = ssl.create_default_context()
-
-    # Log in and send the email
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
-        smtp.login(pollenq_gmail, pollenq_gmail_app_pw)
-        smtp.sendmail(pollenq_gmail, recipient, em.as_string())
 
 def update_db(authenticator, con, cur, email, append_db=False):
     """Update a user's record, or add a new user"""
