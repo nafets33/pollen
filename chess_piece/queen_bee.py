@@ -1001,17 +1001,17 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
     table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
 
     if demo:
-        print("TESTING LOCAL SANDBOX SAVE DATA TO SERVER")
+        print("DEMO MODE ---> SAVE DATA TO SERVER")
         upsert_to_main_server = True
         server = True
         API_URL = os.getenv("main_fastAPI_url")
     elif server and client_user in ['stefanstapinski@gmail.com'] and prod:
-        print("Kings Are Made with Patience, Discipline and Honor - Bee One")
+        print("KINGS Are Made with Patience, Discipline and Honor - Bee One")
         upsert_to_main_server = True
         server = True
         API_URL = os.getenv("main_fastAPI_url")
     else:
-        print("Local Testing - Bee One")
+        print("Local Testing ----> Bee One")
         upsert_to_main_server = False
         server = False
         API_URL = os.getenv("fastAPI_url")
@@ -3399,12 +3399,12 @@ if __name__ == '__main__':
     # read
     def createParser():
         parser = argparse.ArgumentParser()
-        parser.add_argument ('-prod', default='true')
+        parser.add_argument ('-prod', default='false')
         parser.add_argument ('-crypto', default='false')
         parser.add_argument ('-client_user', default=os.environ.get('admin_user'))
         parser.add_argument ('-server', default='false')
         parser.add_argument ('-loglevel', default='warning')
-        parser.add_argument ('-demo', default='warning')
+        parser.add_argument ('-demo', default='false')
         return parser
     
     parser = createParser()
@@ -3414,8 +3414,8 @@ if __name__ == '__main__':
     prod = True if str(prod).lower() == 'true' else False
     crypto = 'crypto' if str(namespace.crypto).lower() == 'true' else ''
     loglevel = namespace.loglevel
-    demo = namespace.demo
-    server = True if namespace.server.lower() == 'true' else False
+    demo = True if str(namespace.demo).lower() == 'true' else False
+    server = True if str(namespace.server).lower() == 'true' else False
 
     PollenDatabase.init_connection_pool(minconn=3, maxconn=15)
         

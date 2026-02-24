@@ -22,6 +22,13 @@ router = APIRouter(
     tags=["auth"]
 )
 
+def check_authKey(api_key):
+    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
+        print("Auth Failed", api_key)
+        return False
+    else:
+        return True
+
 @router.get("/debug/active_connections")
 async def debug_active_connections():
     """Debug: Show raw active connections data."""
@@ -43,7 +50,7 @@ async def debug_active_connections():
     }
 
 ### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
-# ✅ Store active WebSocket connections by username
+#  Store active WebSocket connections by username
 active_connections: Dict[str, Set[WebSocket]] = {}
 
 @router.websocket("/ws_story")
@@ -222,6 +229,7 @@ async def get_websocket_status(client_user: str, prod: bool, request: Request = 
                     if username == client_user:
                         if prod is None or user_prod == prod:
                             user_connections.append({
+                                # 'username': username,
                                 'prod': user_prod,
                                 'environment': "PROD" if user_prod else "SANDBOX"
                             })
@@ -244,16 +252,14 @@ async def get_websocket_status(client_user: str, prod: bool, request: Request = 
             content={"error": str(e)}
         )
 
-
 ### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
 
 
-def check_authKey(api_key):
-    if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return False
-    else:
-        return True
+@router.get("/", status_code=status.HTTP_200_OK)
+def check_api():
+    print("online")
+    return JSONResponse(content="online")
+
 
 @router.get("/local/{file_name}")
 def get_file(file_name: str):
@@ -283,20 +289,6 @@ def load_ozz_voice():
     return JSONResponse(content=json_data)
 
 
-@router.post("/trig_rules", status_code=status.HTTP_200_OK)
-def return_trig_rules(client_user: str=Body(...),  prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
-    try:
-        if check_authKey(api_key) == False:
-            return "NOTAUTH"
-
-        # req = app_queen_order_update_order_rules(client_user, prod, selected_row, default_value)
-        req = {'status': 'success', 'description': 'No changes made', 'error': ''}
-        return JSONResponse(content=grid_row_button_resp(status=req.get('status'), description=req.get('description')))
-    
-    except Exception as e:
-        print("router queen error", e)
-
-
 @router.get("/lastmod_key", status_code=status.HTTP_200_OK)
 def get_revrec_lastmod(client_user: str = Query(...), prod: bool = Query(...), api_key: str = Query(...), api_lastmod_key: str = Query(...)):
     if check_authKey(api_key):
@@ -306,18 +298,6 @@ def get_revrec_lastmod(client_user: str = Query(...), prod: bool = Query(...), a
         return "NOAUTH"
 
 
-@router.post("/voiceGPT", status_code=status.HTTP_200_OK)
-def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
-    # print(f'face data {face_data}')
-    print(f'trig TYPE: {tigger_type}')
-    
-    if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        # Log the trader WORKERBEE
-        return "NOTAUTH"
-
-    json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars)
-    return JSONResponse(content=json_data)
 
 @router.post("/wave_stories", status_code=status.HTTP_200_OK)
 def load_wavestories_json(client_user: str=Body(...), symbols: list=Body(...), toggle_view_selection: str=Body(...), prod: bool=Body(...), api_key = Body(...), return_type = Body(...)):
@@ -413,11 +393,14 @@ def archive_queen_order(username: str=Body(...), prod: bool=Body(...), selected_
         print("router queen error", e)
         return JSONResponse(content=grid_row_button_resp(status='error'))
 
-@router.post("/update_queen_order_kors", status_code=status.HTTP_200_OK)
+# WORKERBEE RECONFIRM IF WORKING PROPERLY
+@router.post("/update_queen_order_kors", status_code=status.HTTP_200_OK) 
 def queen_order_kors(client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     try:
         if check_authKey(api_key) == False:
             return "NOTAUTH"
+
+        return JSONResponse(content=grid_row_button_resp(status="testing TBD", description="ok")) 
 
         req = app_queen_order_update_order_rules(client_user, prod, selected_row, default_value)
         return JSONResponse(content=grid_row_button_resp(status=req.get('status'), description=req.get('description')))
@@ -425,16 +408,37 @@ def queen_order_kors(client_user: str=Body(...), username: str=Body(...), prod: 
     except Exception as e:
         print("router queen error", e)
 
+
+
+### MAIN 3 BUTTON CALLS ###
+
+@router.post("/update_queenking_symbol", status_code=status.HTTP_200_OK)
+async def func_update_queenking_symbol(request: Request, client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...), selected_data_type=Body(...)): # new_data for update entire row
+    if selected_data_type != 'trig_data':
+        return JSONResponse(content=grid_row_button_resp(status="ERROR", description=f"Invalid data type: {selected_data_type}"))
+    
+    if not check_authKey(api_key): # fastapi_pollenq_key
+        return "NOTAUTH"
+    if request is not None and isinstance(request, Request):
+        data = await request.json()
+    triggers = data.get('editable_orders', [])
+    
+    json_data = queenking_symbol(client_user, prod, selected_row, default_value, triggers)
+    return JSONResponse(content=json_data)
+
+
 @router.post("/queen_sell_orders", status_code=status.HTTP_200_OK)
-async def sell_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...),):
+async def sell_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), selected_data_type=Body(...)):
     try:
+        if selected_data_type != 'active_orders':
+            return JSONResponse(content=grid_row_button_resp(status="ERROR", description=f"Invalid data type: {selected_data_type}"))
+
         if not check_authKey(api_key):
             return "NOTAUTH"
         if request is not None and isinstance(request, Request):
             data = await request.json()
             if not data:
                 return JSONResponse(content=grid_row_button_resp(status="ERROR", description="No data received"))
-            # dict_keys(['username', 'prod', 'selected_row', 'default_value', 'editable_orders', 'client_user', 'return_type', 'api_lastmod_key', 'prompt_message', 'prompt_field', 'api_key', 'symbols', 'grid_height', 'toggle_views', 'allow_unsafe_jscode', 'columnOrder', 'refresh_success', 'total_col', 'subtotal_cols', 'filter_apply', 'filter_button', 'show_clear_all_filters', 'column_sets', 'show_cell_content', 'buttons'])
             client_order_id = selected_row.get('client_order_id', None)
             df = data['editable_orders']
             df_order_kors = selected_row.get('active_orders', [])
@@ -453,24 +457,24 @@ async def sell_order(request: Request, client_user: str=Body(...), username: str
                     df_kors['ignore_allocation_budget'] = df_kors['ignore_allocation_budget'].replace({'': False})
                     order_ids = df_kors['client_order_id'].tolist()
                     print("KORS", order_ids)
+                    queenorder_fields_compare = ['queen_order_state']
                     kors_to_compare = ['queen_order_state', 'take_profit', 'sell_out', 'close_order_today', 'sell_trigbee_date', 'ignore_allocation_budget']
                     update = False
                     default_value = {} # kors
                     reps = grid_row_button_resp(status='success', description='')
                     for idx, row in df_kors.iterrows():
                         for col in kors_to_compare:
-                            if col not in df_order_kors.columns:
+                            if col not in df_order_kors.columns and col in queenorder_fields_compare:
+                                print("QUEEN ORDER UPDATE -- updating", col)
                                 update = True
                                 default_value[col] = row[col]
-                                print("KORS MISMATCH Missing COL", col)
-                            else: 
+                            else:
                                 if row[col] != df_order_kors[col].iloc[idx]:
+                                    print("KORS CHANGED -- updating", col, row[col], df_order_kors[col].iloc[idx])
                                     update = True
                                     default_value[col] = row[col]
-                                    print("KORS MISMATCH", col, row[col], df_order_kors[col].iloc[idx])
                         
                         if update:
-                            print("KORS UPDATE NEEDED")
                             selected_row = {'client_order_id': row['client_order_id']} # queen_order - order_rules
                             req = app_queen_order_update_order_rules(client_user, prod, selected_row, default_value)
                             # 'status': status, # success
@@ -512,32 +516,15 @@ async def sell_order(request: Request, client_user: str=Body(...), username: str
         return str(e)
 
 
-@router.post("/ttf_buy_orders", status_code=status.HTTP_200_OK)
-async def buy_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), return_type=Body(...)):
-    if not check_authKey(api_key):
-        return "NOTAUTH"
-
-    if request is not None and isinstance(request, Request):
-        data = await request.json()
-
-    print(data['default_value'].keys())
-    # print(data['default_value'].keys())
-    story = True
-    kors = default_value
-    req = app_buy_order_request(client_user, prod, selected_row, kors, story=story)
-    if req.get('status'):
-        return JSONResponse(content=grid_row_button_resp(description=req.get('msg')))
-    else:
-        return JSONResponse(content=grid_row_button_resp(status="ERROR", description=req.get('msg')))
-
-
 @router.post("/queen_buy_orders", status_code=status.HTTP_200_OK)
-async def buy_order(request: Request, client_user: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+async def buy_order(request: Request, client_user: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...), selected_data_type=Body(...)):
     if not check_authKey(api_key): # fastapi_pollenq_key
         return "NOTAUTH"
     if request is not None and isinstance(request, Request):
         data = await request.json()
     # print(data.keys())
+    if selected_data_type != 'wave_data':
+        return JSONResponse(content=grid_row_button_resp(status="ERROR", description=f"Invalid data type: {selected_data_type}"))
     wave_buy_orders = data.get('editable_orders', [])
     # return JSONResponse(content=grid_row_button_resp(status="testing", description="ok"))
     
@@ -550,30 +537,27 @@ async def buy_order(request: Request, client_user: str=Body(...), prod: bool=Bod
     else:
         return JSONResponse(content=grid_row_button_resp(status="ERROR", description=req.get('msg')))
 
+### MAIN 3 BUTTON CALLS ###
 
 
-@router.post("/update_orders", status_code=status.HTTP_200_OK)
-def write_queen_order(username: str= Body(...), prod: bool= Body(...), new_data= Body(...), api_key=Body(...)):
-    if not check_authKey(api_key): # fastapi_pollenq_key
+@router.post("/ttf_buy_orders", status_code=status.HTTP_200_OK) # WORKERBEE HANDLE NEW KORS
+async def buy_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
+    if not check_authKey(api_key):
         return "NOTAUTH"
-    # print(new_data)
-    df = pd.DataFrame(new_data).T
-    print(df.columns)
-    return JSONResponse(content=grid_row_button_resp())
 
+    if request is not None and isinstance(request, Request):
+        data = await request.json()
 
-@router.post("/text", status_code=status.HTTP_200_OK)
-def get_text(api_key = Body(...)):
-    print(api_key.get("prod"))
-    print("/data/text")
-    n = random.randrange(100)
-    return JSONResponse(content=str(n))
+    print(data['default_value'].keys())
 
+    story = True
+    kors = default_value
+    req = app_buy_order_request(client_user, prod, selected_row, kors, story=story)
+    if req.get('status'):
+        return JSONResponse(content=grid_row_button_resp(description=req.get('msg')))
+    else:
+        return JSONResponse(content=grid_row_button_resp(status="ERROR", description=req.get('msg')))
 
-@router.get("/", status_code=status.HTTP_200_OK)
-def check_api():
-    print("online")
-    return JSONResponse(content="online")
 
 @router.post("/update_queenking_chessboard", status_code=status.HTTP_200_OK)
 async def update_qk_chessboard(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
@@ -603,6 +587,16 @@ def sell_autopilot(client_user: str= Body(...), prod: bool=Body(...), api_key=Bo
     json_data = update_sell_autopilot(client_user, prod, selected_row, default_value)
     return JSONResponse(content=json_data)
 
+
+@router.post("/queen_queenking_trigrule_event", status_code=status.HTTP_200_OK)
+async def func_queen_queenking_trigger_update(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), trigger_id=Body(...), status=Body(...)): # new_data for update entire row
+    if not check_authKey(api_key): # fastapi_pollenq_key
+        return "NOTAUTH"
+
+    json_data = queen_queenking_trigger_update(client_user, prod, trigger_id, status)
+    return JSONResponse(content=json_data)
+
+
 @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
 async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
     # Print the entire body of the POST request
@@ -620,23 +614,15 @@ async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), se
     json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
     return JSONResponse(content=json_data)
 
-
-@router.post("/update_queenking_symbol", status_code=status.HTTP_200_OK)
-async def func_update_queenking_symbol(request: Request, client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), selected_row=Body(...), default_value=Body(...)): # new_data for update entire row
-    if not check_authKey(api_key): # fastapi_pollenq_key
-        return "NOTAUTH"
-    if request is not None and isinstance(request, Request):
-        data = await request.json()
-    triggers = data.get('editable_orders', [])
+# @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
+# def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
+#     # print(f'face data {face_data}')
+#     print(f'trig TYPE: {tigger_type}')
     
-    json_data = queenking_symbol(client_user, prod, selected_row, default_value, triggers)
-    return JSONResponse(content=json_data)
+#     if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
+#         print("Auth Failed", api_key)
+#         # Log the trader WORKERBEE
+#         return "NOTAUTH"
 
-@router.post("/queen_queenking_trigrule_event", status_code=status.HTTP_200_OK)
-async def func_queen_queenking_trigger_update(client_user: str= Body(...), prod: bool=Body(...), api_key=Body(...), trigger_id=Body(...), status=Body(...)): # new_data for update entire row
-    if not check_authKey(api_key): # fastapi_pollenq_key
-        return "NOTAUTH"
-
-    json_data = queen_queenking_trigger_update(client_user, prod, trigger_id, status)
-    return JSONResponse(content=json_data)
-
+#     json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars)
+#     return JSONResponse(content=json_data)

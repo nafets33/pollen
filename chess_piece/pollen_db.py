@@ -172,7 +172,7 @@ class PollenDatabase:
                     password=DATABASE_PASS,
                     connect_timeout=10
                 )
-                print(f"✓ Local connection pool initialized (min={minconn}, max={maxconn})")
+                # print(f"✓ Local connection pool initialized (min={minconn}, max={maxconn})")
                 
                 cls._pool_initialized = True
             

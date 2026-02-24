@@ -32,15 +32,43 @@
 }
 
 .ag-theme-material .ag-header {
-  background-color: #eaf3fb !important; /* Light blue, almost white */
+  background-color: #fafffa !important; /* Light blue, almost white */
   color: #1a3556 !important; /* Darker blue for text */
 }
 .ag-theme-material .ag-header-cell-label {
-  color: #1a3556 !important; /* Darker blue for header cell label text */
+  color: #0c3361 !important; /* Darker blue for header cell label text */
 }
 
 /* Fix header hover background so text stays visible */
 .ag-theme-material .ag-header-cell:hover {
-  background-color: #b3d1f2 !important; /* Slightly darker light blue */
+  background-color: #c7ddf4 !important; /* Slightly darker light blue */
   color: #1a3556 !important; /* Darker blue for text */
 }
+
+/* Flash animations: Green for value increases, Red for value decreases */
+.ag-cell-data-changed-animation-up {
+  animation: flashGreenUp 1s ease-out !important;
+}
+
+.ag-cell-data-changed-animation-down {
+  animation: flashRedDown 1s ease-out !important;
+}
+
+@keyframes flashGreenUp {
+  0% { 
+    background-color: rgba(76, 175, 80, 0.7) !important; 
+  }
+  100% { 
+    background-color: transparent !important; 
+  }
+}
+
+@keyframes flashRedDown {
+  0% { 
+    background-color: rgba(244, 67, 54, 0.7) !important; 
+  }
+  100% { 
+    background-color: transparent !important; 
+  }
+}
+

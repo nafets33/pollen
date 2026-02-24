@@ -275,7 +275,7 @@ const AgGrid = (props: Props) => {
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [previousViewId, setpreviousViewId] = useState(89)
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [selectedColumnSetKeys, setSelectedColumnSetKeys] = useState<string[]>([]);
+  const [selectedColumnSetKey, setSelectedColumnSetKey] = useState<string | null>(null);
   const [initialColumnState, setInitialColumnState] = useState<any>(null);
 
   const [selectedCellContent, setSelectedCellContent] = useState<string | null>(null);
@@ -1180,28 +1180,39 @@ const AgGrid = (props: Props) => {
           >
             {kwargs.toggle_header ? kwargs.toggle_header : ""}
           </div>
-          {toggle_views.length < 20 ? (
-            // Render normal buttons if toggle_views is less than 20
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "10px",
-                padding: "10px",
-                marginBottom: "10px",
-              }}
-            >
-              {toggle_views.map((view: string, index: number) => (
-                <button
-                  key={index}
-                  className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
-                  style={{
-                    ...buttonStyle,
-                    borderRadius: "8px",
-                    color: "#055A6E",
-                    backgroundColor: "#F3FAFD",
-                    fontWeight: "bold",
-                  }}
+{toggle_views.length < 20 ? (
+  <div
+    style={{
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "10px",
+      padding: "10px",
+      marginBottom: "10px",
+      justifyContent: "center",
+    }}
+  >
+    {toggle_views.map((view: string, index: number) => (
+      <button
+        key={index}
+        style={{
+          background: viewId === index 
+            ? "linear-gradient(135deg, #dcffdfff 0%, #f1ffefff 100%)" 
+            : "#ffffff",
+          color: viewId === index ? "#2f4137ff" : "#4a5568",
+          border: viewId === index ? "none" : "2px solid #e2e8f0",
+          borderRadius: "22px",
+          fontWeight: viewId === index ? "700" : "600",
+          fontSize: "14px",
+          padding: "10px 20px",
+          boxShadow: viewId === index 
+            ? "0 4px 15px rgba(102, 126, 234, 0.4)" 
+            : "0 2px 4px rgba(0,0,0,0.08)",
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          cursor: "pointer",
+          transform: viewId === index ? "translateY(-1px)" : "translateY(0)",
+          opacity: loading ? 0.6 : 1,
+          pointerEvents: loading ? "none" : "auto",
+        }}
                   onClick={() => {
                     setViewId(index);
                     setpreviousViewId(viewId);
@@ -1243,23 +1254,45 @@ const AgGrid = (props: Props) => {
                 marginBottom: "10px",
               }}
             >
-              {toggle_views.map((view: string, index: number) => (
-                <button
-                  key={index}
-                  className={`btn ${viewId === index ? "btn-danger" : "btn-secondary"}`}
-                  style={{
-                    ...buttonStyle,
-                    borderRadius: "8px",
-                    color: "#055A6E",
-                    backgroundColor: "#F3FAFD",
-                    fontWeight: "bold",
-                  }}
-                  onClick={() => {
-                    setViewId(index);
-                    setpreviousViewId(viewId);
-                  }}
-                  disabled={loading}
-                >
+{toggle_views.map((view: string, index: number) => (
+  <button
+    key={index}
+    style={{
+      ...buttonStyle,
+      background: viewId === index 
+        ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
+        : "#ffffff",
+      color: viewId === index ? "white" : "#4a5568",
+      border: viewId === index ? "none" : "2px solid #e2e8f0",
+      borderRadius: "20px",
+      fontWeight: viewId === index ? "700" : "600",
+      boxShadow: viewId === index 
+        ? "0 4px 15px rgba(102, 126, 234, 0.4)" 
+        : "0 2px 4px rgba(0,0,0,0.08)",
+      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      cursor: "pointer",
+      transform: viewId === index ? "translateY(-1px)" : "translateY(0)",
+      opacity: loading ? 0.6 : 1,
+      pointerEvents: loading ? "none" : "auto",
+    }}
+    onClick={() => {
+      setViewId(index);
+      setpreviousViewId(viewId);
+    }}
+    disabled={loading}
+    onMouseEnter={(e) => {
+      if (viewId !== index && !loading) {
+        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.12)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (viewId !== index && !loading) {
+        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.08)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }
+    }}
+  >
                   {view}
                   {loading && viewId === index ? (
                     <div
@@ -1386,20 +1419,20 @@ const AgGrid = (props: Props) => {
             <div style={{ marginBottom: 12, display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 
               <button
-                onClick={() => {
-                  setSelectedColumnSetKeys([]);
-                  setTimeout(() => {
-                    const columnApi = gridRef.current?.columnApi;
-                    if (columnApi && initialColumnState) {
-                      columnApi.applyColumnState({
-                        state: initialColumnState,
-                        applyOrder: true,
-                      });
-                    }
-                  }, 0);
-                }}
+onClick={() => {
+  setSelectedColumnSetKey(null);
+  setTimeout(() => {
+    const columnApi = gridRef.current?.columnApi;
+    if (columnApi && initialColumnState) {
+      columnApi.applyColumnState({
+        state: initialColumnState,
+        applyOrder: true,
+      });
+    }
+  }, 0);
+}}
                 style={{
-                  background: "rgb(194, 194, 194)",
+                  background: "rgba(183, 136, 129, 1)",
                   color: "white",
                   border: "1.5px solid rgb(213, 213, 213)",
                   borderRadius: "6px",
@@ -1412,59 +1445,77 @@ const AgGrid = (props: Props) => {
                   cursor: "pointer",
                 }}
               >
-                Reset Columns
+                Reset View
               </button>
 
 
-              {Object.keys(kwargs.column_sets).map(key => (
-
-
-                <button
-                  key={key}
-                  onClick={() => {
-                    setSelectedColumnSetKeys(prev =>
-                      prev.includes(key)
-                        ? prev.filter(k => k !== key)
-                        : [...prev, key]
-                    );
-                    setTimeout(() => {
-                      const keys = selectedColumnSetKeys.includes(key)
-                        ? selectedColumnSetKeys.filter(k => k !== key)
-                        : [...selectedColumnSetKeys, key];
-                      const columnsToShow = Array.from(
-                        new Set(keys.flatMap(k => kwargs.column_sets[k]))
-                      );
-                      const columnApi = gridRef.current?.columnApi;
-                      if (columnApi && Array.isArray(grid_options.columnDefs)) {
-                        grid_options.columnDefs.forEach((col: any) => {
-                          columnApi.setColumnVisible(
-                            col.field,
-                            columnsToShow.includes(col.field)
-                          );
-                        });
-                        columnsToShow.forEach((field, idx) => {
-                          columnApi.moveColumn(field, idx);
-                        });
-                      }
-                    }, 0);
-                  }}
-                  style={{
-                    background: selectedColumnSetKeys.includes(key) ? "#3498db" : "#F3FAFD",
-                    color: selectedColumnSetKeys.includes(key) ? "white" : "#055A6E",
-                    border: selectedColumnSetKeys.includes(key) ? "2px solid #1abc9c" : "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontWeight: "bold",
-                    fontSize: "12px",
-                    padding: "5px 10px",
-                    margin: "0 4px 4px 0",
-                    boxShadow: selectedColumnSetKeys.includes(key) ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
-                    transition: "all 0.15s",
-                    cursor: "pointer",
-                  }}
-                >
-                  {key}
-                </button>
-              ))}
+{Object.keys(kwargs.column_sets).map(key => (
+  <button
+    key={key}
+    onClick={() => {
+      const newKey = selectedColumnSetKey === key ? null : key;
+      setSelectedColumnSetKey(newKey);
+      
+      setTimeout(() => {
+        const columnApi = gridRef.current?.columnApi;
+        
+        if (!newKey) {
+          if (columnApi && initialColumnState) {
+            columnApi.applyColumnState({
+              state: initialColumnState,
+              applyOrder: true,
+            });
+          }
+        } else {
+          const columnsToShow = kwargs.column_sets[newKey];
+          
+          if (columnApi && Array.isArray(grid_options.columnDefs)) {
+            grid_options.columnDefs.forEach((col: any) => {
+              columnApi.setColumnVisible(col.field, false);
+            });
+            
+            columnsToShow.forEach((field: string, idx: number) => {
+              columnApi.setColumnVisible(field, true);
+              columnApi.moveColumn(field, idx);
+            });
+          }
+        }
+      }, 0);
+    }}
+    style={{
+      background: selectedColumnSetKey === key 
+        ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" 
+        : "#ffffff",
+      color: selectedColumnSetKey === key ? "white" : "#4a5568",
+      border: selectedColumnSetKey === key ? "none" : "2px solid #e2e8f0",
+      borderRadius: "20px",
+      fontWeight: selectedColumnSetKey === key ? "700" : "600",
+      fontSize: "13px",
+      padding: "8px 16px",
+      margin: "0 6px 6px 0",
+      boxShadow: selectedColumnSetKey === key 
+        ? "0 4px 15px rgba(102, 126, 234, 0.4)" 
+        : "0 2px 4px rgba(0,0,0,0.08)",
+      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      cursor: "pointer",
+      transform: selectedColumnSetKey === key ? "translateY(-1px)" : "translateY(0)",
+    }}
+    onMouseEnter={(e) => {
+      if (selectedColumnSetKey !== key) {
+        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.12)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (selectedColumnSetKey !== key) {
+        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.08)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }
+    }}
+  >
+    {key}
+  </button>
+))}
 
             </div>
           )}
@@ -1523,54 +1574,79 @@ const AgGrid = (props: Props) => {
             <div style={{ marginBottom: 8 }}>
 
 
-              {kwargs['show_clear_all_filters'] && (
-                <button
-                  onClick={() => {
-                    if (gridRef.current && gridRef.current.api) {
-                      gridRef.current.api.setFilterModel({});
-                    }
-                    setActiveFilter(null);
-                  }}
-                  style={{
-                    background: "rgb(194, 194, 194)",
-                    color: "white",
-                    border: "1.5px solid rgb(213, 213, 213)",
-                    borderRadius: "6px",
-                    fontWeight: "bold",
-                    fontSize: "12px",
-                    padding: "5px 10px",
-                    margin: "0 4px 4px 0",
-                    boxShadow: "0 2px 6px rgb(216, 216, 216)",
-                    transition: "all 0.15s",
-                    cursor: "pointer",
-                  }}
-                >
-                  Clear Filters
-                </button>
-              )}
+{kwargs['show_clear_all_filters'] && (
+  <button
+    onClick={() => {
+      if (gridRef.current && gridRef.current.api) {
+        gridRef.current.api.setFilterModel({});
+      }
+      setActiveFilter(null);
+    }}
+                style={{
+                  background: "rgba(183, 136, 129, 1)",
+                  color: "white",
+                  border: "1.5px solid rgb(213, 213, 213)",
+                  borderRadius: "6px",
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  padding: "5px 10px",
+                  margin: "0 4px 4px 0",
+                  boxShadow: "0 2px 6px rgb(216, 216, 216)",
+                  transition: "all 0.15s",
+                  cursor: "pointer",
+                }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.boxShadow = "0 6px 20px rgba(239, 83, 80, 0.5)";
+      e.currentTarget.style.transform = "translateY(-2px)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.boxShadow = "0 4px 15px rgba(239, 83, 80, 0.4)";
+      e.currentTarget.style.transform = "translateY(0)";
+    }}
+  >
+    Clear Filters
+  </button>
+)}
 
 
-              {uniqueValues.map(val => (
-                <button
-                  key={val}
-                  onClick={() => handleButtonFilter(val)}
-                  style={{
-                    background: activeFilter === val ? "#3498db" : "#F3FAFD", // match main button color and toggle_views bg
-                    color: activeFilter === val ? "white" : "#055A6E",        // match toggle_views text color
-                    border: activeFilter === val ? "2px solid #1abc9c" : "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontWeight: "bold",
-                    fontSize: "12px",
-                    padding: "5px 10px",
-                    margin: "0 4px 4px 0",
-                    boxShadow: activeFilter === val ? "0 2px 6px rgba(52,152,219,0.10)" : "none",
-                    transition: "all 0.15s",
-                    cursor: "pointer",
-                  }}
-                >
-                  {val}
-                </button>
-              ))}
+{uniqueValues.map(val => (
+  <button
+    key={val}
+    onClick={() => handleButtonFilter(val)}
+    style={{
+      background: activeFilter === val 
+        ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" 
+        : "#ffffff",
+      color: activeFilter === val ? "white" : "#4a5568",
+      border: activeFilter === val ? "none" : "2px solid #e2e8f0",
+      borderRadius: "15px",
+      fontWeight: activeFilter === val ? "700" : "600",
+      fontSize: "11px",
+      padding: "5px 10px",
+      margin: "0 6px 6px 0",
+      boxShadow: activeFilter === val 
+        ? "0 4px 15px rgba(102, 126, 234, 0.4)" 
+        : "0 2px 4px rgba(0,0,0,0.08)",
+      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      cursor: "pointer",
+      transform: activeFilter === val ? "translateY(-1px)" : "translateY(0)",
+    }}
+    onMouseEnter={(e) => {
+      if (activeFilter !== val) {
+        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.12)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (activeFilter !== val) {
+        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.08)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }
+    }}
+  >
+    {val}
+  </button>
+))}
 
             </div>
           )}

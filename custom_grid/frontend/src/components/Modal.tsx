@@ -10,24 +10,6 @@ const sliderRules = ["buying_power", "borrow_power"]
 const sliderRules_stars = ["Day", "Week", "Month", "Quarter", "Quarters", "Year"];
 const sliderRules_stars_margin = sliderRules_stars.map(rule => `${rule} Margin`);
 
-
-
-// const modalStyle = {
-//   content: {
-//     top: "50%",
-//     left: "50%",
-//     right: "auto",
-//     bottom: "auto",
-//     marginRight: "-50%",
-//     transform: "translate(-50%, -50%)",
-//     backgroundColor: "yellow",
-//     width: "95vw",           // Responsive width
-//     maxWidth: "400px",       // Limit max width for desktop
-//     minWidth: "280px",       // Minimum for mobile
-//     padding: "16px",
-//   },
-// };
-
 ReactModal.setAppElement("#root");
 let isExecuting = false;
 
@@ -49,12 +31,12 @@ const MyModal: React.FC<MyModalProps> = ({
   toastr,
 }) => {
   const [loading, setLoading] = React.useState(false); // Add loading state
-  const { prompt_field, prompt_order_rules, selectedRow, selectedField, add_symbol_row_info, display_grid_column } = modalData;
-  // console.log("modalData :>> ", display_grid_column, prompt_field); // workerbee handle in agagrid display_grid_column add var from mount
+  const { prompt_field, prompt_order_rules, selectedRow, selectedField, add_symbol_row_info } = modalData;
+
+  // console.log("modalData :>> ", activeDisplayColumn, prompt_field); // workerbee handle in agagrid activeDisplayColumn add var from mount
   const [showStarsSliders, setShowStarsSliders] = React.useState(false);
   const [showStarsMarginSliders, setShowStarsMarginSliders] = React.useState(false);
-  const [showActiveOrders, setShowActiveOrders] = React.useState(false);
-  const [showWaveData, setShowWaveData] = React.useState(true);
+
   const [showButtonColData, setShowButtonColData] = React.useState(true);
   const [sellQtys, setSellQtys] = React.useState<{ [key: number]: string }>({});
   const handleSellQtyChange = (idx: number, value: string) => {
@@ -62,17 +44,41 @@ const MyModal: React.FC<MyModalProps> = ({
   };
 
 
+
   const [editableValues, setEditableValues] = React.useState<{ [col: string]: { [idx: number]: any } }>({});
-  const editableCols = modalData.editableCols || [];
-  const ordersToRender = (selectedRow && display_grid_column && Array.isArray(selectedRow[display_grid_column]))
-    ? selectedRow[display_grid_column]
-    : [];
-  const dataCols = ordersToRender.length > 0 ? Object.keys(ordersToRender[0]) : [];
-  const editableColHeaders = editableCols.map((col: { col_header: string }) => col.col_header);
-  const allCols = Array.from(new Set([...editableColHeaders, ...dataCols]));
+  const [selectedDisplayColumn, setSelectedDisplayColumn] = React.useState<string>("");
+
+  // ✅ Memoize to prevent new array on every render
+  const editableColsDict = React.useMemo(() => modalData.editableCols || {}, [modalData.editableCols]);
+  const displayColumnOptions = React.useMemo(() => Object.keys(editableColsDict), [editableColsDict]);
+
+  // ✅ Use selected column or first available key
+  const activeDisplayColumn = selectedDisplayColumn || displayColumnOptions[0] || "";
+
+  // ✅ Get editableCols for the active column
+  const editableCols = React.useMemo(() => editableColsDict[activeDisplayColumn] || [], [editableColsDict, activeDisplayColumn]);
+
+  const ordersToRender = React.useMemo(() =>
+    (selectedRow && activeDisplayColumn && Array.isArray(selectedRow[activeDisplayColumn]))
+      ? selectedRow[activeDisplayColumn]
+      : []
+    , [selectedRow, activeDisplayColumn]);
+
+  const dataCols = React.useMemo(
+    () => ordersToRender.length > 0 ? Object.keys(ordersToRender[0]) : [],
+    [ordersToRender]
+  );
+  const editableColHeaders = React.useMemo(
+    () => editableCols.map((col: { col_header: string }) => col.col_header),
+    [editableCols]
+  );
+  const allCols = React.useMemo(
+    () => Array.from(new Set([...editableColHeaders, ...dataCols])),
+    [editableColHeaders, dataCols]
+  );
 
   const ref = useRef<HTMLButtonElement>(null);
-  const selectRef = useRef<HTMLSelectElement>(null);
+  // const selectRef = useRef<HTMLSelectElement>(null);
 
 
 
@@ -83,8 +89,8 @@ const MyModal: React.FC<MyModalProps> = ({
     isExecuting = true;
     try {
       // Merge editable values into each order
-      const ordersToRender = display_grid_column && selectedRow && Array.isArray(selectedRow[display_grid_column])
-        ? selectedRow[display_grid_column]
+      const ordersToRender = activeDisplayColumn && selectedRow && Array.isArray(selectedRow[activeDisplayColumn])
+        ? selectedRow[activeDisplayColumn]
         : [];
 
       if (!ordersToRender || !Array.isArray(ordersToRender)) {
@@ -101,12 +107,14 @@ const MyModal: React.FC<MyModalProps> = ({
       });
 
 
+
       const body = {
         username: modalData.username,
         prod: modalData.prod,
         selected_row: modalData.selectedRow,
         default_value: promptText,
         editable_orders: ordersWithEdits,
+        selected_data_type: activeDisplayColumn,
         ...modalData.kwargs,
       };
       const { data: res } = await axios.post(modalData.button_api, body);
@@ -142,61 +150,41 @@ const MyModal: React.FC<MyModalProps> = ({
     setSellQtys({}); // Reset sellQtys to an empty object
   }, [isOpen, selectedRow]);
 
-
   useEffect(() => {
     if (!isOpen) {
       setEditableValues({});
+      setSelectedDisplayColumn("");
       return;
     }
 
-    console.log("🔄 Modal opening - fetching fresh data from grid");
-
-    // ✅ Get fresh data directly from AG Grid
-    const gridRef = modalData.gridRef;
-    const index = modalData.index;
-    const selectedRowFromModal = modalData.selectedRow; // ✅ Use modalData.selectedRow, not props
-    const selectedRowId = selectedRowFromModal?.[index];
-
-    if (!gridRef?.current?.api || !selectedRowId) {
-      console.warn("⚠️  Missing gridRef or selectedRowId", {
-        hasGridRef: !!gridRef?.current?.api,
-        hasIndex: !!index,
-        hasSelectedRow: !!selectedRowFromModal,
-        selectedRowId
-      });
+    if (!modalData.editableCols || Object.keys(modalData.editableCols).length === 0) {
+      console.warn("⚠️ editableCols not ready yet");
       return;
     }
 
-    // ✅ ALWAYS get the latest data from grid when modal opens
-    const freshNode = gridRef.current.api.getRowNode(selectedRowId);
+    if (displayColumnOptions.length > 0 && !selectedDisplayColumn) {
+      setSelectedDisplayColumn(displayColumnOptions[0]);
+    }
 
-    if (!freshNode || !freshNode.data) {
-      console.warn("⚠️  Row not found in grid:", selectedRowId);
+    if (!activeDisplayColumn) {
+      console.warn("⚠️ No active display column");
       return;
     }
 
-    const freshData = freshNode.data;
-    const orders = freshData[display_grid_column];
+    // ✅ selectedRow is already fresh — was fetched from grid in Aggrid.tsx before setModalData
+    const orders = selectedRow?.[activeDisplayColumn];
 
-    if (!Array.isArray(orders) || !editableCols) {
-      console.warn("⚠️  Invalid orders data", {
+    if (!Array.isArray(orders) || editableCols.length === 0) {
+      console.warn("⚠️ Invalid orders data", {
         hasOrders: !!orders,
         isArray: Array.isArray(orders),
-        hasEditableCols: !!editableCols,
-        displayColumn: display_grid_column
+        hasEditableCols: editableCols.length > 0,
+        displayColumn: activeDisplayColumn,
       });
       setEditableValues({});
       return;
     }
 
-    console.log("✅ Building editableValues from FRESH grid data:", {
-      rowId: selectedRowId,
-      orderCount: orders.length,
-      firstOrderTakeProfit: orders[0]?.take_profit,
-      allOrders: orders
-    });
-
-    // ✅ Build editableValues from fresh data
     const reset: any = {};
     editableCols.forEach(({ col_header }: { col_header: string }) => {
       reset[col_header] = {};
@@ -205,11 +193,9 @@ const MyModal: React.FC<MyModalProps> = ({
       });
     });
 
-    console.log("✅ Setting editableValues:", reset);
     setEditableValues(reset);
 
-    // ✅ Only depend on isOpen - refresh EVERY time modal opens
-  }, [isOpen]);
+  }, [isOpen, activeDisplayColumn]);
 
   const isValidDate = (dateStr: string) => {
     return formats.some(format => moment(dateStr, format, true).isValid());
@@ -614,12 +600,46 @@ const MyModal: React.FC<MyModalProps> = ({
               )}
             </div>
 
-            {/* Display Grid Column Table */}
-            {display_grid_column &&
-              selectedRow &&
-              Array.isArray(selectedRow[display_grid_column]) &&
-              selectedRow[display_grid_column].length > 0 && (
-                <div style={{ margin: "16px 0" }}>
+            {/* Display Grid Column Toggle & Table */}
+            {displayColumnOptions.length > 0 && (
+              <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <label style={{ fontWeight: "bold", fontSize: "0.9rem", marginRight: "4px" }}>
+                  {/* Select Data: */}
+                </label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {displayColumnOptions.map((col: string) => {
+                    const isActive = (selectedDisplayColumn || displayColumnOptions[0]) === col;
+                    return (
+                      <button
+                        key={col}
+                        type="button"
+                        onClick={() => setSelectedDisplayColumn(col)}
+                        style={{
+                          padding: "5px 14px",
+                          fontSize: "0.85rem",
+                          fontWeight: isActive ? "bold" : "normal",
+                          border: `2px solid ${isActive ? "#007bff" : "#ccc"}`,
+                          borderRadius: "20px",
+                          background: isActive ? "#007bff" : "#fff",
+                          color: isActive ? "#fff" : "#555",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {col.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ✅ UPDATED: Check activeDisplayColumn instead of activeDisplayColumn */}
+            {selectedRow &&
+              Array.isArray(selectedRow[activeDisplayColumn]) &&
+              selectedRow[activeDisplayColumn].length > 0 && (
+                <div>
                   <div
                     style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
                     onClick={() => setShowButtonColData((prev: boolean) => !prev)}
@@ -633,11 +653,12 @@ const MyModal: React.FC<MyModalProps> = ({
                       style={{ fontWeight: "bold", textDecoration: "underline", color: "#007bff", background: "none", border: "none", cursor: "pointer" }}
                       onClick={() => setShowButtonColData((prev: boolean) => !prev)}
                     >
-                      {display_grid_column}
+                      {/* {activeDisplayColumn} ({selectedRow[activeDisplayColumn].length} rows) */}
                     </button>
                   </div>
+
                   {showButtonColData && (() => {
-                    const ordersToRender = selectedRow[display_grid_column];
+                    // const ordersToRender = selectedRow[activeDisplayColumn];
 
                     // Helper function to calculate cumulative left position for pinned columns
                     const getPinnedColumnLeftPosition = (colIndex: number): number => {
@@ -668,29 +689,24 @@ const MyModal: React.FC<MyModalProps> = ({
                         const cellValue = editableValues[col]?.[idx] ?? order[col];
                         const compareValue = cond.compare_to ? order[cond.compare_to] : cond.value;
 
-    // ✅ Handle 'in' operator for checking if value is in a list
-    if (cond.operator === "in") {
-      const valueList = Array.isArray(compareValue) ? compareValue : [compareValue];
-      return valueList.includes(cellValue) ? cond.trueColor : cond.falseColor;
-    }
-    
-    // ✅ Handle '!in' operator (not in list)
-    if (cond.operator === "!in") {
-      const valueList = Array.isArray(compareValue) ? compareValue : [compareValue];
-      return !valueList.includes(cellValue) ? cond.trueColor : cond.falseColor;
-    }
+                        // Handle 'in' operator for checking if value is in a list
+                        if (cond.operator === "in") {
+                          const valueList = Array.isArray(compareValue) ? compareValue : [compareValue];
+                          return valueList.includes(cellValue) ? cond.trueColor : cond.falseColor;
+                        }
 
-    // Existing string operations
-    if (cond.operator === "contains") {
-      return String(cellValue).toLowerCase().includes(String(compareValue).toLowerCase()) 
-        ? cond.trueColor : cond.falseColor;
-    }
-    
+                        // ✅ Handle '!in' operator (not in list)
+                        if (cond.operator === "!in") {
+                          const valueList = Array.isArray(compareValue) ? compareValue : [compareValue];
+                          return !valueList.includes(cellValue) ? cond.trueColor : cond.falseColor;
+                        }
 
+                        // Existing string operations
                         if (cond.operator === "contains") {
                           return String(cellValue).toLowerCase().includes(String(compareValue).toLowerCase())
                             ? cond.trueColor : cond.falseColor;
                         }
+
                         if (cond.operator === "!contains") {
                           return !String(cellValue).toLowerCase().includes(String(compareValue).toLowerCase())
                             ? cond.trueColor : cond.falseColor;

@@ -808,7 +808,9 @@ def story_grid(prod, client_user,
                                     },
                             'current_ask': {'headerName': 'Ask', 'sortable':'true',
                                             "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
-                                            'valueFormatter': value_format_number},
+                                            'valueFormatter': value_format_number,
+                                            # 'enableCellChangeFlash': True,
+                                            },
                             '5Minute_5Day_change': {'headerName':"Week Change", 'cellStyle': honey_colors, 'sortable':'true',
                                                 "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
                                                 'valueFormatter': value_format_pct_2
@@ -847,6 +849,168 @@ def story_grid(prod, client_user,
                 trig_dict = trig_data.get(trig)
                 trig_editableCols.append(trig_dict)
 
+            wave_data_editable_cols = [
+                { 
+                    'col_header': "confirm_buy", 
+                    'dtype': "checkbox",
+                    'pinned': True,  # ✅ Pin this important column
+                    'backgroundColor': "#a5f092",  # ✅ Yellow highlight for confirmation
+                },
+                { 
+                    'col_header': "ignore_allocation_budget", 
+                    'dtype': "checkbox", 
+                    "display_name": "Ignore AutoPilot",
+                    # 'backgroundColor': "#ffebee",  # ✅ Light red warning for ignoring budget
+                },
+                { 
+                    'col_header': "close_order_today", 
+                    'dtype': "checkbox",
+                    # 'backgroundColor': "#e3f2fd",  # ✅ Light blue for time-sensitive action
+                },
+                { 
+                    'col_header': "allocation_long", 
+                    'dtype': "number", 
+                    "display_name": "Buy Amount",
+                    'pinned': True,  # ✅ Pin the buy amount
+                    # 'conditionalColor': {  # ✅ Color based on amount
+                    #     'type': 'threshold',
+                    #     'field': 'allocation_long',
+                    #     'operator': '>',
+                    #     'value': 1000,
+                    #     'trueColor': '#c8e6c9',  # Green when > $1000
+                    #     'falseColor': '#fff9c4'   # Yellow when < $1000
+                    # }
+                },
+                { 
+                    'col_header': "limit_price", 
+                    'dtype': "number",
+                    # 'backgroundColor': "#e8f5e9",  # ✅ Light green for buy price
+                },
+                { 
+                    'col_header': "take_profit", 
+                    'dtype': "number",
+                    # 'backgroundColor': "#c8e6c9",  # ✅ Darker green for profit target
+                    # 'conditionalColor': {  # ✅ Color based on profit percentage
+                    #     'type': 'threshold',
+                    #     'field': 'take_profit',
+                    #     'operator': '>',
+                    #     'value': 0.05,  # 5% profit
+                    #     'trueColor': '#81c784',  # Darker green for high profit
+                    #     'falseColor': '#e8f5e9'   # Light green for lower profit
+                    # }
+                },
+                { 
+                    'col_header': "sell_out", 
+                    'dtype': "number",
+                    # 'backgroundColor': "#ffcdd2",  # ✅ Light red for stop loss
+                    # 'conditionalColor': {  # ✅ Warning color for large stop loss
+                    #     'type': 'threshold',
+                    #     'field': 'sell_out',
+                    #     'operator': '<',
+                    #     'value': -0.03,  # -3% or worse
+                    #     'trueColor': '#ef5350',  # Dark red for large loss
+                    #     'falseColor': '#ffcdd2'   # Light red for small loss
+                    # }
+                },
+                { 
+                    'col_header': "sell_trigbee_date", 
+                    'dtype': "datetime",
+                    # 'backgroundColor': "#f3e5f5",  # ✅ Light purple for date fields
+                },
+                                            { 
+                    'col_header': "macd_state", 
+                    'dtype': "string",
+                    # 'backgroundColor': "#ffcdd2",  # ✅ Light red for stop loss
+                    'conditionalColor': {
+                        'operator': 'contains',
+                        'value': 'buy',  # ✅ Green if cell contains "buy"
+                        'trueColor': '#c8e6c9',  # Green
+                        'falseColor': '#ffcdd2'   # Red (when it doesn't contain "buy")
+                    }
+                },
+
+            ]
+
+            active_order_editable_cols = [
+                                        { 
+                                            'col_header': "confirm_sell", 
+                                            'dtype': "checkbox", 
+                                            "display_name": "!Confirm Sell OR Update Order!",
+                                            'pinned': True,  # ✅ Pin confirmation column
+                                            'backgroundColor': "#F0E439EE",  # ✅ Yellow highlight for confirmation
+                                        },
+                                        { 
+                                            'col_header': "sell_qty", 
+                                            'dtype': "number", 
+                                            "display_name": "Sell Qty",
+                                            'pinned': True,  # ✅ Pin sell quantity
+                                            # 'backgroundColor': "transparent", #"#ffebee",  # ✅ Light red for sell quantity
+                                            # 'conditionalColor': {  # ✅ Highlight large sell quantities
+                                            #     'type': 'threshold',
+                                            #     'field': 'sell_qty',
+                                            #     'operator': '>',
+                                            #     'value': 100,  # Adjust threshold based on your needs
+                                            #     'trueColor': '#ffcdd2',  # Darker red for large quantities
+                                            #     'falseColor': '#ffebee'   # Light red for small quantities
+                                            # }
+                                        },
+                                        { 
+                                            'col_header': "sell_amount", 
+                                            'dtype': "number",
+                                            "info": "This will overwrite Sell Qty",
+                                            # 'backgroundColor': "transparent", #"#ef5350",  # ✅ Dark red warning (overwrites qty)
+                                        },
+                                        { 
+                                            'col_header': "take_profit", 
+                                            'dtype': "number",
+                                            # 'backgroundColor': "#c8e6c9",  # ✅ Green for profit target
+                                            # 'conditionalColor': {  # ✅ Color based on profit percentage
+                                            #     'type': 'threshold',
+                                            #     'field': 'take_profit',
+                                            #     'operator': '>',
+                                            #     'value': 0.05,  # 5% profit
+                                            #     'trueColor': '#81c784',  # Darker green for high profit
+                                            #     'falseColor': '#e8f5e9'   # Light green for lower profit
+                                            # }
+                                        },
+                                        { 
+                                            'col_header': "sell_out", 
+                                            'dtype': "number",
+                                            # 'backgroundColor': "#ffcdd2",  # ✅ Light red for stop loss
+                                            # 'conditionalColor': {  # ✅ Warning color for large stop loss
+                                            #     'type': 'threshold',
+                                            #     'field': 'sell_out',
+                                            #     'operator': '<',
+                                            #     'value': -0.03,  # -3% or worse
+                                            #     'trueColor': '#ef5350',  # Dark red for large loss
+                                            #     'falseColor': '#ffcdd2'   # Light red for small loss
+                                            # }
+                                        },
+                                        { 
+                                            'col_header': "sell_trigbee_date", 
+                                            'dtype': "datetime",
+                                            # 'backgroundColor': "#f3e5f5",  # ✅ Light purple for date fields
+                                        },
+                                        { 
+                                            'col_header': "close_order_today", 
+                                            'dtype': "checkbox",
+                                            # 'backgroundColor': "#e3f2fd",  # ✅ Light blue for time-sensitive action
+                                        },
+                                        { 
+                                            'col_header': "ignore_allocation_budget", 
+                                            'dtype': "checkbox", 
+                                            "display_name": "Ignore Allocation Deploy",
+                                            # 'backgroundColor': "#ffebee",  # ✅ Light red warning
+                                        },
+                                        { 
+                                            'col_header': "queen_order_state", 
+                                            'dtype': "list", 
+                                            "display_name": "queen_order_state", 
+                                            "values": king_G.get('active_order_state_list'),
+                                            # 'backgroundColor': "#e1bee7",  # ✅ Light purple for status dropdown
+                                        },
+                                    ]
+
 
             buttons=[
                         {'button_name': None, # MAIN SYMBOL BUTTON
@@ -859,15 +1023,16 @@ def story_grid(prod, client_user,
                         'sortable': True,
                         'pinned': 'left',
                         'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None and i != 'symbol'],
-                        'cellStyle': button_style_symbol,
-                        'display_grid_column': 'trig_data',
-                        'editableCols': trig_editableCols, #[ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
+                        'cellStyle': generate_shaded_cell_style('trinity_w_L'),
+                        # 'display_grid_column': ['trig_data'],
+                        'editableCols': {'trig_data': trig_editableCols,
+                                         'wave_data': wave_data_editable_cols,
+                                         'active_orders':active_order_editable_cols}, #[ {'col_header': i, 'display_name': i} for i in create_TrigRule().keys()],
 
                         'cellRenderer': "agGroupCellRenderer",
                         'pivot': True,
                         'add_symbol_row_info': ['buy_autopilot', 'sell_autopilot', 'trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'] # ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
-                        # 'display_grid_column': 'active_orders',
-                        # 'editableCols': ['allocation_long'],
+
                         },
 
                         {'button_name': None,
@@ -894,88 +1059,11 @@ def story_grid(prod, client_user,
                         
                         'add_symbol_row_info': ['current_ask'],
 
-                        'display_grid_column': 'wave_data',
-                            'editableCols': [
-                                { 
-                                    'col_header': "confirm_buy", 
-                                    'dtype': "checkbox",
-                                    'pinned': True,  # ✅ Pin this important column
-                                    'backgroundColor': "#a5f092",  # ✅ Yellow highlight for confirmation
-                                },
-                                { 
-                                    'col_header': "ignore_allocation_budget", 
-                                    'dtype': "checkbox", 
-                                    "display_name": "Ignore AutoPilot",
-                                    # 'backgroundColor': "#ffebee",  # ✅ Light red warning for ignoring budget
-                                },
-                                { 
-                                    'col_header': "close_order_today", 
-                                    'dtype': "checkbox",
-                                    # 'backgroundColor': "#e3f2fd",  # ✅ Light blue for time-sensitive action
-                                },
-                                { 
-                                    'col_header': "allocation_long", 
-                                    'dtype': "number", 
-                                    "display_name": "Buy Amount",
-                                    'pinned': True,  # ✅ Pin the buy amount
-                                    # 'conditionalColor': {  # ✅ Color based on amount
-                                    #     'type': 'threshold',
-                                    #     'field': 'allocation_long',
-                                    #     'operator': '>',
-                                    #     'value': 1000,
-                                    #     'trueColor': '#c8e6c9',  # Green when > $1000
-                                    #     'falseColor': '#fff9c4'   # Yellow when < $1000
-                                    # }
-                                },
-                                { 
-                                    'col_header': "limit_price", 
-                                    'dtype': "number",
-                                    # 'backgroundColor': "#e8f5e9",  # ✅ Light green for buy price
-                                },
-                                { 
-                                    'col_header': "take_profit", 
-                                    'dtype': "number",
-                                    # 'backgroundColor': "#c8e6c9",  # ✅ Darker green for profit target
-                                    # 'conditionalColor': {  # ✅ Color based on profit percentage
-                                    #     'type': 'threshold',
-                                    #     'field': 'take_profit',
-                                    #     'operator': '>',
-                                    #     'value': 0.05,  # 5% profit
-                                    #     'trueColor': '#81c784',  # Darker green for high profit
-                                    #     'falseColor': '#e8f5e9'   # Light green for lower profit
-                                    # }
-                                },
-                                { 
-                                    'col_header': "sell_out", 
-                                    'dtype': "number",
-                                    # 'backgroundColor': "#ffcdd2",  # ✅ Light red for stop loss
-                                    # 'conditionalColor': {  # ✅ Warning color for large stop loss
-                                    #     'type': 'threshold',
-                                    #     'field': 'sell_out',
-                                    #     'operator': '<',
-                                    #     'value': -0.03,  # -3% or worse
-                                    #     'trueColor': '#ef5350',  # Dark red for large loss
-                                    #     'falseColor': '#ffcdd2'   # Light red for small loss
-                                    # }
-                                },
-                                { 
-                                    'col_header': "sell_trigbee_date", 
-                                    'dtype': "datetime",
-                                    # 'backgroundColor': "#f3e5f5",  # ✅ Light purple for date fields
-                                },
-                                                            { 
-                                    'col_header': "macd_state", 
-                                    'dtype': "string",
-                                    # 'backgroundColor': "#ffcdd2",  # ✅ Light red for stop loss
-                                    'conditionalColor': {
-                                        'operator': 'contains',
-                                        'value': 'buy',  # ✅ Green if cell contains "buy"
-                                        'trueColor': '#c8e6c9',  # Green
-                                        'falseColor': '#ffcdd2'   # Red (when it doesn't contain "buy")
-                                    }
-                                },
-
-                            ],
+                        'editableCols': {
+                                         'wave_data': wave_data_editable_cols,
+                                         'active_orders':active_order_editable_cols,
+                                        'trig_data': trig_editableCols,
+                                         }, 
                         },
 
                         {'button_name': None,
@@ -999,86 +1087,11 @@ def story_grid(prod, client_user,
                                                 'star_buys_at_play', 'ticker_total_budget', 
                                                 'ticker_remaining_budget', 'ticker_remaining_borrow'],
                         
-                        'display_grid_column': 'active_orders',
-                        'editableCols': [
-                            { 
-                                'col_header': "confirm_sell", 
-                                'dtype': "checkbox", 
-                                "display_name": "!Confirm Sell OR Update Order!",
-                                'pinned': True,  # ✅ Pin confirmation column
-                                'backgroundColor': "#F0E439EE",  # ✅ Yellow highlight for confirmation
-                            },
-                            { 
-                                'col_header': "sell_qty", 
-                                'dtype': "number", 
-                                "display_name": "Sell Qty",
-                                'pinned': True,  # ✅ Pin sell quantity
-                                # 'backgroundColor': "transparent", #"#ffebee",  # ✅ Light red for sell quantity
-                                # 'conditionalColor': {  # ✅ Highlight large sell quantities
-                                #     'type': 'threshold',
-                                #     'field': 'sell_qty',
-                                #     'operator': '>',
-                                #     'value': 100,  # Adjust threshold based on your needs
-                                #     'trueColor': '#ffcdd2',  # Darker red for large quantities
-                                #     'falseColor': '#ffebee'   # Light red for small quantities
-                                # }
-                            },
-                            { 
-                                'col_header': "sell_amount", 
-                                'dtype': "number",
-                                "info": "This will overwrite Sell Qty",
-                                # 'backgroundColor': "transparent", #"#ef5350",  # ✅ Dark red warning (overwrites qty)
-                            },
-                            { 
-                                'col_header': "take_profit", 
-                                'dtype': "number",
-                                # 'backgroundColor': "#c8e6c9",  # ✅ Green for profit target
-                                # 'conditionalColor': {  # ✅ Color based on profit percentage
-                                #     'type': 'threshold',
-                                #     'field': 'take_profit',
-                                #     'operator': '>',
-                                #     'value': 0.05,  # 5% profit
-                                #     'trueColor': '#81c784',  # Darker green for high profit
-                                #     'falseColor': '#e8f5e9'   # Light green for lower profit
-                                # }
-                            },
-                            { 
-                                'col_header': "sell_out", 
-                                'dtype': "number",
-                                # 'backgroundColor': "#ffcdd2",  # ✅ Light red for stop loss
-                                # 'conditionalColor': {  # ✅ Warning color for large stop loss
-                                #     'type': 'threshold',
-                                #     'field': 'sell_out',
-                                #     'operator': '<',
-                                #     'value': -0.03,  # -3% or worse
-                                #     'trueColor': '#ef5350',  # Dark red for large loss
-                                #     'falseColor': '#ffcdd2'   # Light red for small loss
-                                # }
-                            },
-                            { 
-                                'col_header': "sell_trigbee_date", 
-                                'dtype': "datetime",
-                                # 'backgroundColor': "#f3e5f5",  # ✅ Light purple for date fields
-                            },
-                            { 
-                                'col_header': "close_order_today", 
-                                'dtype': "checkbox",
-                                # 'backgroundColor': "#e3f2fd",  # ✅ Light blue for time-sensitive action
-                            },
-                            { 
-                                'col_header': "ignore_allocation_budget", 
-                                'dtype': "checkbox", 
-                                "display_name": "Ignore Allocation Deploy",
-                                # 'backgroundColor': "#ffebee",  # ✅ Light red warning
-                            },
-                            { 
-                                'col_header': "queen_order_state", 
-                                'dtype': "list", 
-                                "display_name": "queen_order_state", 
-                                "values": king_G.get('active_order_state_list'),
-                                # 'backgroundColor': "#e1bee7",  # ✅ Light purple for status dropdown
-                            },
-                        ],
+                        'editableCols': {
+                                         'active_orders':active_order_editable_cols,
+                                        #  'wave_data': wave_data_editable_cols,
+                                        # 'trig_data': trig_editableCols,
+                                         },                         
                         },
                         
                         {'button_name': None,
@@ -1154,8 +1167,8 @@ def story_grid(prod, client_user,
                                     'cellStyle': honey_colors,
                                     "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
                                     'valueFormatter': value_format_pct,
-                                    'enableCellChangeFlash': False, 'cellRenderer': 'agAnimateShowChangeCellRenderer',
-                                    }, #  "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                                      
+                                    # 'enableCellChangeFlash': True, 
+                                    },
 
             'total_budget': {'headerName':'Total Budget', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},                    
             'unrealized_pl': {'headerName':"Unrealized PL", 'cellStyle': honey_colors, 'sortable':'true',
@@ -1176,11 +1189,14 @@ def story_grid(prod, client_user,
             'star_buys_at_play': { 'headerName': '$Long', 'sortable': True, 'initialWidth': 100, 
                                   'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 
                                   'initialWidth': 110,
-                                  'enableCellChangeFlash': True,
+                                #   'enableCellChangeFlash': True,
                                   } ,
             'star_sells_at_play': { 'headerName': '$Short', 'sortable': True, 'initialWidth': 100, 
-                                   'enableCellChangeFlash': True, 'cellRenderer': 'agAnimateShowChangeCellRenderer', 
-                                   'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 'initialWidth': 110},
+                                #    'enableCellChangeFlash': True, 
+                                #    'cellRenderer': 'agAnimateShowChangeCellRenderer', 
+                                   'type': ["customNumberFormat", "numericColumn", "numberColumnFilter"], 
+                                   'initialWidth': 110
+                                   },
             'star_buys_at_play_allocation' : {'headerName':'Auto Pilot Allocation', 'sortable':'true', 
             "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
             'allocation_long' : {'headerName':'Advisor Minimum Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
@@ -1240,8 +1256,11 @@ def story_grid(prod, client_user,
 
         
         story_col_order = [
-                            'queens_suggested_buy', 
+                            'trinity_w_L', 
+                            'queens_suggested_buy',
                             'queens_suggested_sell', 
+                            'buy_autopilot', 
+                            'sell_autopilot',
                             'current_from_yesterday',
                             'current_ask',
                             'pct_portfolio',
@@ -1251,10 +1270,8 @@ def story_grid(prod, client_user,
                             'allocation_long',
                             'unrealized_pl', 
                             'unrealized_plpc', 
-                            'piece_name',
                             'trinity_deviation_from_qcp',
-                            'buy_autopilot', 
-                            'sell_autopilot',
+                            'piece_name',
         ]
 
         toggle_view = []
@@ -1441,15 +1458,18 @@ def story_grid(prod, client_user,
             filter_button='piece_name',
             show_clear_all_filters=True,
             column_sets = {
-"Simple View": [
-    "symbol", 
-    "qty_available", 
-    "current_ask", 
-    "pct_portfolio", 
-    "star_buys_at_play", 
-    "star_sells_at_play",
-    "money",
-    "unrealized_pl"
+"Trinity - Waves": [
+    "symbol",
+    "trinity_w_L",
+    "trinity_w_15",
+    "trinity_w_30",
+    "trinity_w_54",
+    "Day_state",
+    "Week_state",
+    "Month_state",
+    "Quarter_state", 
+    "Quarters_state", 
+    "Year_state",
 ],
 
 "Trading View": [
@@ -1470,32 +1490,20 @@ def story_grid(prod, client_user,
     "star_buys_at_play",
 ],
 
-"Performance Analysis": [
-    "symbol",
-    "pct_portfolio",
-    "money",
-    "honey",
-    "unrealized_pl",
-    "unrealized_plpc",
-    "current_from_yesterday",
-    "1Day_1Year_change",
-    "30Minute_1Month_change",
-    "5Minute_5Day_change"
-],
+# "Performance Analysis": [
+#     "symbol",
+#     "pct_portfolio",
+#     "money",
+#     "honey",
+#     "unrealized_pl",
+#     "unrealized_plpc",
+#     "current_from_yesterday",
+#     "1Day_1Year_change",
+#     "30Minute_1Month_change",
+#     "5Minute_5Day_change"
+# ],
 
-"Technical Indicators": [
-    "symbol",
-    "trinity_w_L",
-    "trinity_w_15",
-    "trinity_w_30",
-    "trinity_w_54",
-    "Day_state",
-    "Week_state",
-    "Month_state",
-    "Quarter_state", 
-    "Quarters_state", 
-    "Year_state",
-]
+
 
 },
 show_cell_content=True,
@@ -1572,7 +1580,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         #                     mark_down_text(f'Portfolio')
 
         # Toggle View
-        tab_view = sac_tabs(["Portfolio", "AI Portfolio Manager", "Hedge Funds", "Sectors"])
+        tab_view = sac_tabs(["Portfolio", "AI Portfolio Manager", "Hedge Funds"])
         if tab_view == 'Hedge Funds':
             show_graph_s = False
             show_graph_t = False

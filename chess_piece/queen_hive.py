@@ -3589,7 +3589,6 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         QUEEN = PollenDatabase.retrieve_data(table_name, f'{db_root}-QUEEN', main_server=main_server) if queen else {}
 
         if queen and orders_v2:
-            print("Set QUEEN ORDERS in QUEEN")
             queen_orders = copy.deepcopy(ORDERS['queen_orders'])
             QUEEN['queen_orders'] = queen_orders
             QUEEN['orders_v2'] = True

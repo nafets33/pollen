@@ -497,9 +497,9 @@ def pollenq(sandbox=False, demo=False):
 
     with header_text_1.container():
         if not prod:
-            mark_down_text("SandBox Account", fontsize="28", color="#b0b029", align="left")
+            mark_down_text("SandBox Account", fontsize="28", color="#8A801E", align="left")
         else:
-            mark_down_text("Live Account", fontsize="28", color="#03457C", align="left")
+            mark_down_text("Live Account", fontsize="28", color="#088114", align="left")
 
         # if show_acct:
         with cols[3]:
@@ -588,7 +588,6 @@ def pollenq(sandbox=False, demo=False):
         if 'chess_board__revrec' not in QUEEN_KING.keys():
             print("SETUP QUEEN KING")
             st.session_state['chessboard_setup'] = True
-            # switch_page('chessboard')
             st.switch_page('pages/chessboard.py')
 
         if st.sidebar.button("Clear App Requests"):
@@ -690,17 +689,22 @@ def pollenq(sandbox=False, demo=False):
         # with cols[1]:
 
     if menu_id in ['pollen', 'demo']:
+        tabs = st.tabs(["Trading Grids", "Portfolio Allocations"])
         st.divider()
         cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
         cash = max(min(cash, 1), -1)
         QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
-        queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=st.session_state.get('sneak_peak'))
+        with tabs[0]:
+            queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=st.session_state.get('sneak_peak'))
     
-    if menu_id == 'Portfolio Allocations':
+    # if menu_id == 'Portfolio Allocations':
+        st.subheader("Portfolio Allocations")
+        st.divider()
         crypto_symbols__tickers_avail = ['BTC/USD', 'ETH/USD']
         themes = list(pollen_themes(KING).keys())
         ticker_allowed = KING['alpaca_symbols_df'].index.tolist() + crypto_symbols__tickers_avail
-        chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=admin_pq)
+        with tabs[1]:
+            chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=admin_pq)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')

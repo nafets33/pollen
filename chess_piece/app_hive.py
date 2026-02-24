@@ -175,8 +175,8 @@ def sac_menu_buttons(main='pollen'):
             # sac.ButtonsItem(label='Trading Models', disabled=False),
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
             # sac.ButtonsItem(label='Engine', icon='gem'),
-            sac.ButtonsItem(label='Account', icon='share-fill'),
-        ], format_func='title', align='left', color='#E6C93B')
+            # sac.ButtonsItem(label='Account', icon='share-fill'),
+        ], format_func='title', align='right', color='#E6C93B')
     elif main == 'Account':
         menu_buttons = sac.buttons([
             sac.ButtonsItem(label='account', icon='key'),

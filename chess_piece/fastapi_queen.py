@@ -344,7 +344,7 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     portfolio = QUEENsHeart['heartbeat'].get('portfolio')
 
     buy_package = create_AppRequest_package(request_name='buy_orders')
-    # buy_package.update({'buy_order': {}})
+
     blessing={} #{i: '': for i in []}, # order_vars
     
     # Broker
@@ -614,6 +614,7 @@ def process_clean_on_QK_requests(QUEEN, QUEEN_KING, request_name='sell_orders'):
 def app_Sellorder_request(client_user, prod, process_type, selected_row, default_value, df_sells=[]): # sell_orders
   # WORKERBEE attempt to handle WashSale Rule
   try:
+    # how to handle errors # WORKERBEE
     king_G = kingdom__global_vars()
     RUNNING_Orders = king_G.get('RUNNING_Orders') # = ['running', 'running_open']
     qb = init_queenbee(client_user=client_user, prod=prod, orders_v2=True, queen_king=True, api=True, orders=True, pg_migration=pg_migration)
@@ -792,14 +793,16 @@ def app_queen_order_update_order_rules(client_user, prod, selected_row, default_
       QUEEN_KING = init_queenbee(client_user=client_user, prod=prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
       order_update_package = create_AppRequest_package(request_name='update_order_rules', client_order_id=client_order_id)
       order_update_package['update_order_rules'] = {}
+      update_dict = {}
 
       if kors:
-        update_dict = {}
         for kor, newvalue in default_value.items():
-          if kor in kors.keys():
-            if newvalue == kors[kor]:
-              #  print("no update")
-              continue
+          if kor not in kors.keys():
+            print("NOT a KOR in default_value: ", kor)
+            continue
+          if newvalue == kors[kor]:
+            #  print("no update")
+            continue
           current_value = current_kors[kor] # if current_value in current_kors else None
           newvalue = validate_kors_valueType(newvalue, current_value)
           if newvalue == 'error':
@@ -807,12 +810,12 @@ def app_queen_order_update_order_rules(client_user, prod, selected_row, default_
             return {'status': False, 'description': f"date time conversion failed try mm/dd/yyyy"}
           else:
               update_dict[kor] = newvalue
-      else:
+      else: # queen order state update
          update_dict = default_value
         
       if update_dict:
         order_update_package['update_order_rules'].update({client_order_id: update_dict})
-        print(order_update_package['update_order_rules'])
+        print("SENDING APP REQUEST TO QUEENKING FOR QUEEN: ", order_update_package['update_order_rules'])
       
         QUEEN_KING['update_order_rules'].append(order_update_package)
         
@@ -1351,7 +1354,7 @@ def header_account(client_user, prod):
       portfolio_value = long + short + crypto_value
       buying_power = random.randint(50, 10000)
       if not demo:
-        print("DEMO MODE - Randomizing values for non-Alpaca brokers")
+        # print("DEMO MODE - Randomizing values for non-Alpaca brokers")
         crypto_value = 0
         long = 0
         short = 0
@@ -1417,34 +1420,35 @@ def queenking_symbol(client_user, prod, selected_row=None, default_value=None, t
     existing_by_id = {rule.get('trigger_id'): rule for rule in existing_trigrules if rule.get('trigger_id')}
     
     # Process triggers marked for saving
-    triggers_to_save = [t for t in triggers if t.get('save_to_db') == True]
-    if triggers_to_save:
-      for trig in triggers_to_save:
-          # Set Trigger ID
-          trigger_id = f"{symbol}_{trig.get('trigrule_type')}_{trig.get('ttf')}"
-          trig['trigger_id'] = trigger_id
-          trig['save_to_db'] = False  # Flip save back
-          
-          # Replace or add
-          if trigger_id in existing_by_id:
-              # Update existing trigger
-              existing_by_id[trigger_id].update(trig)
-              print(f"✏️  QUEEN_KING Updated trigger: {trigger_id}")
-          else:
-              # Add new trigger
-              existing_by_id[trigger_id] = trig
-              print(f"➕ New trigger: {trigger_id}")
-      
-      # Convert back to list and save
-      QUEEN_KING['king_controls_queen']['ticker_trigrules'] = list(existing_by_id.values())
-      if triggers_only:
-          if pg_migration:
-              table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
-              PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
-          else:
-             PickleData(QUEEN_KING.get('source'), QUEEN_KING)
-          
-          return grid_row_button_resp(description=f" {symbol} Trigger Rules Updated")
+    if triggers:
+      triggers_to_save = [t for t in triggers if t.get('save_to_db') == True]
+      if triggers_to_save:
+        for trig in triggers_to_save:
+            # Set Trigger ID
+            trigger_id = f"{symbol}_{trig.get('trigrule_type')}_{trig.get('ttf')}"
+            trig['trigger_id'] = trigger_id
+            trig['save_to_db'] = False  # Flip save back
+            
+            # Replace or add
+            if trigger_id in existing_by_id:
+                # Update existing trigger
+                existing_by_id[trigger_id].update(trig)
+                print(f"✏️  QUEEN_KING Updated trigger: {trigger_id}")
+            else:
+                # Add new trigger
+                existing_by_id[trigger_id] = trig
+                print(f"➕ New trigger: {trigger_id}")
+        
+        # Convert back to list and save
+        QUEEN_KING['king_controls_queen']['ticker_trigrules'] = list(existing_by_id.values())
+        if triggers_only:
+            if pg_migration:
+                table_name = 'client_user_store' if prod else 'client_user_store_sandbox'
+                PollenDatabase.upsert_data(table_name, QUEEN_KING.get('key'), QUEEN_KING)
+            else:
+              PickleData(QUEEN_KING.get('source'), QUEEN_KING)
+            
+            return grid_row_button_resp(description=f" {symbol} Trigger Rules Updated")
 
     trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol)
     if not trading_model:
@@ -1458,9 +1462,9 @@ def queenking_symbol(client_user, prod, selected_row=None, default_value=None, t
         elif key == 'borrow_power':
             if 'buyingpower_allocation_ShortTerm' in trading_model:
                 trading_model['buyingpower_allocation_ShortTerm'] = value
-        elif key == 'max_budget_allowed':
-            if 'total_budget' in trading_model:
-                trading_model['total_budget'] = value
+        # elif key == 'max_budget_allowed':
+        #     if 'total_budget' in trading_model:
+        #         trading_model['total_budget'] = value
         elif key in starnames.keys():
             if 'stars_kings_order_rules' in trading_model and starnames[key] in trading_model['stars_kings_order_rules']:
                 trading_model['stars_kings_order_rules'][starnames[key]]['buyingpower_allocation_LongTerm'] = value

@@ -322,7 +322,7 @@ def signin_main(page='demo'):
         st.session_state['client_user'] = st.session_state["username"]
         st.session_state['db_root'] = db_root
         if not prod:
-            st.markdown("<h4 style='text-align: center; color: #d9c91c;'> SANDBOX ENVIRONMENT </h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='text-align: center; color: #8A801E;'> SANDBOX ENVIRONMENT </h4>", unsafe_allow_html=True)
             st.divider()
         return prod
 
