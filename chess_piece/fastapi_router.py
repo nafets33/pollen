@@ -10,8 +10,8 @@ import os
 import random
 import pandas as pd
 
-from master_ozz.utils import init_constants
-from master_ozz.ozz_query import ozz_query
+# from master_ozz.utils import init_constants
+# from master_ozz.ozz_query import ozz_query
 from chess_piece.fastapi_queen import *
 from chess_utils.websocket_manager import manager
 from chess_utils.websocket_updates import send_story_grid_update
@@ -261,27 +261,27 @@ def check_api():
     return JSONResponse(content="online")
 
 
-@router.get("/local/{file_name}")
-def get_file(file_name: str):
-    print("GET FILE", file_name)
-    constants = init_constants()
-    OZZ_db_audio = constants.get('OZZ_db_audio')
-    OZZ_db_images = constants.get('OZZ_db_images')
-    file_path = os.path.join(OZZ_db_audio, file_name)
+# @router.get("/local/{file_name}")
+# def get_file(file_name: str):
+#     print("GET FILE", file_name)
+#     constants = init_constants()
+#     OZZ_db_audio = constants.get('OZZ_db_audio')
+#     OZZ_db_images = constants.get('OZZ_db_images')
+#     file_path = os.path.join(OZZ_db_audio, file_name)
     
-    # Determine the media type based on the file extension
-    media_type = "application/octet-stream"
-    if file_name.lower().endswith(".mp3"):
-        media_type = "audio/mp3"
-        file_path = os.path.join(OZZ_db_audio, file_name)
-    elif file_name.lower().endswith(".png"):
-        media_type = "image/png"
-        file_path = os.path.join(OZZ_db_images, file_name)
-    elif file_name.lower().endswith(".gif"):
-        media_type = "image/gif"
-        file_path = os.path.join(OZZ_db_images, file_name)
+#     # Determine the media type based on the file extension
+#     media_type = "application/octet-stream"
+#     if file_name.lower().endswith(".mp3"):
+#         media_type = "audio/mp3"
+#         file_path = os.path.join(OZZ_db_audio, file_name)
+#     elif file_name.lower().endswith(".png"):
+#         media_type = "image/png"
+#         file_path = os.path.join(OZZ_db_images, file_name)
+#     elif file_name.lower().endswith(".gif"):
+#         media_type = "image/gif"
+#         file_path = os.path.join(OZZ_db_images, file_name)
 
-    return FileResponse(file_path, media_type=media_type)
+#     return FileResponse(file_path, media_type=media_type)
 
 @router.get("/test", status_code=status.HTTP_200_OK)
 def load_ozz_voice():
@@ -597,22 +597,22 @@ async def func_queen_queenking_trigger_update(client_user: str= Body(...), prod:
     return JSONResponse(content=json_data)
 
 
-@router.post("/voiceGPT", status_code=status.HTTP_200_OK)
-async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
-    # Print the entire body of the POST request
-    body = await request.json()
-    print("Full Request Body:", body)
-    selected_actions = body.get('selected_actions', [])
-    use_embeddings = body.get('use_embeddings', [])
+# @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
+# async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
+#     # Print the entire body of the POST request
+#     body = await request.json()
+#     print("Full Request Body:", body)
+#     selected_actions = body.get('selected_actions', [])
+#     use_embeddings = body.get('use_embeddings', [])
 
-    print(f'trig TYPE: {tigger_type} {before_trigger_vars}')
+#     print(f'trig TYPE: {tigger_type} {before_trigger_vars}')
     
-    if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
-        print("Auth Failed", api_key)
-        return "NOTAUTH"
+#     if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
+#         print("Auth Failed", api_key)
+#         return "NOTAUTH"
 
-    json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
-    return JSONResponse(content=json_data)
+#     json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
+#     return JSONResponse(content=json_data)
 
 # @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
 # def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):

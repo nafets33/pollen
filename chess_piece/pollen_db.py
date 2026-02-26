@@ -154,7 +154,8 @@ class PollenDatabase:
                     password=DATABASE_PASS_SERVER,
                     connect_timeout=10
                 )
-                print(f"✓ Server connection pool initialized (min={minconn}, max={maxconn})")
+                # print(f"✓ Server connection pool initialized (min={minconn}, max={maxconn})")
+                cls._pool_initialized = True
             else:
                 # Local pool initialization
                 DATABASE_HOST = os.getenv("POLLEN_DATABASE_host", "localhost")
@@ -173,7 +174,6 @@ class PollenDatabase:
                     connect_timeout=10
                 )
                 # print(f"✓ Local connection pool initialized (min={minconn}, max={maxconn})")
-                
                 cls._pool_initialized = True
             
         except Exception as e:

@@ -13,7 +13,7 @@ from chess_piece.pollen_db import PollenDatabase
 from chess_utils.conscience_utils import buy_button_dict_items, add_symbol_dict_items
 from chess_utils.trigrule_utils import create_trig_rule_metadata
 from pq_auth import signin_main
-from pages.PortfolioManager import ozz
+# from pages.PortfolioManager import ozz
 from custom_grid import st_custom_grid, GridOptionsBuilder, JsCode
 # from streamlit_custom_api_grid import st_custom_grid, GridOptionsBuilder, JsCode
 
@@ -779,10 +779,10 @@ def story_grid(prod, client_user,
         gb = GridOptionsBuilder.create()
         gb.configure_grid_options(pagination=True, 
                                     paginationPageSize=100, 
-                                #   suppressPaginationPanel=True, 
+                                    suppressPaginationPanel=True, 
                                     enableRangeSelection=True, 
                                     copyHeadersToClipboard=True,
-                                    sideBar=True,
+                                    sideBar=False,
                                     sortable=True
                                 ) 
         gb.configure_default_column(column_width=100, 
@@ -1614,11 +1614,11 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
             print("account_header_grid refresh_sec", refresh_sec)
             account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
         
-        if tab_view == 'AI Portfolio Manager':
-            # st.switch_page("pages/PortfolioManager.py")
-            print("AI Portfolio Manager")
-            ozz(st.session_state['authentication_status'])
-            st.stop()
+        # if tab_view == 'AI Portfolio Manager':
+        #     # st.switch_page("pages/PortfolioManager.py")
+        #     print("AI Portfolio Manager")
+        #     ozz(st.session_state['authentication_status'])
+        #     st.stop()
 
         story_grid(prod, client_user=client_user, ip_address=ip_address, 
                    revrec=revrec, symbols=symbols, 

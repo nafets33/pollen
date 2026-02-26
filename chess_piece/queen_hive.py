@@ -3401,11 +3401,11 @@ def init_pollen_dbs(db_root, prod, queens_chess_piece='queen', queenKING=False, 
                 if not PollenDatabase.key_exists(table_name, pg_table):
                     data = {'data': []}
                     PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data) 
-            elif key == "SESSION_STATE":
-                if not PollenDatabase.key_exists(table_name, pg_table):
-                    from master_ozz.utils import hoots_and_hootie_vars
-                    data = hoots_and_hootie_vars()
-                    PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
+            # elif key == "SESSION_STATE":
+            #     if not PollenDatabase.key_exists(table_name, pg_table):
+            #         from master_ozz.utils import hoots_and_hootie_vars
+            #         data = hoots_and_hootie_vars()
+            #         PollenDatabase.upsert_data(table_name=table_name, key=pg_table, value=data)
 
 
     if pg_migration:
