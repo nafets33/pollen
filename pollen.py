@@ -517,17 +517,6 @@ def pollenq(sandbox=False, demo=False):
     if 'admin__client_user' in st.session_state:
         client_user = st.session_state['admin__client_user']
 
-    if st.session_state['admin']:
-        if st.sidebar.button("Refresh Ticker Universe to KING"):
-            ticker_universe = return_Ticker_Universe()
-            KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
-            KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
-            if pg_migration:
-                PollenDatabase.upsert_data(db_table, KING.get('key'), KING)
-            else:
-                PickleData(KING.get('source'), KING)
-                st.success("KING Saved")
-    
     
     cols = st.columns((4,2))
     with cols[0]:
@@ -576,14 +565,24 @@ def pollenq(sandbox=False, demo=False):
                            demo=demo,
                            )
         api = qb.get('api')
+        # st.write(vars(api))
         revrec = qb.get('revrec')
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
+        print(f"Welcome, {QUEEN_KING.get('key')}")
 
-        # with cols[1]:
-        #     cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
-        #     cash = max(min(cash, 1), -1)
-        #     QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
+        if st.session_state['admin']:
+            if st.sidebar.button("Refresh Ticker Universe to KING"):
+                ticker_universe = return_Ticker_Universe(False)
+                KING['alpaca_symbols_dict'] = ticker_universe.get('alpaca_symbols_dict')
+                KING['alpaca_symbols_df'] = ticker_universe.get('alpaca_symbols_df')
+                if pg_migration:
+                    PollenDatabase.upsert_data(db_table, KING.get('key'), KING)
+                else:
+                    PickleData(KING.get('source'), KING)
+                    st.success("KING Saved")
+
+
 
         if 'chess_board__revrec' not in QUEEN_KING.keys():
             print("SETUP QUEEN KING")
@@ -630,23 +629,23 @@ def pollenq(sandbox=False, demo=False):
             if not api:
                 queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
                 api_failed = True
-                st.stop()
+                # st.stop()
             else:
                 api_failed = False
                 snapshot = api.get_snapshot("SPY") # return_last_quote from snapshot
-            alpaca_acct_info = refresh_account_info(api=api)
-            with st.sidebar:
-                if st.button('acct info'):
-                    st.write(alpaca_acct_info)
-            # ap_info=alpaca_acct_info
-            acct_info = alpaca_acct_info.get('info_converted')
-            acct_info_raw = alpaca_acct_info.get('info')
+                alpaca_acct_info = refresh_account_info(api=api)
+                with st.sidebar:
+                    if st.button('acct info'):
+                        st.write(alpaca_acct_info)
+                # ap_info=alpaca_acct_info
+                acct_info = alpaca_acct_info.get('info_converted')
+                acct_info_raw = alpaca_acct_info.get('info')
 
         except Exception as e:
             st.error(e)
             acct_info = False
             queen__account_keys(QUEEN_KING=QUEEN_KING, authorized_user=authorized_user, show_form=True) #EDRXZ Maever65teo
-            st.stop()
+            # st.stop()
 
         ### TOP OF PAGE
         if st.session_state['admin']:
@@ -655,16 +654,12 @@ def pollenq(sandbox=False, demo=False):
                 if st.button('API'):
                     run_pq_fastapi_server()
 
-
-        
-
-
-        trading_days = hive_dates(api=api)['trading_days']
+        trading_days = hive_dates(api=api).get('trading_days', None)
         # st.write(trading_days) # STORE IN KING and only call once
         mkhrs = return_market_hours(trading_days=trading_days)
         seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0, second=0) - datetime.now(est)).total_seconds()
 
-        
+        print("MK HOURS")
         seconds_to_market_close = abs(seconds_to_market_close) if seconds_to_market_close > 0 else 8
         if mkhrs != 'open':
             seconds_to_market_close = 1
@@ -674,18 +669,20 @@ def pollenq(sandbox=False, demo=False):
         if menu_id == 'Engine':
             from pages.pollen_engine import pollen_engine
             pollen_engine(acct_info_raw)
+        print("api", api)
+        # if api: 
+        #     print("API FETCH")
+        #     portfolio_performance = get_portfolio_performance(api, periods)
+        #     for i, period in enumerate(periods):
 
-    portfolio_performance = get_portfolio_performance(api, periods)
-    for i, period in enumerate(periods):
+        #         portfolio_perf = portfolio_performance.get(period)
+        #         if portfolio_perf is not None:
+        #             with perf_containers[i]:
+        #                 color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
+        #                 mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
+        #                 mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
 
-        portfolio_perf = portfolio_performance.get(period)
-        if portfolio_perf is not None:
-            with perf_containers[i]:
-                color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
-                mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
-                mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
-
-    # QUEENS CONSCIENCE Account, Story, Graphs
+        # QUEENS CONSCIENCE Account, Story, Graphs
         # with cols[1]:
 
     if menu_id in ['pollen', 'demo']:

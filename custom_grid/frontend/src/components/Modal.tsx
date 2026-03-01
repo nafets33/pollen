@@ -22,6 +22,27 @@ interface MyModalProps {
   toastr: any; // Define the toastr type if available
 }
 
+
+// 12-step gradients for green and red
+const greenGradient = [
+  "#f1f8e9", "#e6f9e9", "#d0f5d6", "#c8e6c9", "#bff0c7", "#a5d6a7",
+  "#80df97", "#81c784", "#4caf50", "#43a047", "#388e3c", "#1b5e20"
+];
+const redGradient = [
+  "#ffebee", "#fdecec", "#ffcdd2", "#f8c6c6", "#ef9a9a", "#f09494",
+  "#e57373", "#f44336", "#e06363", "#c62828", "#b71c1c", "#c23d3d"
+];
+
+function getTrinityColor(val: number) {
+  // Clamp between -100 and 100, but max color at 75
+  const capped = Math.max(-75, Math.min(75, val));
+  const arr = capped >= 0 ? greenGradient : redGradient;
+  // Map -75..75 to 0..11
+  const idx = Math.round(Math.abs(capped) / 75 * (arr.length - 1));
+  return arr[idx];
+}
+
+
 const MyModal: React.FC<MyModalProps> = ({
   isOpen,
   closeModal,
@@ -239,13 +260,34 @@ const MyModal: React.FC<MyModalProps> = ({
     <ReactModal
       isOpen={isOpen}
       onRequestClose={closeModal}
-      // style={modalStyle}
+  style={{
+    overlay: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      zIndex: 1000,
+    },
+    content: {
+      overflow: 'visible',
+      padding: 0,
+      inset: 'auto',
+      position: 'relative',
+      border: 'none',
+      background: 'transparent',
+    }
+  }}
       ariaHideApp={false}
     >
       <div className="my-modal-content">
         {/* Modal Header */}
         <div className="modal-header px-3 d-flex justify-content-center align-items-center" style={{ position: "relative" }}>
-          <h4 className="text-center m-0">{modalData.prompt_message}</h4>
+          <h4 className="text-center m-0">
+            {Object.keys(selectedRow || {}).some(col => col.toLowerCase().includes("symbol")) && selectedRow?.symbol && (
+              <span style={{ color: "#2f8d24ff", marginRight: 8 }}>{selectedRow.symbol} {": "}</span>
+            )}
+            {modalData.prompt_message}
+          </h4>
           <span className="close" onClick={closeModal} style={{ position: "absolute", right: "20px" }}>
             &times;
           </span>
@@ -287,318 +329,7 @@ const MyModal: React.FC<MyModalProps> = ({
               </div>
             )}
 
-            {/* Add Symbol Row Info Column */}
-            {add_symbol_row_info && Array.isArray(add_symbol_row_info) && (
-              <div
-                className="d-flex flex-wrap"
-                style={{
-                  flex: 1,
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "8px",
-                  padding: "8px",
-                  background: "#fafcff",
-                  marginBottom: "8px"
-                }}
-              >
-                {add_symbol_row_info.map((col: string, idx: number) =>
-                  selectedRow && selectedRow[col] !== undefined && (
-                    <div
-                      key={col}
-                      style={{
-                        flex: "1 1 30%",
-                        minWidth: "120px",
-                        marginBottom: "8px",
-                        paddingRight: "12px"
-                      }}
-                    >
-                      <b>{col}: </b>
-                      {typeof selectedRow[col] === "number"
-                        ? Number(selectedRow[col]).toLocaleString(undefined, { maximumFractionDigits: 2 })
-                        : String(selectedRow[col])}
-                    </div>
-                  )
-                )}
-              </div>
-            )}
 
-            {/* Other Fields (Text, Datetime, Array Fields) */}
-            <div className="d-flex flex-wrap" style={{ gap: "16px", marginBottom: "16px" }}>
-              {/* Text Fields */}
-              {textFields.length > 0 &&
-                textFields.map((rule: any, index: number) => {
-                  if (sliderRules_stars.includes(rule) || sliderRules_stars_margin.includes(rule)) return null;
-                  const isSliderRule = sliderRules.includes(rule);
-
-                  return (
-                    <div
-                      key={index}
-                      className="d-flex flex-column"
-                      style={{
-                        flex: "1 1 calc(50% - 16px)", // Two columns per row
-                        minWidth: "150px",
-                      }}
-                    >
-                      <label
-                        className="mb-1"
-                        style={{
-                          fontSize: "0.85rem",
-                          fontWeight: "bold",
-                          textTransform: "capitalize",
-                        }}
-                      >
-                        {rule.replace(/_/g, " ")}:
-                        {rule === "sell_amount" && (
-                          <span
-                            style={{ marginLeft: "4px", cursor: "pointer" }}
-                            title="This amount will override sell_qty"
-                          >
-                            ❓
-                          </span>
-                        )}
-                      </label>
-
-                      {isSliderRule ? (
-                        <>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step=".01"
-                            value={promptText[rule] || 0}
-                            onChange={(e) =>
-                              setPromptText({
-                                ...promptText,
-                                [rule]: Number(e.target.value),
-                              })
-                            }
-                            style={{ width: "100%" }}
-                          />
-                          <span style={{ fontSize: "0.85rem", fontWeight: "bold", marginTop: "4px" }}>
-                            {promptText[rule] || 0}
-                          </span>
-                        </>
-                      ) : (
-                        <input
-                          type="text"
-                          value={promptText[rule]}
-                          onChange={(e) =>
-                            setPromptText({
-                              ...promptText,
-                              [rule]: e.target.value,
-                            })
-                          }
-                          style={{
-                            width: "100%",
-                            padding: "6px",
-                            fontSize: "0.85rem",
-                            border: "1px solid #ccc",
-                            borderRadius: "4px",
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-
-              {/* Array Fields */}
-              {arrayFields.length > 0 &&
-                arrayFields.map((rule: any, index: number) => (
-                  <div
-                    key={index}
-                    className="d-flex flex-column"
-                    style={{
-                      flex: "1 1 calc(50% - 16px)", // Two columns per row
-                      minWidth: "150px",
-                    }}
-                  >
-                    <label
-                      className="mb-1"
-                      style={{
-                        fontSize: "0.85rem",
-                        fontWeight: "bold",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {rule.replace(/_/g, " ")}:
-                    </label>
-                    <select
-                      value={promptText[rule][0]}
-                      onChange={(e) =>
-                        setPromptText({
-                          ...promptText,
-                          [rule]: [e.target.value],
-                        })
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "6px",
-                        fontSize: "0.85rem",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {promptText[rule].map((item: any, i: number) => (
-                        <option key={i} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-
-              {/* Datetime Fields */}
-              {datetimeFields.length > 0 &&
-                datetimeFields.map((rule: any, index: number) => (
-                  <div
-                    key={index}
-                    className="d-flex flex-column"
-                    style={{
-                      flex: "1 1 calc(50% - 16px)", // Two columns per row
-                      minWidth: "150px",
-                    }}
-                  >
-                    <label
-                      className="mb-1"
-                      style={{
-                        fontSize: "0.85rem",
-                        fontWeight: "bold",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {rule.replace(/_/g, " ")}:
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={promptText[rule] && formatToLocalDatetime(promptText[rule])}
-                      onChange={(e) =>
-                        setPromptText({
-                          ...promptText,
-                          [rule]: e.target.value,
-                        })
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "6px",
-                        fontSize: "0.85rem",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                    />
-                  </div>
-                ))}
-
-              {/* Expander for sliderRules_stars */}
-              {sliderRules_stars.some((rule: any) => prompt_order_rules?.includes(rule)) && (
-                <div style={{ flex: "1 1 100%", marginTop: "16px" }}>
-                  <div
-                    style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
-                    onClick={() => setShowStarsSliders((prev) => !prev)}
-                  >
-                    {showStarsSliders ? "▼" : "►"} Advanced Allocation Options
-                  </div>
-                  {showStarsSliders && (
-                    <div className="d-flex flex-wrap" style={{ gap: "16px" }}>
-                      {sliderRules_stars.map((rule: any, index: number) =>
-                        prompt_order_rules?.includes(rule) && promptText[rule] !== undefined && (
-                          <div
-                            key={index}
-                            className="d-flex flex-column"
-                            style={{
-                              flex: "1 1 calc(50% - 16px)", // Two columns per row
-                              minWidth: "150px",
-                            }}
-                          >
-                            <label
-                              className="mb-1"
-                              style={{
-                                fontSize: "0.85rem",
-                                fontWeight: "bold",
-                                textTransform: "capitalize",
-                              }}
-                            >
-                              {rule.replace(/_/g, " ")}:
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="1"
-                              step=".01"
-                              value={promptText[rule] || 0}
-                              onChange={(e) =>
-                                setPromptText({
-                                  ...promptText,
-                                  [rule]: Number(e.target.value),
-                                })
-                              }
-                              style={{ width: "100%" }}
-                            />
-                            <span style={{ fontSize: "0.85rem", fontWeight: "bold", marginTop: "4px" }}>
-                              {promptText[rule] || 0}
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Expander for sliderRules_stars_margin */}
-              {sliderRules_stars_margin.some((rule: any) => prompt_order_rules?.includes(rule)) && (
-                <div style={{ flex: "1 1 100%", marginTop: "16px" }}>
-                  <div
-                    style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
-                    onClick={() => setShowStarsMarginSliders((prev) => !prev)}
-                  >
-                    {showStarsMarginSliders ? "▼" : "►"} Advanced Margin Allocation Options
-                  </div>
-                  {showStarsMarginSliders && (
-                    <div className="d-flex flex-wrap" style={{ gap: "16px" }}>
-                      {sliderRules_stars_margin.map((rule: any, index: number) =>
-                        prompt_order_rules?.includes(rule) && promptText[rule] !== undefined && (
-                          <div
-                            key={index}
-                            className="d-flex flex-column"
-                            style={{
-                              flex: "1 1 calc(50% - 16px)", // Two columns per row
-                              minWidth: "150px",
-                            }}
-                          >
-                            <label
-                              className="mb-1"
-                              style={{
-                                fontSize: "0.85rem",
-                                fontWeight: "bold",
-                                textTransform: "capitalize",
-                              }}
-                            >
-                              {rule.replace(/_/g, " ")}:
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="1"
-                              step=".01"
-                              value={promptText[rule] || 0}
-                              onChange={(e) =>
-                                setPromptText({
-                                  ...promptText,
-                                  [rule]: Number(e.target.value),
-                                })
-                              }
-                              style={{ width: "100%" }}
-                            />
-                            <span style={{ fontSize: "0.85rem", fontWeight: "bold", marginTop: "4px" }}>
-                              {promptText[rule] || 0}
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* Display Grid Column Toggle & Table */}
             {displayColumnOptions.length > 0 && (
@@ -730,9 +461,9 @@ const MyModal: React.FC<MyModalProps> = ({
 
                     return (
                       <div style={{
-                        maxHeight: "400px",      // ✅ Set a max height
-                        overflowY: "auto",       // ✅ Enable vertical scrolling
-                        overflowX: "auto",       // ✅ Keep horizontal scrolling
+                        // maxHeight: "800px",      // ✅ Set a max height
+                        // overflowY: "auto",       // ✅ Enable vertical scrolling
+                        // overflowX: "auto",       // ✅ Keep horizontal scrolling
                         border: "1px solid #ddd" // Optional: visual boundary
                       }}>
                         <table className="table table-bordered table-sm" style={{ fontSize: "0.6rem" }}>
@@ -1022,6 +753,432 @@ const MyModal: React.FC<MyModalProps> = ({
 
                 </div>
               )}
+
+
+
+
+            {/* Add Symbol Row Info Column */}
+            {add_symbol_row_info && Array.isArray(add_symbol_row_info) && (() => {
+              const trinityKeys = ['trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'];
+              const trinityPresent = add_symbol_row_info.filter((col: string) => trinityKeys.includes(col) && selectedRow?.[col] !== undefined);
+              const regularCols = add_symbol_row_info.filter((col: string) => !trinityKeys.includes(col));
+
+
+              return (
+                <div style={{ marginBottom: "4px" }}>
+
+                  {/* Trinity Display */}
+                  {trinityPresent.length > 0 && (
+                    <div style={{ display: "flex", gap: "8px", marginBottom: "4px" }}>
+                      {[
+                        { key: 'trinity_w_L', label: 'Trinity Avg Weight', main: true },
+                        { key: 'trinity_w_15', label: '1Day - 1Week' },
+                        { key: 'trinity_w_30', label: '1Month - 3Month' },
+                        { key: 'trinity_w_54', label: '6Month - 1Year' },
+                      ].filter(({ key }) => selectedRow?.[key] !== undefined).map(({ key, label, main }) => {
+                        const val = Number(selectedRow[key]);
+                        const bgColor = getTrinityColor(val);
+                        return (
+                          <div
+                            key={key}
+                            style={{
+                              flex: main ? "1.5" : "1.1",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: main ? "12px" : "8px",
+                              padding: main ? "10px 18px 8px" : "6px 6px 4px",
+                              background: bgColor,
+                              border: `1px solid #222`,
+                              boxShadow: main ? "0 1px 8px rgba(166, 196, 190, 0.19)" : "0 1px 4px rgba(0,0,0,0.05)",
+                              minWidth: main ? "110px" : "80px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: main ? "2rem" : "1.4rem",
+                                fontWeight: main ? "900" : "700",
+                                lineHeight: 1.1,
+                                color: "#222", // dark text
+                                letterSpacing: main ? "-1px" : "0px",
+                                filter: "none",
+                              }}
+                            >
+                              {val > 0 ? "+" : ""}
+                              {val.toFixed(1)}%
+                            </div>
+                            <div
+                              style={{
+                                fontSize: main ? "0.8rem" : "0.7rem",
+                                color: "#222", // dark text
+                                textTransform: "uppercase",
+                                letterSpacing: main ? "2.5px" : "1.5px",
+                                marginTop: "4px",
+                                textAlign: "center",
+                              }}
+                            >
+                              {label}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Regular add_symbol_row_info cols */}
+                  {regularCols.length > 0 && (
+                    <div
+                      className="d-flex flex-wrap"
+                      style={{
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "10px",
+                        padding: "12px 10px 8px",
+                        background: "linear-gradient(90deg, #fafcff 80%, #f3f6fa 100%)",
+                        boxShadow: "0 1px 6px rgba(206, 188, 188, 0.06)",
+                        gap: "12px",
+                      }}
+                    >
+                      {regularCols.map((col: string) =>
+                        selectedRow && selectedRow[col] !== undefined && (
+                          <div
+                            key={col}
+                            style={{
+                              flex: "1 1 32%",
+                              minWidth: "140px",
+                              marginBottom: "10px",
+                              padding: "10px 14px 8px 10px",
+                              background: "#fff",
+                              borderRadius: "8px",
+                              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <span style={{
+                              fontWeight: 700,
+                              color: "#222",
+                              fontSize: "1.05rem",
+                              marginRight: "6px",
+                              textTransform: "capitalize",
+                              letterSpacing: "0.5px",
+                            }}>
+                              {col.replace(/_/g, " ")}:
+                            </span>
+                            <span style={{
+                              fontWeight: 500,
+                              color: "#222",
+                              fontSize: "1rem",
+                            }}>
+                              {typeof selectedRow[col] === "number"
+                                ? Number(selectedRow[col]).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                                : String(selectedRow[col])}
+                            </span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+
+                </div>
+              );
+            })()}
+
+
+            {/* {sliderRules_stars.some(rule => prompt_order_rules?.includes(rule)) && (
+  <h3 style={{ marginBottom: "16px", textAlign: "center" }}>
+    Symbol Budget Allocation
+  </h3>
+)} */}
+            {/* Other Fields (Text, Datetime, Array Fields) */}
+
+            <div className="d-flex flex-wrap" style={{ gap: "16px", marginBottom: "16px" }}>
+              {/* Text Fields */}
+              {textFields.length > 0 &&
+                textFields.map((rule: any, index: number) => {
+                  if (sliderRules_stars.includes(rule) || sliderRules_stars_margin.includes(rule)) return null;
+
+                  const isSliderRule = sliderRules.includes(rule);
+
+                  return (
+<div
+  key={index}
+  className="d-flex flex-column"
+  style={{
+    flex: "1 1 40%",
+    minWidth: "120px",
+    marginBottom: "4px",
+    padding: "2px 0",
+  }}
+>
+  <label
+    className="mb-1"
+    style={{
+      fontSize: "0.8rem",
+      fontWeight: "bold",
+      textTransform: "capitalize",
+      marginBottom: "2px",
+    }}
+  >
+                        {rule.replace(/_/g, " ")}:
+                        {rule === "sell_amount" && (
+                          <span
+                            style={{ marginLeft: "4px", cursor: "pointer" }}
+                            title="This amount will override sell_qty"
+                          >
+                            ❓
+                          </span>
+                        )}
+                      </label>
+
+                      {isSliderRule ? (
+                        <>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step=".01"
+                            value={promptText[rule] || 0}
+                            onChange={(e) =>
+                              setPromptText({
+                                ...promptText,
+                                [rule]: Number(e.target.value),
+                              })
+                            }
+                            style={{ width: "100%" }}
+                          />
+                          <span style={{ fontSize: "0.85rem", fontWeight: "bold", marginTop: "4px" }}>
+                            {promptText[rule] || 0}
+                          </span>
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          value={promptText[rule]}
+                          onChange={(e) =>
+                            setPromptText({
+                              ...promptText,
+                              [rule]: e.target.value,
+                            })
+                          }
+                          style={{
+                            width: "100%",
+                            padding: "6px",
+                            fontSize: "0.85rem",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px",
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
+              {/* Array Fields */}
+              {arrayFields.length > 0 &&
+                arrayFields.map((rule: any, index: number) => (
+                  <div
+                    key={index}
+                    className="d-flex flex-column"
+                    style={{
+                      flex: "1 1 calc(50% - 16px)", // Two columns per row
+                      minWidth: "150px",
+                    }}
+                  >
+                    <label
+                      className="mb-1"
+                      style={{
+                        fontSize: "0.85rem",
+                        fontWeight: "bold",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {rule.replace(/_/g, " ")}:
+                    </label>
+                    <select
+                      value={promptText[rule][0]}
+                      onChange={(e) =>
+                        setPromptText({
+                          ...promptText,
+                          [rule]: [e.target.value],
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "6px",
+                        fontSize: "0.85rem",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {promptText[rule].map((item: any, i: number) => (
+                        <option key={i} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+
+              {/* Datetime Fields */}
+              {datetimeFields.length > 0 &&
+                datetimeFields.map((rule: any, index: number) => (
+                  <div
+                    key={index}
+                    className="d-flex flex-column"
+                    style={{
+                      flex: "1 1 calc(50% - 16px)", // Two columns per row
+                      minWidth: "150px",
+                    }}
+                  >
+                    <label
+                      className="mb-1"
+                      style={{
+                        fontSize: "0.85rem",
+                        fontWeight: "bold",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {rule.replace(/_/g, " ")}:
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={promptText[rule] && formatToLocalDatetime(promptText[rule])}
+                      onChange={(e) =>
+                        setPromptText({
+                          ...promptText,
+                          [rule]: e.target.value,
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "6px",
+                        fontSize: "0.85rem",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                      }}
+                    />
+                  </div>
+                ))}
+
+              {/* Expander for sliderRules_stars */}
+              {sliderRules_stars.some((rule: any) => prompt_order_rules?.includes(rule)) && (
+                <div style={{ flex: "1 1 100%", marginTop: "16px" }}>
+                  <div
+                    style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
+                    onClick={() => setShowStarsSliders((prev) => !prev)}
+                  >
+                    {showStarsSliders ? "▼" : "►"} Advanced Allocation Options
+                  </div>
+                  {showStarsSliders && (
+                    <div className="d-flex flex-wrap" style={{ gap: "16px" }}>
+                      {sliderRules_stars.map((rule: any, index: number) =>
+                        prompt_order_rules?.includes(rule) && promptText[rule] !== undefined && (
+                          <div
+                            key={index}
+                            className="d-flex flex-column"
+                            style={{
+                              flex: "1 1 calc(50% - 16px)", // Two columns per row
+                              minWidth: "150px",
+                            }}
+                          >
+                            <label
+                              className="mb-1"
+                              style={{
+                                fontSize: "0.85rem",
+                                fontWeight: "bold",
+                                textTransform: "capitalize",
+                              }}
+                            >
+                              {rule.replace(/_/g, " ")}:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step=".01"
+                              value={promptText[rule] || 0}
+                              onChange={(e) =>
+                                setPromptText({
+                                  ...promptText,
+                                  [rule]: Number(e.target.value),
+                                })
+                              }
+                              style={{ width: "100%" }}
+                            />
+                            <span style={{ fontSize: "0.85rem", fontWeight: "bold", marginTop: "4px" }}>
+                              {promptText[rule] || 0}
+                            </span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Expander for sliderRules_stars_margin */}
+              {sliderRules_stars_margin.some((rule: any) => prompt_order_rules?.includes(rule)) && (
+                <div style={{ flex: "1 1 100%", marginTop: "16px" }}>
+                  <div
+                    style={{ cursor: "pointer", fontWeight: "bold", marginBottom: "4px" }}
+                    onClick={() => setShowStarsMarginSliders((prev) => !prev)}
+                  >
+                    {showStarsMarginSliders ? "▼" : "►"} Advanced Margin Allocation Options
+                  </div>
+                  {showStarsMarginSliders && (
+                    <div className="d-flex flex-wrap" style={{ gap: "16px" }}>
+                      {sliderRules_stars_margin.map((rule: any, index: number) =>
+                        prompt_order_rules?.includes(rule) && promptText[rule] !== undefined && (
+                          <div
+                            key={index}
+                            className="d-flex flex-column"
+                            style={{
+                              flex: "1 1 calc(50% - 16px)", // Two columns per row
+                              minWidth: "150px",
+                            }}
+                          >
+                            <label
+                              className="mb-1"
+                              style={{
+                                fontSize: "0.85rem",
+                                fontWeight: "bold",
+                                textTransform: "capitalize",
+                              }}
+                            >
+                              {rule.replace(/_/g, " ")}:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step=".01"
+                              value={promptText[rule] || 0}
+                              onChange={(e) =>
+                                setPromptText({
+                                  ...promptText,
+                                  [rule]: Number(e.target.value),
+                                })
+                              }
+                              style={{ width: "100%" }}
+                            />
+                            <span style={{ fontSize: "0.85rem", fontWeight: "bold", marginTop: "4px" }}>
+                              {promptText[rule] || 0}
+                            </span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+
+
+
+
           </div>
         </div>
 

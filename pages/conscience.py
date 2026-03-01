@@ -6,7 +6,7 @@ from itertools import islice
 from dotenv import load_dotenv
 import streamlit as st
 
-from chess_piece.app_hive import sac_tabs, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
+from chess_piece.app_hive import sac_tabs,sac_menu_buttons, symbols_unique_color, log_grid, create_ag_grid_column, wave_grid, mark_down_text, mark_down_text, page_line_seperator, local_gif, flying_bee_gif
 from chess_piece.king import hive_master_root, kingdom__global_vars, streamlit_config_colors, print_line_of_error, return_QUEENs__symbols_data, return_QUEEN_KING_symbols
 from chess_piece.queen_hive import stars, star_names, return_queenking_board_symbols, sell_button_dict_items, hive_dates, return_market_hours, init_logging, init_queenbee, kingdom__grace_to_find_a_Queen, create_QueenOrderBee
 from chess_piece.pollen_db import PollenDatabase
@@ -274,7 +274,6 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
     """)      
 
 
-
 def generate_threshold_background_color_style(column_name, threshold_value, color_above="#ff3939", color_below="#fdfdfd"):
     """
     Generate JsCode to color cell BACKGROUNDS based on a threshold value.
@@ -363,54 +362,69 @@ function(p) {{
 """)
 
 
-button_suggestedallocation_style = JsCode("""
-function(p) {
-    // Check if this is the last pinned subtotal row
-    if (p.node && p.node.rowPinned === 'bottom') {
-        var value = p.value;
-        var color = value > 0 ? '#0a9d25' : '#ed370f'; // Green for >0, red otherwise
-        var formatted = '';
-        if (typeof value === 'number' && !isNaN(value)) {
-            formatted = value.toLocaleString();
-        } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
-            formatted = parseFloat(value).toLocaleString();
-        } else {
-            formatted = value;
-        }
-        return {
-            color: color,
-            fontWeight: 'bold',
-            fontSize: '16px',
-            backgroundColor: '#fff',
-            border: '8px solid white',
-            textAlign: 'center',
-            value: formatted
-        };
-    }
-    // Default style for other rows
-    if (p.data.allocation_long_deploy > 0) {
-        return {
-            padding: '3px',
-            boxSizing: 'border-box',
-            border: '8px solid' + '#f2f7ff',
-            color: 'green',
-            fontSize: '16px',
-        };
-    } else if (p.data.allocation_long_deploy < 0) {
-        return {
-            padding: '3px',
-            boxSizing: 'border-box',
-            border: '8px solid' + '#f2f7ff',
-            color: 'red',
-            fontSize: '16px',
-        };
-    } else {
-        return {
-            border: '3px solid white'
-        };
-    }
-}
-""")
+def generate_symbol_button_style(flash_state_variable='trinity_w_L', border_color='#888'):
+    return JsCode(f"""
+        function(p) {{
+            var value = p.data.{flash_state_variable};
+            var color = '';
+            // Gradient coloring logic
+            if (value !== null && !isNaN(value)) {{
+                if (value > 0) {{
+                    if (value <= 25) {{
+                        color = '#e6f9e9';
+                    }} else if (value <= 50) {{
+                        color = '#bff0c7';
+                    }} else if (value <= 75) {{
+                        color = '#80df97';
+                    }} else if (value <= 90) {{
+                        color = '#4cb96d';
+                    }} else if (value <= 100) {{
+                        color = '#2e8948';
+                    }}
+                }} else if (value < 0) {{
+                    if (value >= -25) {{
+                        color = '#fdecec';
+                    }} else if (value >= -50) {{
+                        color = '#f8c6c6';
+                    }} else if (value >= -75) {{
+                        color = '#f09494';
+                    }} else if (value >= -90) {{
+                        color = '#e06363';
+                    }} else if (value >= -100) {{
+                        color = '#c23d3d';
+                    }}
+                }}
+                return {{
+                    backgroundColor: color,
+                    color: '#000',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: '2px solid {border_color}',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    padding: '7px 16px',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                }};
+            }}
+            // Default style for unhandled cases
+            return {{
+                backgroundColor: '#f5f5f5',
+                color: '#000',
+                border: '2px solid {border_color}',
+                borderRadius: '10px',
+                textAlign: 'center',
+                padding: '7px 16px',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+            }};
+        }}
+    """)
+
 
 honey_colors = JsCode("""
 function(p) {
@@ -451,6 +465,83 @@ value_format_pct = JsCode("function(params) { return params.value ? params.value
 
 value_format_pct_2 = JsCode("function(params) { return params.value ? (params.value * 100).toFixed(2) + '%' : ''; }")
 
+# workerbee right in color gradiant for background per value red-green
+# workerbee right in color gradiant for background per value red-green
+button_suggestedallocation_style = JsCode("""
+function(p) {
+    // Check if this is the last pinned subtotal row
+    if (p.node && p.node.rowPinned === 'bottom') {
+        var value = p.value;
+        var color = value > 0 ? '#0a9d25' : '#ed370f';
+        var formatted = '';
+        if (typeof value === 'number' && !isNaN(value)) {
+            formatted = value.toLocaleString();
+        } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+            formatted = parseFloat(value).toLocaleString();
+        } else {
+            formatted = value;
+        }
+        return {
+            color: color,
+            fontWeight: 'bold',
+            fontSize: '14px',
+            backgroundColor: '#fff',
+            border: '1px solid ' + color,
+            borderRadius: '10px',
+            textAlign: 'center',
+            padding: '7px 16px',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+            value: formatted,
+            transition: 'all 0.2s'
+        };
+    }
+    // Default style for other rows
+    if (p.data.allocation_long_deploy > 0) {
+        return {
+            padding: '7px 16px',
+            boxSizing: 'border-box',
+            border: '1px solid #0a9d25',
+            borderRadius: '10px',
+            color: 'green',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            backgroundColor: '#e6f9e9',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+        };
+    } else if (p.data.allocation_long_deploy < 0) {
+        return {
+            padding: '7px 16px',
+            boxSizing: 'border-box',
+            border: '1px solid #ed370f',
+            borderRadius: '10px',
+            color: 'red',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            backgroundColor: '#fdecec',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+        };
+    } else {
+        return {
+            border: '1px solid #ccc',
+            borderRadius: '10px',
+            padding: '7px 16px',
+            backgroundColor: '#f5f5f5',
+            color: '#888',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            textAlign: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+        };
+    }
+}
+""")
 
 button_style_sell = JsCode("""
 function(p) {
@@ -465,51 +556,68 @@ function(p) {
     // Check if this is the subtotal row (usually has a property like 'isSubtotal' or 'ag-group-row')
     if (p.node && p.node.rowPinned === 'bottom') {
         return {
-            backgroundColor: '#f2f7ff', // Blue for subtotal row
+            backgroundColor: '#f2f7ff',
             color: '#fff',
-            padding: '3px',
+            padding: '7px 16px',
             boxSizing: 'border-box',
-            border: '8px solid #3498db'
+            border: '1px solid #3498db',
+            borderRadius: '10px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            textAlign: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
         };
     }
     if (value > 0) {
         return {
-            //backgroundColor: '#bff0c7', // Light green for positive allocation_long_deploy
-            padding: '3px',
+            padding: '7px 16px',
             boxSizing: 'border-box',
-            //border: '8px solid #bff0c7' // White border
-            border: '10px solid #f2f7ff', // Light grey border
+            border: '1px solid green',
+            borderRadius: '10px',
             color: 'green',
-            fontSize: '16px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            backgroundColor: '#e6f9e9',
+            textAlign: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
         };
     } else if (value < 0) {
         return {
-            //backgroundColor: '#f8c6c6', // Light red for negative allocation_long_deploy
-            padding: '3px',
+            padding: '7px 16px',
             boxSizing: 'border-box',
-            //border: '8px solid #f8c6c6' // White border
-            border: '10px solid #f2f7ff', // Light grey border
+            border: '1px solid red',
+            borderRadius: '10px',
             color: 'red',
-            fontSize: '16px', 
+            fontWeight: 'bold',
+            fontSize: '14px',
+            backgroundColor: '#fdecec',
+            textAlign: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
         };
     } else {
-        return null; // No style for other cases (e.g., money === 0)
+        return {
+            border: '1px solid #ccc',
+            borderRadius: '10px',
+            padding: '7px 16px',
+            backgroundColor: '#f5f5f5',
+            color: '#888',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            textAlign: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+        };
     }
 }
 """)
 
-button_style_symbol = JsCode("""
-function(p) {
-    return {
-        fontSize: '14px',
-        boxSizing: 'border-box',
-        padding: '5px',
-        border: '10px solid #f2f7ff', // Light grey border
-        //backgroundColor: '#f5f5f5'   // Light grey background
-        // color: p.value > 0 ? '#0a9d25' : '#ed370f',
-    };
-}
-""")
 
 button_style_BUY_autopilot = JsCode("""
 function(color_autobuy) {
@@ -800,6 +908,8 @@ def story_grid(prod, client_user,
         gb.configure_theme('ag-theme-material')
         if paginationOn:
             gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+        
+        # workerbee add dict helpertool for each known column, allocation budget, ask, total budget...etc
 
         pct_change_columns_config = {
                             'pct_portfolio': {'headerName':"% Portfolio", 'sortable':'true',
@@ -809,7 +919,7 @@ def story_grid(prod, client_user,
                             'current_ask': {'headerName': 'Ask', 'sortable':'true',
                                             "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
                                             'valueFormatter': value_format_number,
-                                            # 'enableCellChangeFlash': True,
+                                            'enableCellChangeFlash': True,
                                             },
                             '5Minute_5Day_change': {'headerName':"Week Change", 'cellStyle': honey_colors, 'sortable':'true',
                                                 "type": ["customNumberFormat", "numericColumn", "numberColumnFilter"],
@@ -1015,7 +1125,7 @@ def story_grid(prod, client_user,
             buttons=[
                         {'button_name': None, # MAIN SYMBOL BUTTON
                         'button_api': f'{ip_address}/api/data/update_queenking_symbol',
-                        'prompt_message': 'Manage Board',
+                        'prompt_message': 'Set Buy Triggers - Buy Time Series Modals - Active Orders',
                         'prompt_field': 'add_symbol_option',
                         'col_headername': 'Symbol',
                         "col_header": "symbol",
@@ -1023,7 +1133,7 @@ def story_grid(prod, client_user,
                         'sortable': True,
                         'pinned': 'left',
                         'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None and i != 'symbol'],
-                        'cellStyle': generate_shaded_cell_style('trinity_w_L'),
+                        'cellStyle': generate_symbol_button_style(),
                         # 'display_grid_column': ['trig_data'],
                         'editableCols': {'trig_data': trig_editableCols,
                                          'wave_data': wave_data_editable_cols,
@@ -1031,7 +1141,7 @@ def story_grid(prod, client_user,
 
                         'cellRenderer': "agGroupCellRenderer",
                         'pivot': True,
-                        'add_symbol_row_info': ['buy_autopilot', 'sell_autopilot', 'trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'] # ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
+                        'add_symbol_row_info': ['trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'] # ['star_buys_at_play', 'allocation_long', 'current_ask', 'ticker_total_budget', 'ticker_remaining_budget', 'ticker_remaining_borrow'],
 
                         },
 
@@ -1057,7 +1167,8 @@ def story_grid(prod, client_user,
                         }
                         """),
                         
-                        'add_symbol_row_info': ['current_ask'],
+                        'add_symbol_row_info': ['current_ask', 'star_buys_at_play', 'ticker_total_budget', 
+                                                'ticker_remaining_budget', 'ticker_remaining_borrow'] + ['trinity_w_L', 'trinity_w_15', 'trinity_w_30', 'trinity_w_54'],
 
                         'editableCols': {
                                          'wave_data': wave_data_editable_cols,
@@ -1581,6 +1692,8 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
         # Toggle View
         tab_view = sac_tabs(["Portfolio", "AI Portfolio Manager", "Hedge Funds"])
+        # tab_view = st.tabs(["Portfolio", "AI Portfolio Manager", "Hedge Funds"])
+        # sac_menu_buttons({'Story': {'icon':'robot', }})
         if tab_view == 'Hedge Funds':
             show_graph_s = False
             show_graph_t = False
@@ -1589,7 +1702,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         log_dir = os.path.join(db_root, 'logs')
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=st.session_state['prod'])
         
-        trading_days = hive_dates(api=api)['trading_days']
+        trading_days = hive_dates(api=api).get('trading_days', None)
         mkhrs = return_market_hours(trading_days=trading_days)
         seconds_to_market_close = (datetime.now(est).replace(hour=16, minute=0)- datetime.now(est)).total_seconds() 
         seconds_to_market_close = seconds_to_market_close if seconds_to_market_close > 0 else 0

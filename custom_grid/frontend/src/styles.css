@@ -1,74 +1,40 @@
-
 #myGrid {
-  /* flex: 1 1 0px; */
-  width: 100%;
-
-  --ag-value-change-delta-down-color: rgb(0, 200, 160);
-  --ag-value-change-delta-up-color: rgb(255, 0, 80);
-}
-.ag-header-cell{
-  /* padding-left: 0px; */
-  padding-right: 0px;
-  /* text-align: center !important; */
-}
-#toast-container {
-  margin-top: 1rem;
+    width: 100%;
+    /* Use this variable to change the single default flash color if not using up/down logic */
+    --ag-value-change-value-highlight-background-color: rgba(76, 175, 80, 0.5); 
 }
 
-#toast-container.toast-top-full-width>.toast {
-  max-width: 270px;
+.ag-header-cell {
+    padding-right: 0px;
 }
 
-#toast-container>.toast-success {
-  background-color: #35c8c3;
-  opacity:1;
-  box-shadow:0px 0px 10px rgba(0,0,0,0.2);
-}
+/* --- Keep your Toast styles --- */
+#toast-container { margin-top: 1rem; }
+/* ... (rest of your toast css) ... */
 
-#toast-container>.toast-success:hover {
-  background-color: #35c8c3;
-  opacity:1;
-  box-shadow:0px 0px 10px rgba(0,0,0,0.4);
-}
-
+/* --- Keep your Header styles --- */
 .ag-theme-material .ag-header {
-  background-color: #fafffa !important; /* Light blue, almost white */
-  color: #1a3556 !important; /* Darker blue for text */
+    background-color: #fafffa !important;
+    color: #1a3556 !important;
 }
 .ag-theme-material .ag-header-cell-label {
-  color: #0c3361 !important; /* Darker blue for header cell label text */
+    color: #0c3361 !important;
 }
-
-/* Fix header hover background so text stays visible */
 .ag-theme-material .ag-header-cell:hover {
-  background-color: #c7ddf4 !important; /* Slightly darker light blue */
-  color: #1a3556 !important; /* Darker blue for text */
+    background-color: #c7ddf4 !important;
+    color: #1a3556 !important;
 }
 
-/* Flash animations: Green for value increases, Red for value decreases */
-.ag-cell-data-changed-animation-up {
-  animation: flashGreenUp 1s ease-out !important;
+/* --- FLASH WITHOUT DELTA --- */
+/* Target the standard flash classes used by 'enableCellChangeFlash: true' */
+
+/* Initial flash state (active for ~500ms) */
+.ag-theme-material .ag-cell-data-changed {
+    background-color: rgba(76, 175, 80, 0.7) !important; /* Change to your preferred color */
 }
 
-.ag-cell-data-changed-animation-down {
-  animation: flashRedDown 1s ease-out !important;
+/* Fade-out state (active for ~1000ms) */
+.ag-theme-material .ag-cell-data-changed-animation {
+    background-color: transparent !important;
+    transition: background-color 1s ease-out !important;
 }
-
-@keyframes flashGreenUp {
-  0% { 
-    background-color: rgba(76, 175, 80, 0.7) !important; 
-  }
-  100% { 
-    background-color: transparent !important; 
-  }
-}
-
-@keyframes flashRedDown {
-  0% { 
-    background-color: rgba(244, 67, 54, 0.7) !important; 
-  }
-  100% { 
-    background-color: transparent !important; 
-  }
-}
-

@@ -302,12 +302,16 @@ def return_alpaca_user_apiKeys(QUEEN_KING, authorized_user, prod):
 
 
 def hive_dates(api):
-    current_date = datetime.now(est).strftime("%Y-%m-%d")
-    trading_days = api.get_calendar()
-    trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-    trading_days_df["date"] = pd.to_datetime(trading_days_df["date"])
+    try:
+        current_date = datetime.now(est).strftime("%Y-%m-%d")
+        trading_days = api.get_calendar()
+        trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+        trading_days_df["date"] = pd.to_datetime(trading_days_df["date"])
+        return {"trading_days": trading_days}
+    except Exception as e:
+        print("NO API")
+        return {}
 
-    return {"trading_days": trading_days}
 
 
 def init_queen(queens_chess_piece):
@@ -2928,23 +2932,27 @@ def createParser():
 
 def return_market_hours(trading_days, crypto=False):
     # trading_days = api_cal # api.get_calendar()
-    trading_days_df = pd.DataFrame([day._raw for day in trading_days])
-    s = datetime.now(est)
-    s_iso = s.isoformat()[:10]
-    mk_open_today = s_iso in trading_days_df["date"].tolist()
-    mk_open = s.replace(hour=9, minute=30, second=0)
-    mk_close = s.replace(hour=16, minute=0, second=0)
+    try:
+        trading_days_df = pd.DataFrame([day._raw for day in trading_days])
+        s = datetime.now(est)
+        s_iso = s.isoformat()[:10]
+        mk_open_today = s_iso in trading_days_df["date"].tolist()
+        mk_open = s.replace(hour=9, minute=30, second=0)
+        mk_close = s.replace(hour=16, minute=0, second=0)
 
-    if crypto:
-        return "open"
-
-    if mk_open_today:
-        if s >= mk_open and s <= mk_close:
+        if crypto:
             return "open"
+
+        if mk_open_today:
+            if s >= mk_open and s <= mk_close:
+                return "open"
+            else:
+                return "closed"
         else:
             return "closed"
-    else:
-        return "closed"
+    except Exception as e:
+        print("NO API")
+        return None
 
 
 def discard_allprior_days(df):
@@ -4031,7 +4039,13 @@ def refresh_tickers_TradingModels(QUEEN_KING, ticker, theme='nuetral'):
     return QUEEN_KING
 
 
-def return_Ticker_Universe():  # Return Ticker and Acct Info #WORKERBEE THIS NEEDS FIXED for when New User doesn't have correct Keys to Call data I guess?
+def return_Ticker_Universe(api=True):  # Return Ticker and Acct Info #WORKERBEE THIS NEEDS FIXED for when New User doesn't have correct Keys to Call data I guess?
+    if not api:
+        return {
+            "alpaca_symbols_dict": {},
+            "all_alpaca_tickers": [],
+            "alpaca_symbols_df": pd.DataFrame(),
+        }
     api = return_alpaca_api_keys(prod=True)["api"]
     # Initiate Code File Creation
     index_list = [
