@@ -165,6 +165,7 @@ def return_all_client_users__db(query="SELECT * FROM users"):
                 "login_count": user[6],
             })
         df = pd.DataFrame(creds)
+        PollenDatabase.return_connection(con)
         return users, df
     else:
         con = sqlite3.connect(os.path.join(hive_master_root(), "db/client_users.db"))
@@ -183,7 +184,7 @@ def return_all_client_users__db(query="SELECT * FROM users"):
                         6:'login_count',
                         }
                     )
-
+        con.close()
     return users, df
 
 

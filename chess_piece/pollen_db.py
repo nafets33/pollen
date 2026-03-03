@@ -361,7 +361,7 @@ class PollenDatabase:
 
 
     @staticmethod
-    def create_table_if_not_exists(table_name):
+    def create_table_if_not_exists(table_name, server=server):
         """
         Create a table if it doesn't exist with the following structure:
         - id: serial, primary key
@@ -371,7 +371,7 @@ class PollenDatabase:
         - last_modified: timestamp, defaults to CURRENT_TIMESTAMP
         Returns True if the table was created, False if it already existed.
         """
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
             # Check if the table exists already
             cur.execute("""
             SELECT to_regclass(%s);
@@ -395,7 +395,7 @@ class PollenDatabase:
                 return False  # Table already exists
 
     @staticmethod
-    def key_exists(table_name, key):
+    def key_exists(table_name, key, server=server):
         """
         Checks if a key exists in the specified table.
 
@@ -404,7 +404,7 @@ class PollenDatabase:
         :return: True if the key exists, False otherwise.
         """
         try:
-            with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+            with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
                 # Query to check if the key exists in the table
                 query = f"SELECT EXISTS (SELECT 1 FROM {table_name} WHERE key = %s);"
                 cur.execute(query, (key,))
@@ -428,28 +428,28 @@ class PollenDatabase:
             "POLLEN_TABLE_NAME", "pollen_store"
         )  # default to "pollen_store" if not set
 
-    @staticmethod
-    def ensure_last_modified_column(table_name):
-        """
-        Adds 'last_modified' column to the table if it doesn't exist.
-        """
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
-            alter_query = f"""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1
-                    FROM information_schema.columns 
-                    WHERE table_name = '{table_name}' 
-                    AND column_name = 'last_modified'
-                ) THEN
-                    ALTER TABLE {table_name} 
-                    ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-                END IF;
-            END $$;
-            """
-            cur.execute(alter_query)
-            conn.commit()
+    # @staticmethod
+    # def ensure_last_modified_column(table_name):
+    #     """
+    #     Adds 'last_modified' column to the table if it doesn't exist.
+    #     """
+    #     with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+    #         alter_query = f"""
+    #         DO $$
+    #         BEGIN
+    #             IF NOT EXISTS (
+    #                 SELECT 1
+    #                 FROM information_schema.columns 
+    #                 WHERE table_name = '{table_name}' 
+    #                 AND column_name = 'last_modified'
+    #             ) THEN
+    #                 ALTER TABLE {table_name} 
+    #                 ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    #             END IF;
+    #         END $$;
+    #         """
+    #         cur.execute(alter_query)
+    #         conn.commit()
 
     @staticmethod
     def upsert_data(table_name, key, value, console=True, console_table_ignore=[''], main_server=server):
@@ -699,8 +699,8 @@ class PollenDatabase:
         return None
 
     @staticmethod
-    def get_all_tables():
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+    def get_all_tables(server=server):
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
             try:
                 # Execute query to fetch all table names in the public schema
                 cur.execute("""
@@ -721,8 +721,8 @@ class PollenDatabase:
 
 
     @staticmethod
-    def get_all_tables_with_sizes():
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+    def get_all_tables_with_sizes(server=server):
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
             try:
                 # Execute query to fetch all table names and their sizes in the public schema
                 cur.execute("""
@@ -959,7 +959,7 @@ class PollenDatabase:
                 return []
 
     @staticmethod
-    def get_all_keys_with_timestamps_and_sizes(table_name='db', db_root=None):
+    def get_all_keys_with_timestamps_and_sizes(table_name='db', db_root=None, server=server):
         """
         Fetch all keys along with their last modified timestamp and size from the specified table.
         Returns raw bytes AND human-readable format.
@@ -975,7 +975,7 @@ class PollenDatabase:
             else:
                 return f"{size_in_bytes / (1024**3):.2f} GB"
 
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
             try:
                 if db_root:
                     query = f"""
@@ -1018,10 +1018,10 @@ class PollenDatabase:
             return cur.fetchall()
 
     @staticmethod
-    def vacuum_table(table_name='db'):
+    def vacuum_table(table_name='db', server=server):
         try:
             # Get connection without pooling wrapper for autocommit
-            conn = PollenDatabase.get_connection()
+            conn = PollenDatabase.get_connection(server)
             
             # For PooledConnection, access the underlying connection
             if isinstance(conn, PooledConnection):
@@ -1045,11 +1045,11 @@ class PollenDatabase:
             print(f"Error running VACUUM FULL: {e}")
 
     @staticmethod
-    def delete_table(table_name):
+    def delete_table(table_name, server=server):
         """
         Delete the specified table from the database.
         """
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
             try:
                 # Drop the table if it exists
                 cur.execute(f"DROP TABLE IF EXISTS {table_name};")
@@ -1061,7 +1061,7 @@ class PollenDatabase:
                 return False
 
     @staticmethod
-    def delete_key(table_name, key_column, console='del'):
+    def delete_key(table_name, key_column, console='del', server=server):
         """
         Delete a specific row from the specified table based on the key.
 
@@ -1083,7 +1083,7 @@ class PollenDatabase:
         delete_query = f"DELETE FROM {table_name} WHERE key = %s"
 
         try:
-            with PollenDatabase.get_connection() as conn:
+            with PollenDatabase.get_connection(server) as conn:
                 with conn.cursor() as cur:
                     # Execute the query
                     cur.execute(delete_query, (key_column,))
@@ -1097,21 +1097,20 @@ class PollenDatabase:
             return False
 
     @staticmethod
-    def read_client_users(source_table='client_users'):
-        with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
-            try:
-                with PollenDatabase.get_connection() as conn, conn.cursor() as cur:
+    def read_client_users(source_table='client_users', server=server):
+        try:
+            with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
 
-                    # Fetch data from the source table
-                    cur.execute(f"SELECT * FROM {source_table};")
-                    users = cur.fetchall()
-                    # users = cur.execute("SELECT * FROM client_users").fetchall()
-                    df = pd.DataFrame(users)
+                # Fetch data from the source table
+                cur.execute(f"SELECT * FROM {source_table};")
+                users = cur.fetchall()
+                # users = cur.execute("SELECT * FROM client_users").fetchall()
+                df = pd.DataFrame(users)
 
-                return users, df
+            return users, df
 
-            except Exception as e:
-                print("Error client users", e)
+        except Exception as e:
+            print("Error client users", e)
 
     @staticmethod
     def read_priceinfo_table(table_name='snapshot_priceinfo', tickers=None, crypto_only=None, limit=None, server=server):

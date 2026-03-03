@@ -3,9 +3,9 @@ from fastapi.responses import JSONResponse, FileResponse
 from dotenv import load_dotenv
 from fastapi import Request
 import logging
-
+from pydantic import BaseModel
 import asyncio
-from typing import Dict, Set, Optional
+from typing import Dict, Set, Optional, List, Any
 import os
 import random
 import pandas as pd
@@ -595,6 +595,39 @@ async def func_queen_queenking_trigger_update(client_user: str= Body(...), prod:
 
     json_data = queen_queenking_trigger_update(client_user, prod, trigger_id, status)
     return JSONResponse(content=json_data)
+
+
+@router.post("/ozz_api", status_code=status.HTTP_200_OK)
+async def load_ozz_call(request: Request):
+
+    body = await request.json()
+    
+    # Extract the message and any kwargs
+    message = body.get('message', '')
+    client_user = body.get('client_user', '')
+    history = body.get('history', [])  # Message history from frontend
+    
+    # Process the message (your AI/chat logic here)
+    response_text = f"Demo - Response: The AI will analyze your portfolio and help you with your investing strategies and even update your portfolio for you with a paid plan."  # Replace with actual logic
+    # Return in role/content format matching VoiceChatModal
+    return JSONResponse(content={
+        "status": "success",
+        "role": "assistant",
+        "content": response_text,
+        "timestamp": datetime.now(est).isoformat(),
+    })
+    
+    # selected_actions = body.get('selected_actions', [])
+    # use_embeddings = body.get('use_embeddings', [])
+
+    # print(f'trig TYPE: {tigger_type} {before_trigger_vars}')
+    
+    # if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
+    #     print("Auth Failed", api_key)
+    #     return "NOTAUTH"
+
+    # json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
+    # return JSONResponse(content=json_data)
 
 
 # @router.post("/voiceGPT", status_code=status.HTTP_200_OK)

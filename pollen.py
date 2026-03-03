@@ -460,8 +460,13 @@ def pollenq(sandbox=False, demo=False):
     
     if 'env_button_counter' not in st.session_state:
         st.session_state['env_button_counter'] = 0
-    
+ 
     # HEADER
+    cols = st.columns((4,2))
+    with cols[0]:
+        menu_id = sac_menu_buttons(pollen)
+    st.divider()
+    
     cols = st.columns((1,2,2,4))
     with cols[0]:
         height=50
@@ -518,9 +523,7 @@ def pollenq(sandbox=False, demo=False):
         client_user = st.session_state['admin__client_user']
 
     
-    cols = st.columns((4,2))
-    with cols[0]:
-        menu_id = sac_menu_buttons(pollen)
+
     with st.sidebar:
         st.write(f'menu selection {menu_id}')
     if menu_id == 'PlayGround':
@@ -669,21 +672,19 @@ def pollenq(sandbox=False, demo=False):
         if menu_id == 'Engine':
             from pages.pollen_engine import pollen_engine
             pollen_engine(acct_info_raw)
-        print("api", api)
-        # if api: 
-        #     print("API FETCH")
-        #     portfolio_performance = get_portfolio_performance(api, periods)
-        #     for i, period in enumerate(periods):
+        # print("api", api)
+        if api: 
+            # print("API FETCH")
+            portfolio_performance = get_portfolio_performance(api, periods)
+            for i, period in enumerate(periods):
 
-        #         portfolio_perf = portfolio_performance.get(period)
-        #         if portfolio_perf is not None:
-        #             with perf_containers[i]:
-        #                 color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
-        #                 mark_down_text(f'{period}', fontsize='18', color="#888", align="center")
-        #                 mark_down_text(f'{portfolio_perf}%', fontsize='23', color=color, align="center")
+                portfolio_perf = portfolio_performance.get(period)
+                if portfolio_perf is not None:
+                    with perf_containers[i]:
+                        color = "#1d982b" if portfolio_perf > 0 else "#ff4136"
+                        mark_down_text(f'{period}', fontsize='16', color="#888", align="center")
+                        mark_down_text(f'{portfolio_perf}%', fontsize='18', color=color, align="center")
 
-        # QUEENS CONSCIENCE Account, Story, Graphs
-        # with cols[1]:
 
     if menu_id in ['pollen', 'demo']:
         tabs = st.tabs(["Trading Grids", "Portfolio Allocations"])

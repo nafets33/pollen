@@ -93,7 +93,7 @@ def copy_pollen_store_by_symbol_to_MAIN_server():
         send_email(subject=f"Pollen Store Server Sync FAILED", body=str(e))
 
 def copy_data_between_tables(source_table='snapshot_priceinfo', target_table='snapshot_priceinfo'):
-
+    # DON"T USE UNTIL YOU FIX CONNECTION WORKERBEE
     def get_connection_and_cursor():
         conn = MigratePostgres.get_server_connection()
         cur = conn.cursor()
@@ -129,24 +129,19 @@ def copy_data_between_tables(source_table='snapshot_priceinfo', target_table='sn
         print(e)
     finally:
         # Ensure both connections are closed
-        if source_cur:
-            source_cur.close()
-        if source_con:
-            source_con.close()
-        if target_cur:
-            target_cur.close()
+        PollenDatabase.return_connection(source_con)
         if target_con:
-            target_con.close()
+            target_con.close() 
 
 if __name__ == "__main__":
 # Parse command-line arguments
 
-    if args.run:
+    if args.run == 'true':
         print("Ad-hoc run triggered for BISHOP")
         copy_pollen_store_by_symbol_to_MAIN_server()
 
     # Schedule tasks
-    schedule.every().day.at("09:33").do(copy_data_between_tables)
+    # schedule.every().day.at("09:33").do(copy_data_between_tables)
     times = ["09:35", "10:15", "11:00", "12:00", "13:00", "14:00", "15:00", "15:16"]
     for t in times:
         schedule.every().day.at(t).do(copy_pollen_store_by_symbol_to_MAIN_server)

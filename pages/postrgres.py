@@ -218,7 +218,7 @@ def copy_data_between_tables(source_table, target_table):
         if source_cur:
             source_cur.close()
         if source_con:
-            source_con.close()
+            PollenDatabase.return_connection(source_con)
         if target_cur:
             target_cur.close()
         if target_con:

@@ -22,7 +22,7 @@ import { format } from "date-fns-tz"
 import { duration } from "moment"
 import "./styles.css"
 import axios from "axios"
-// import Ozz from "./components/VoiceChatModal";
+import Ozz from "./components/VoiceChatModal";
 
 import {
   ComponentProps,
@@ -217,7 +217,6 @@ const AgGrid = (props: Props) => {
 
     return options;
   }
-
   const getGridOptions = () => {
     let options = { ...grid_options };
     if (kwargs.nestedGridEnabled && kwargs.detailGridOptions) {
@@ -256,7 +255,6 @@ const AgGrid = (props: Props) => {
     kwargs,
   } = props
   let { grid_options = {} } = props
-
 
   //parsing must be done here. For some unknow reason if its moved after the
   //button mapping, deepMap gets lots of React objects (api, symbolRefs, etc.)
@@ -1317,6 +1315,40 @@ const AgGrid = (props: Props) => {
           )}
         </>
       )}
+
+
+{kwargs.api_ozz && (
+  <div style={{
+    marginBottom: "10px",
+    maxWidth: "100%",
+  }}>
+    <Ozz
+      username={username}
+      kwargs={kwargs}
+      api={api}
+      prod={prod}
+      onSendMessage={async (msg, history) => {
+        if (!kwargs.api_ozz) {
+          return `🧪 Test Mode: You said "${msg}". Configure kwargs.api_ozz to connect to your backend.`;
+        }
+        
+        try {
+          const res = await axios.post(kwargs.api_ozz, { 
+            message: msg,
+            conversation_history: history,
+            client_user: username,
+            prod: kwargs.prod,
+            api_key: kwargs.api_key,
+          });
+          return res.data.content;
+        } catch (error: any) {
+          console.error("Ozz API error:", error);
+          return `⚠️ API Error: ${error.message || "Could not reach Pollen API"}. Test response for: "${msg}"`;
+        }
+      }}
+    />
+  </div>
+)}
 
 
       <MyModal

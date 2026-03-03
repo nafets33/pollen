@@ -124,7 +124,7 @@ def forgot_password(authenticator):
                 body=f"""
 Dear {authenticator.credentials["usernames"][email_forgot_pw]["name"]},
 
-Your new password for pollenq.com is {random_password}
+Your new password for quantqueen.com is {random_password}
 
 Please keep this password safe.
 
@@ -139,8 +139,11 @@ Pollen
             st.error("Email not found")
         else:
             st.info("Please enter your email to reset your password")
+        
     except Exception as e:
         st.error(e)
+    finally:
+        PollenDatabase.return_connection(con)
 
 
 # def send_email(recipient, subject, body):
@@ -260,9 +263,11 @@ Pollen
 """,
             )
             st.success("Password changed successfully")
-
+        
     except Exception as e:
         st.error(e)
+    finally:
+        PollenDatabase.return_connection(con)
 
 def read_user_db(cur):
     try:
@@ -284,6 +289,7 @@ def read_user_db(cur):
         raise f'AUTH ERROR READ USERS{e}'
 
 def signin_main(page='demo'):
+    con = None
     """Return True or False if the user is signed in"""
     ip_address = return_app_ip()
     st.session_state['ip_address'] = ip_address
@@ -379,6 +385,7 @@ def signin_main(page='demo'):
             st.session_state['authentication_status'] = True
             authenticator.logout("Logout", location='sidebar')
             define_authorized_user()
+            PollenDatabase.return_connection(con)
             return authenticator
         else:
             name, authentication_status, email = authenticator.login("Login", "main")
@@ -396,9 +403,11 @@ def signin_main(page='demo'):
                 if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
                     if already_setup:
                         setup_user_pollenqdbs()
+                        PollenDatabase.return_connection(con)
                         return authenticator
                     else:
                         define_authorized_user()
+                        PollenDatabase.return_connection(con)
                         return authenticator
                 else:    
                     update_db(authenticator, con=con, cur=cur, email=email)
@@ -413,23 +422,25 @@ def signin_main(page='demo'):
             with st.expander("New User"):
                 register_user(authenticator, con, cur)
 
-
         # no login trial; create account
         elif authentication_status == None:
             with st.expander("New User Create Account"):
                 register_user(authenticator, con, cur)
             
-            # cust_Button(file_path_url='misc/pollen_preview.gif', height='150px', hoverText='')
-    
-        print("ATUH", authentication_status)
 
+
+        PollenDatabase.return_connection(con)
         
         return authenticator
     
     
     except Exception as e:
         print('ERROR auth', e)
-        print_line_of_error()
+        print_line_of_error(e)
+        st.write(f"An error occurred during authentication: {e}. Please try again later.")
+    
+    finally:
+        PollenDatabase.return_connection(con)
 
 if __name__ == "__main__":
     st.session_state["logout"] = True
