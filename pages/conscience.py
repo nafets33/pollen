@@ -222,7 +222,7 @@ def generate_cell_style_range(max_number=40):
         }}
     """)
 
-def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
+def generate_shaded_cell_style(flash_state_variable='trinity_w_L', fontSize='13'):
     return JsCode(f"""
         function(p) {{
             var value = p.data.{flash_state_variable};
@@ -264,7 +264,8 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L'):
                     padding: '5px',
                     boxSizing: 'border-box',
                     textAlign: 'center',
-                    border: '3px solid white' // White border
+                    border: '3px solid white', // White border
+                    fontSize: '{fontSize}px',
                 }};
             }}
 
@@ -760,16 +761,16 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             default_text_color = k_colors.get('default_text_color')
             return  {
         'Broker': {'width': 130, 'cellStyle': button_style_broker }, #, 'cellRenderer': "agGroupCellRenderer" },                  
-        'Cash': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},
-        'Long': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **animate_numbers},                  
+        'Cash': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **{}},
+        'Long': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}}, **{}},                  
         'Short': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Crypto': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
-        'Money': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}, "type": ["customNumberFormat", "numericColumn", "customCurrencyFormat"], 'custom_currency_symbol':"$"}, **animate_numbers},
+        'Money': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}, "type": ["customNumberFormat", "numericColumn", "customCurrencyFormat"], 'custom_currency_symbol':"$"}, **{}},
         'Day % Change': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}},
         'Portfolio Value': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'Buying Power': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}},
         'daytrade count': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
-        'Heart Beat': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}, 'width': 89}, **animate_numbers},
+        'Heart Beat': {**{'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '15px'}, 'width': 89}, **{'enableCellChangeFlash': True,}},
         'Avg Beat': {'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '16px'}, 'width': 89},
         # 'Broker Delta': {'width': 80,'cellStyle': {'backgroundColor': backgroundColor, 'color': default_text_color, 'fontSize': '12px'}},
             }
@@ -787,6 +788,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             client_user=client_user,
             username=client_user, #KING['users_allowed_queen_emailname__db'].get(client_user), 
             api=f"{ip_address}/api/data/account_header",
+            api_ws= f"{ip_address}/api/data/ws_grid",
             api_update= None, #f"{ip_address}/api/data/update_queenking_chessboard",
             refresh_sec=refresh_sec, 
             refresh_cutoff_sec=seconds_to_market_close, 
@@ -799,7 +801,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             api_key=os.environ.get("fastAPI_key"),
             buttons=[],
             grid_height=grid_height,
-            toggle_views=[],
+            toggle_views=['Account'],
             allow_unsafe_jscode=True,
             grid_type='account_header',
             subtotal_cols=[i for i in cols if i != 'Broker'], # columns to sum for subtotal
@@ -902,7 +904,7 @@ def story_grid(prod, client_user,
                                     autoHeight=True, 
                                     suppress_menu=False, 
                                     filter=True, 
-                                    minWidth=89,
+                                    minWidth=65,
                                     cellStyle={"fontSize": "15px"})            
         gb.configure_index('symbol')
         gb.configure_theme('ag-theme-material')
@@ -1129,7 +1131,9 @@ def story_grid(prod, client_user,
                         'prompt_field': 'add_symbol_option',
                         'col_headername': 'Symbol',
                         "col_header": "symbol",
-                        'col_width':100,
+                        # 'col_width':80,
+                        'initialWidth': 89,
+                        # 'width': 80,
                         'sortable': True,
                         'pinned': 'left',
                         'prompt_order_rules': [i for i, v in add_symbol_dict_items().items() if v is not None and i != 'symbol'],
@@ -1311,11 +1315,12 @@ def story_grid(prod, client_user,
             'star_buys_at_play_allocation' : {'headerName':'Auto Pilot Allocation', 'sortable':'true', 
             "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
             'allocation_long' : {'headerName':'Advisor Minimum Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ], 'initialWidth': 110},              
-            'trinity_w_L': {'headerName': 'Trinity Weights','sortable': True, 
-                            'initialWidth': 89, 'enableCellChangeFlash': True, 
+            'trinity_w_L': {'headerName': 'Trinity Score','sortable': True, 
+                            'initialWidth': 80, 'enableCellChangeFlash': True, 
                             'cellRenderer': 'agAnimateShowChangeCellRenderer', 
-                            'cellStyle': generate_shaded_cell_style('trinity_w_L'), 
+                            'cellStyle': generate_shaded_cell_style('trinity_w_L', '11'), 
                             'valueFormatter': value_format_pct,
+                            'pinned': 'left',
                             },
             'trinity_w_15': {'headerName': 'Trinity Weights Day-Week','sortable': True, 
                                 'initialWidth': 89, 'enableCellChangeFlash': True, 
@@ -1741,7 +1746,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                    ui_refresh_sec=ui_refresh_sec,
                    k_colors=k_colors,
                    seconds_to_market_close=seconds_to_market_close,
-                   api_ws='/api/data/ws_story'
+                   api_ws='/api/data/ws_grid'
                    )
           
         if st.sidebar.toggle("Show Wave Grid"):

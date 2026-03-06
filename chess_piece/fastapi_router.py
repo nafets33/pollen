@@ -14,7 +14,7 @@ import pandas as pd
 # from master_ozz.ozz_query import ozz_query
 from chess_piece.fastapi_queen import *
 from chess_utils.websocket_manager import manager
-from chess_utils.websocket_updates import send_story_grid_update
+from chess_utils.websocket_updates import send_story_grid_update, send_account_header_update
 from chess_piece.pollen_db import PollenJsonDecoder
 
 router = APIRouter(
@@ -53,7 +53,7 @@ async def debug_active_connections():
 #  Store active WebSocket connections by username
 active_connections: Dict[str, Set[WebSocket]] = {}
 
-@router.websocket("/ws_story")
+@router.websocket("/ws_grid")
 async def websocket_story_endpoint(websocket: WebSocket):
     client_user = None
     toggle_view = None
@@ -161,7 +161,7 @@ async def trigger_story_grid_update(request: Request):
         api_key = payload.get('api_key')
         prod = payload.get('prod')
         revrec = payload.get('revrec')
-        toggle_view_selection = payload.get('toggle_view_selection', 'queen')
+        toggle_view_selection = payload.get('toggle_view_selection', 'Portfolio')
         
         # ✅ Validate API key
         if api_key != os.getenv('fastAPI_key'):
@@ -169,7 +169,7 @@ async def trigger_story_grid_update(request: Request):
         
         # ✅ Check if user is connected
         if not manager.is_connected(client_user, prod):
-            logging.warning(f"⚠️  User {client_user} not connected via WebSocket PROD: {prod}")
+            # logging.warning(f"⚠️  User {client_user} not connected via WebSocket PROD: {prod}")
             return {
                 "status": "warning",
                 "message": f"User {client_user} not connected",
@@ -251,6 +251,62 @@ async def get_websocket_status(client_user: str, prod: bool, request: Request = 
             status_code=500,
             content={"error": str(e)}
         )
+
+@router.post("/trigger_account_header_update")
+async def trigger_account_header_update(request: Request):
+    """
+    Trigger account header update via WebSocket.
+    Called by Queen Bee after account refresh.
+    """
+    try:
+        body = await request.body()
+        payload = json.loads(body, cls=PollenJsonDecoder)
+
+        client_user = payload.get('client_user')
+        api_key = payload.get('api_key')
+        prod = payload.get('prod')
+        account_rows = payload.get('account_rows')  # expected list[dict]
+        toggle_view_selection = payload.get('toggle_view_selection', 'Acoount')
+        row_id_field = payload.get('row_id_field', 'broker')
+
+        # Validate API key
+        if api_key != os.getenv('fastAPI_key'):
+            return {"status": "error", "message": "Invalid API key"}
+
+        # Optional fast-fail if no ws connection
+        if not manager.is_connected(client_user, prod):
+            print(f"User {client_user} not connected via WebSocket.")
+            return {
+                "status": "warning",
+                "message": f"User {client_user} not connected",
+                "connected_users": manager.get_active_users()
+            }
+
+        success = await send_account_header_update(
+            client_user=client_user,
+            prod=prod,
+            account_rows=account_rows,
+            toggle_view_selection=toggle_view_selection,
+            row_id_field=row_id_field,
+        )
+
+        if success:
+            return {
+                "status": "success",
+                "message": f"Account header update sent to {client_user} PROD: {prod}"
+            }
+        return {
+            "status": "error",
+            "message": f"Failed to send account header update to {client_user} PROD: {prod}"
+        }
+
+    except Exception as e:
+        logging.error(f"❌ Error in trigger_account_header_update: {e}")
+        print_line_of_error()
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 ### NEW WEBSOCKET CODE FOR EVENT-DRIVEN UPDATES ###
 

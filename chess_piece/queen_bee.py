@@ -19,6 +19,7 @@ import uuid
 import requests
 import json
 import ipdb
+import random
 
 
 
@@ -58,7 +59,6 @@ from chess_piece.pollen_db import PollenDatabase, PollenJsonEncoder, PollenJsonD
 from chess_piece.workerbees_snap import process_priceinfo_snapshot
 from chess_utils.robinhood_crypto_utils import CryptoAPITrading
 from chess_utils.conscience_utils import story_return
-# from chess_utils.websocket_manager import manager
 
 import copy
 from tqdm import tqdm
@@ -104,8 +104,7 @@ def symbol_is_crypto(symbol, crypto_currency_symbols=crypto_currency_symbols):
 
 coin_exchange = "CBSE"
 # ACTIVE_SYMBOLS = list(return_Ticker_Universe().get('alpaca_symbols_dict')) + crypto_currency_symbols
-alpaca_symbols_dict = return_Ticker_Universe().get('alpaca_symbols_dict')
-ACTIVE_SYMBOLS = list(alpaca_symbols_dict.keys()) + crypto_currency_symbols
+# ACTIVE_SYMBOLS = list(KING['alpaca_symbols_dict'].keys()) + crypto_currency_symbols
 
 # misc
 exclude_conditions = [
@@ -113,7 +112,8 @@ exclude_conditions = [
     'P','Q','R','T','V','Z'
 ] # 'U'
 
-def check_user_websocket_status(client_user, prod, API_URL, upsert_to_main_server=upsert_to_main_server):
+### WEBSOCKET UPDATES
+def check_user_websocket_status(client_user, prod, API_URL, upsert_to_main_server=upsert_to_main_server): ## DEPRECATED
     """
     Check if a specific user has an active WebSocket connection.
     
@@ -175,79 +175,191 @@ def check_user_websocket_status(client_user, prod, API_URL, upsert_to_main_serve
 def story_grid_update(prod, QUEEN_KING, revrec, client_user, API_KEY, API_URL, upsert_to_main_server=upsert_to_main_server):
     if upsert_to_main_server:
         API_URL = os.getenv('main_fastAPI_url')
+    
     endpoint = f"{API_URL}/api/data/trigger_story_grid_update"
     revrec_copy = copy.deepcopy(revrec)
     QUEEN_KING_copy = copy.deepcopy(QUEEN_KING)
     df_story = story_return(QUEEN_KING_copy, revrec_copy)
     
-    revrec_for_ws = {'storygauge': df_story.to_dict('records')}
-    
-    # Prepare payload
     payload = {
         'client_user': client_user,
         'api_key': API_KEY,
         'prod': prod,
-        'revrec': revrec_for_ws,
-        'toggle_view_selection': 'queen',
+        'revrec': {'storygauge': df_story.to_dict('records')},
+        'toggle_view_selection': 'Portfolio',
     }
 
     try:
-        # Send HTTP POST with PollenJsonEncoder
         response = requests.post(
             endpoint,
             data=json.dumps(payload, cls=PollenJsonEncoder),
             headers={'Content-Type': 'application/json'},
-            timeout=15
+            timeout=.3
         )
         
-        # print(f"\n📥 Response Status: {response.status_code}")
-        
-        if response.status_code == 404:
-            print(f"❌ 404 NOT FOUND")
-            print(f"💡 The endpoint might not exist. Check your fastapi_router.py")
-            
-            # Try to get OpenAPI docs tehehee
-            try:
-                docs_response = requests.get(f"{API_URL}/docs")
-                if docs_response.status_code == 200:
-                    print(f"✅ FastAPI docs available at: {API_URL}/docs")
-                    print(f"   Check there for available endpoints")
-            except:
-                pass
-            
-            return False
-        
         if response.status_code == 200:
+            print(f"✅ Story grid update triggered successfully for {client_user}")
             result = response.json()
-            # print(f"✅ Status: {result.get('status')}")
-            # print(f"💬 Message: {result.get('message')}")
             if result.get('status') == 'success':
-                logging.info(f"\n🎉 SUCCESS! {client_user} Story grid update sent via WebSocket")
                 return True
-            elif result.get('status') == 'warning':
-                logging.warning(f"\n⚠️  WARNING: {result.get('message')}")
-                print(f"💡 Connected users: {result.get('connected_users', [])}")
-                return False
-            else:
-                logging.error(f"\n❌ ERROR: {result.get('message')}")
-                return False
-        else:
-            logging.error(f"❌ HTTP Error: {response.status_code}")
-            logging.error(f"Response: {response.text}")
-            return False
+        return False
             
-    except requests.exceptions.Timeout:
-        logging.error(f"\n⏱️  TIMEOUT: Request took longer than 15 seconds")
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, Exception):
+        # Silent fail - WebSocket update not critical
         return False
-    except requests.exceptions.ConnectionError:
-        logging.error(f"\n❌ CONNECTION ERROR: Could not connect to {API_URL}")
-        logging.error(f"💡 Make sure FastAPI server is running!")
+
+# Account Header account_header
+def header_account(client_user, prod, QUEENsHeart=None, broker_info=None):
+  if not QUEENsHeart:
+    QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=pg_migration).get('QUEENsHeart')
+  if not broker_info:
+    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
+
+  demo = True if client_user == 'stapinskistefan@gmail.com' else False
+
+  if 'charlie_bee' not in QUEENsHeart.keys():
+    df = pd.DataFrame()
+  
+  # heart
+  if 'heartbeat' in QUEENsHeart.keys():
+      # broker_qty_delta = QUEENsHeart['heartbeat'].get('broker_qty_delta')
+      beat = round((datetime.now(est) - QUEENsHeart.get('heartbeat_time')).total_seconds(), 1)
+      # beat = QUEENsHeart.get('heartbeat_beat', 0)
+      avg_beat = QUEENsHeart.get('heartbeat_avg_beat', 0)
+      if beat > 1989:
+          beat = "zZzzz"
+
+      long = QUEENsHeart['heartbeat'].get('long')
+      short = QUEENsHeart['heartbeat'].get('short')
+  else:
+     beat = 0
+     avg_beat = 0
+     long = 0
+     short = 0
+
+  df = pd.DataFrame()
+  brokers = ['Alpaca', 'RobinHood', 'Interactive Brokers', 'Etrade']
+  for broker in brokers:
+    crypto_value = 0
+
+    # Account Info
+    acct_info = broker_info
+    if 'buying_power' not in acct_info.keys():
+    # if len(acct_info) == 0:
+        df_accountinfo = pd.DataFrame()
+        acct_info = {'accrued_fees': 0.0,
+                  'buying_power': 100000,
+                  'cash': 0,
+                  'daytrade_count': 0,
+                  'last_equity': 100000,
+                  'portfolio_value': 100000,}
+
+    if broker != 'Alpaca':
+      crypto_value = random.randint(20000, 80000) # fake crypto value for non-alpaca brokers  
+      long = random.randint(50000, 100000)
+      short = random.randint(0, 26000)
+      portfolio_value = long + short + crypto_value
+      buying_power = random.randint(50, 10000)
+      if not demo:
+        # print("DEMO MODE - Randomizing values for non-Alpaca brokers")
+        crypto_value = 0
+        long = 0
+        short = 0
+        portfolio_value = 1
+        buying_power = 0
+      
+      acct_info = {'accrued_fees': 0.0,
+              'buying_power': buying_power,
+              'cash': portfolio_value - long,
+              'daytrade_count': 0,
+              'last_equity': portfolio_value,
+              'portfolio_value': portfolio_value,}
+
+
+    # format
+    # 1
+    long = '${:,}'.format(long)
+    short = '${:,}'.format(short)
+    crypto_value = '${:,}'.format(crypto_value)
+    # 2
+    honey_text = '%{:,.2f}'.format(((acct_info['portfolio_value'] - acct_info['last_equity']) / acct_info['portfolio_value']) *100)
+    money_text = '${:,.0f}'.format(acct_info['portfolio_value'] - acct_info['last_equity'])
+    # 3
+    buying_power = '${:,}'.format(round(acct_info.get('buying_power')))
+    cash = '${:,}'.format(round(acct_info.get('cash')))
+    daytrade_count = round(acct_info.get('daytrade_count'))
+    portfolio_value = '${:,}'.format(round(acct_info.get('portfolio_value')))
+
+    df_heart = pd.DataFrame([{'Broker': broker, 'Long': long, 'Short': short, 'Crypto': crypto_value, 'Heart Beat': beat, 'Avg Beat': avg_beat}])
+
+    df_accountinfo = pd.DataFrame([{'Money': money_text, 'Day % Change': honey_text, 'Portfolio Value': portfolio_value, 'Cash': cash, 'Buying Power': buying_power, 'daytrade count': daytrade_count}])
+
+
+    df_ = pd.concat([df_heart, df_accountinfo], axis=1)
+
+    df = pd.concat([df, df_]).reset_index(drop=True)
+
+    # for idx in df.index:
+    #   df.at[idx, 'nestedRows'] = [{'count_on_me': 89, 'nestedRows': [{'count_on_her': 89}]}]
+    # print("acoucnt", df)
+
+  return df.to_dict(orient='records')
+
+
+
+def account_header_update(
+    prod,
+    account_header_rows,
+    client_user,
+    API_KEY,
+    API_URL,
+    upsert_to_main_server=upsert_to_main_server
+):
+    """
+    Send account header rows to websocket trigger endpoint.
+
+    account_header can be:
+      - list[dict]
+      - dict (single row)
+      - pandas.DataFrame
+    """
+    if upsert_to_main_server:
+        API_URL = os.getenv('main_fastAPI_url')
+
+    endpoint = f"{API_URL}/api/data/trigger_account_header_update"
+
+    payload = {
+        'client_user': client_user,
+        'api_key': API_KEY,
+        'prod': prod,
+        'account_rows': account_header_rows,
+        'toggle_view_selection': 'Account',
+        'row_id_field': 'Broker',
+    }
+
+    try:
+        response = requests.post(
+            endpoint,
+            data=json.dumps(payload, cls=PollenJsonEncoder),
+            headers={'Content-Type': 'application/json'},
+            timeout=.3
+        )
+
+        if response.status_code == 200:
+            print(f"✅ Account header update triggered successfully for {client_user}")
+            result = response.json()
+            return result.get('status') == 'success'
+
         return False
-    except Exception as e:
-        logging.error(f"\n❌ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
+
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, Exception) as e:
+        # Silent fail - websocket push is non-critical
+        # print(f"Error sending account header update: {e}")
         return False
+
+
+### WEBSOCKET UPDATES
+
 
 
 def init_broker_orders(api, BROKER, start_date=None, end_date=None):
@@ -500,7 +612,13 @@ def handle_broker(broker):
     return broker
 
 
-def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False, ACTIVE_SYMBOLS=ACTIVE_SYMBOLS, trigger_buy=False):
+def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_time_frame, trig, wave_amo, order_type='market', side='buy', crypto=False, limit_price=False, portfolio=None, trading_model=False, ACTIVE_SYMBOLS=[], trigger_buy=False):
+    tic, tframe, tperiod = ticker_time_frame.split("_")
+
+    if tic not in ACTIVE_SYMBOLS:
+        print(f"EX BUY ERROR: {ticker} No Longer Active symbol")
+        return {}
+
     try:
         def update__validate__qty(crypto, current_price, limit_price, wave_amo):
             if crypto:
@@ -523,7 +641,6 @@ def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_tim
             # check again
             crypto = True if ticker in crypto_currency_symbols else False
         
-        tic, tframe, tperiod = ticker_time_frame.split("_")
         star = f'{tframe}_{tperiod}'
         robinhood_crypto_ticker = tic.replace('/', '-') if ticker in crypto_currency_symbols else None
 
@@ -610,7 +727,7 @@ def execute_buy_order(broker, order_key, prod, api, blessing, ticker, ticker_tim
         return {'executed': False}
 
 
-def execute_sell_order(broker, prod, api, QUEEN, king_eval_order, ticker, ticker_time_frame, trig, run_order_idx, crypto=False, limit_price=False, portfolio=None, order_type='market', side='sell', ACTIVE_SYMBOLS=ACTIVE_SYMBOLS):
+def execute_sell_order(broker, prod, api, QUEEN, king_eval_order, ticker, ticker_time_frame, trig, run_order_idx, crypto=False, limit_price=False, portfolio=None, order_type='market', side='sell', ACTIVE_SYMBOLS=[]):
     try:
         if ticker not in ACTIVE_SYMBOLS:
             print(f"{ticker} No Longer Active symbol")
@@ -1002,19 +1119,24 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
     if demo:
         print("DEMO MODE ---> SAVE DATA TO SERVER")
+        client_user = 'stapinskistefan@gmail.com'
         upsert_to_main_server = True
         server = True
         API_URL = os.getenv("main_fastAPI_url")
+        prod = False
+        print(client_user, API_URL, "server: ", server, "upsert_to_main_server: ", upsert_to_main_server)
     elif server and client_user in ['stefanstapinski@gmail.com'] and prod:
         print("KINGS Are Made with Patience, Discipline and Honor - Bee One")
         upsert_to_main_server = True
         server = True
         API_URL = os.getenv("main_fastAPI_url")
+        print(client_user, API_URL, "server: ", server, "upsert_to_main_server: ", upsert_to_main_server)
     else:
         print("Local Testing ----> Bee One")
         upsert_to_main_server = False
         server = False
         API_URL = os.getenv("fastAPI_url")
+        print(client_user, API_URL, "server: ", server, "upsert_to_main_server: ", upsert_to_main_server)
     
     if not server and client_user in ['stefanstapinski@gmail.com'] and prod:
         print("Kings Account Stay Running on Sever NOT LOCAL")
@@ -1787,7 +1909,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         except Exception as e:
             print_line_of_error()
 
-    def command_conscience(QUEEN, STORY_bee, QUEEN_KING, api, mkhrs):
+    def command_conscience(QUEEN, STORY_bee, QUEEN_KING, api, mkhrs, ACTIVE_SYMBOLS):
 
         def repeat_purchase_delay(wave, ticker_time_frame, QUEEN):
             if ticker_time_frame in QUEEN['stars'].keys():
@@ -2077,7 +2199,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                                     #   side='buy', 
                                                       crypto=crypto, 
                                                     #   limit_price=False, 
-                                                      portfolio=QUEEN['portfolio']
+                                                      portfolio=QUEEN['portfolio'],
+                                                      ACTIVE_SYMBOLS=ACTIVE_SYMBOLS,
                                                       )
                                 if exx.get('executed'):
                                     new_queen_order_df = pd.DataFrame([exx['new_queen_order']]).set_index("client_order_id", drop=False)
@@ -2349,14 +2472,14 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                 pending_sell_value = 0
                 if len(pending_sells) > 0:
                     for idx, sell_order in pending_sells.iterrows():
-                        sell_qty = float(sell_order['qty'])
+                        pending_order_qty = float(sell_order['qty'])
                         sell_price = sell_order.get('limit_price', makers_middle_price)
                         if not sell_price:
                             # print("NO LIMIT PRICE using maker middle")
                             sell_price = float(makers_middle_price)
                         if not isinstance(sell_price, (int, float)):
                             sell_price = float(makers_middle_price)
-                        pending_sell_value += (sell_qty * sell_price)
+                        pending_sell_value += (pending_order_qty * sell_price)
                     
                     logging.info(f"{ticker_time_frame} PENDING SELLS DETECTED: {len(pending_sells)} orders, Total Value: ${round(pending_sell_value)}")
 
@@ -2694,7 +2817,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             logging.error("Bishop Selling Error")
 
 
-    def order_management(BROKER, STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee, mkhrs='closed'): 
+    def order_management(BROKER, STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee, mkhrs='closed', ACTIVE_SYMBOLS=[]): 
 
         def stop_queen_order_from_kingbishop(run_order):
             # Stop Queen Order from going to the Kings Court -- order_trig_sell_stop, qty_avilable, autopilot'
@@ -2717,7 +2840,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
 
 
         # WORKERBEE FIND RETURN BROKER DELTA AND FIX WITH QTY_AVAILABLE
-        def queen_orders_main(BROKER, QUEEN, STORY_bee, QUEEN_KING, charlie_bee, mkhrs):
+        def queen_orders_main(BROKER, QUEEN, STORY_bee, QUEEN_KING, charlie_bee, mkhrs, ACTIVE_SYMBOLS):
                     
             
             try: # Order Loop
@@ -2911,6 +3034,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                                     run_order_idx=king_eval_order['bishop_keys']['client_order_id'], 
                                     order_type=king_eval_order['bishop_keys']['order_type'],
                                     crypto=king_eval_order['bishop_keys']['qo_crypto'],
+                                    ACTIVE_SYMBOLS=ACTIVE_SYMBOLS,
                                 )
                             if exx.get('executed'):
                                 save = True
@@ -3011,7 +3135,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         try:
             # Submitted Orders First
             s_loop = datetime.now(est)
-            queen_orders_main(BROKER, QUEEN, STORY_bee, QUEEN_KING, charlie_bee, mkhrs=mkhrs)
+            queen_orders_main(BROKER, QUEEN, STORY_bee, QUEEN_KING, charlie_bee, mkhrs=mkhrs, ACTIVE_SYMBOLS=ACTIVE_SYMBOLS)
             charlie_bee['queen_cyle_times']['om_queen_orders___main'] = (datetime.now(est) - s_loop).total_seconds()
         
         except Exception as e:
@@ -3184,6 +3308,8 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         api = qb.get('api')
         QUEENsHeart = qb.get('QUEENsHeart')
         BROKER = qb.get('BROKER')
+        ACTIVE_SYMBOLS = list(KING['alpaca_symbols_dict'].keys()) + crypto_currency_symbols
+        ACTIVE_SYMBOLS = list(return_Ticker_Universe().get('alpaca_symbols_dict')) + crypto_currency_symbols if api else ACTIVE_SYMBOLS
 
 
         ## """Rev Rec"""
@@ -3241,7 +3367,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         # if 'price_info_symbols' not in QUEEN.keys():
         QUEEN['price_info_symbols'] = queenbee_get_priceinfo(QUEEN, active_queen_order_states)
 
-        print(f'ProdEnv {prod} Here we go Mario')
+        print(f'PROD ENV: {prod} ---> Here we go Mario')
 
         # handle App updates
         process_app_requests__order_updates(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, upsert_to_main_server=upsert_to_main_server)
@@ -3336,33 +3462,34 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             charlie_bee['queen_cyle_times']['cc_revrec'] = QUEEN['revrec'].get('cycle_time')
 
             # WORKERBEE ONLY SEND NECESSARY DATA (Priceinfo, total budget, remaining balance...????)
-            if check_user_websocket_status(client_user, prod, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
-                story_grid_update(prod, QUEEN_KING, QUEEN['revrec'], client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server)
+            # if check_user_websocket_status(client_user, prod, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
+            story_grid_update(prod, QUEEN_KING, QUEEN['revrec'], client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server)
+            account_header_rows = header_account(client_user=client_user, prod=prod, QUEENsHeart=QUEENsHeart, broker_info=QUEEN['account_info'])
+            account_header_update(prod, account_header_rows, client_user, API_KEY, API_URL, upsert_to_main_server=upsert_to_main_server)
 
             # Process All Orders
             s_time = datetime.now(est)
             # ("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<ORDER MANAGEMENT>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            order_management(BROKER, STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee, mkhrs)
+            order_management(BROKER, STORY_bee, QUEEN, QUEEN_KING, api, QUEENsHeart, charlie_bee, mkhrs, ACTIVE_SYMBOLS)
             charlie_bee['queen_cyle_times']['order management'] = (datetime.now(est) - s_time).total_seconds()
 
             s_time = datetime.now(est)
             # ("<<<<<<<<<<<<<<<<<<<<<<<COMMAND CONSCIENCE>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            command_conscience(QUEEN, STORY_bee, QUEEN_KING, api, mkhrs) ##### >   
+            command_conscience(QUEEN, STORY_bee, QUEEN_KING, api, mkhrs, ACTIVE_SYMBOLS) ##### >   
             charlie_bee['queen_cyle_times']['command conscience'] = (datetime.now(est) - s_time).total_seconds()
             
             beat = (datetime.now(est) - s).total_seconds()
             heartbeat_cyle.append(beat)
+            print("HeartBeat", beat, datetime.now(est).strftime('%y-%m-%d:%H:%M'))
+            avg_beat = sum(heartbeat_cyle) / len(heartbeat_cyle)
+            QUEENsHeart.update({"heartbeat_beat": round(beat)})
+            QUEENsHeart.update({"heartbeat_avg_beat": round(avg_beat)})
             
             charlie_bee['queen_cycle_count'] += 1
             if datetime.now(est) - cycle_time > timedelta(seconds=60) or charlie_bee['queen_cycle_count'] == 1:
                 cycle_time = datetime.now(est)
-                print("HeartBeat", beat, datetime.now(est).strftime('%y-%m-%d:%H:%M'))
-                avg_beat = sum(heartbeat_cyle) / len(heartbeat_cyle)
-                QUEENsHeart.update({"heartbeat_beat": round(beat)})
-                QUEENsHeart.update({"heartbeat_avg_beat": round(avg_beat)})
                 god_save_the_queen(QUEEN, QUEENsHeart, console=True, upsert_to_main_server=upsert_to_main_server)
 
-            
             if beat > 23:
                 logging.warning((queens_chess_piece, ": SLOW cycle Heart Beat: ", beat, "use price gauge"))
 

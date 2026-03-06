@@ -11,6 +11,8 @@ import asyncio
 import aiohttp
 import asyncio
 from asyncio import Semaphore
+import schedule
+
 
 # Load environment variables
 load_dotenv()
@@ -215,7 +217,7 @@ def get_bulk_snapshots_priceinfo(api, symbols, max_symbols_per_api_call=89):
                                 all_priceinfo.append(priceinfo)
                     
                     chunk_results = len(snapshots) if snapshots else 0
-                    print(f"Successfully processed, symbols in this chunk {chunk_results} :: {datetime.now(est).strftime('%Y-%m-%d %H:%M:%S')}")
+                    # print(f"Successfully processed, symbols in this chunk {chunk_results} :: {datetime.now(est).strftime('%Y-%m-%d %H:%M:%S')}")
                                 
                 except Exception as e:
                     print(f"Error fetching bulk snapshots for chunk: {e}")
@@ -535,7 +537,7 @@ def main_workerbees_snap(prod=True, awake=False, save_to_db=True, loglevel='WARN
                     last_print_time = current_time
 
                 price_data = fetch_and_store_priceinfo(symbols, api, table_name, save_to_db=save_to_db)
-
+                print(f"Fetched price info for {len(price_data)} symbols at {datetime.now(est).strftime('%Y-%m-%d %I:%M:%S %p')}")
             else:
                 print("No symbols to process.")
 
@@ -559,4 +561,21 @@ if __name__ == "__main__":
     save_to_db = namespace.save_to_db
     loglevel = namespace.loglevel
 
+
+    # run_time = "09:30"
+    # a = schedule.every().day.at(run_time).do(main_workerbees_snap(prod=prod, awake=awake, save_to_db=save_to_db, loglevel=loglevel))
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(1)
+
+
+    while True:
+        seconds_to_market_open = (datetime.now(est).replace(hour=9, minute=30, second=3) - datetime.now(est)).total_seconds()
+
+        if seconds_to_market_open > 0:
+            print(seconds_to_market_open, " ZZzzzZZ")
+            time.sleep(3)
+        else:
+            break
+    
     main_workerbees_snap(prod=prod, awake=awake, save_to_db=save_to_db, loglevel=loglevel)

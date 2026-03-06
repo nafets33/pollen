@@ -385,7 +385,6 @@ def signin_main(page='demo'):
             st.session_state['authentication_status'] = True
             authenticator.logout("Logout", location='sidebar')
             define_authorized_user()
-            PollenDatabase.return_connection(con)
             return authenticator
         else:
             name, authentication_status, email = authenticator.login("Login", "main")
@@ -403,11 +402,9 @@ def signin_main(page='demo'):
                 if 'authorized_user' in st.session_state and st.session_state['authorized_user'] == True:
                     if already_setup:
                         setup_user_pollenqdbs()
-                        PollenDatabase.return_connection(con)
                         return authenticator
                     else:
                         define_authorized_user()
-                        PollenDatabase.return_connection(con)
                         return authenticator
                 else:    
                     update_db(authenticator, con=con, cur=cur, email=email)
@@ -427,9 +424,6 @@ def signin_main(page='demo'):
             with st.expander("New User Create Account"):
                 register_user(authenticator, con, cur)
             
-
-
-        PollenDatabase.return_connection(con)
         
         return authenticator
     

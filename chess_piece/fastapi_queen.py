@@ -11,7 +11,9 @@ import copy
 from chess_piece.king import (return_QUEEN_KING_symbols, return_QUEENs__symbols_data, 
                               kingdom__global_vars, ReadPickleData, streamlit_config_colors, 
                               hive_master_root, stars, PickleData, hive_master_root_db, 
-                              read_QUEENs__pollenstory, print_line_of_error)
+                              read_QUEENs__pollenstory, print_line_of_error,
+                              
+                              )
 from chess_piece.queen_hive import (return_symbol_from_ttf, 
                                     add_trading_model, 
                                     find_symbol_in_chess_board, 
@@ -33,6 +35,8 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     add_symbol_to_chess_board,
                                     init_swarm_dbs,
                                     assign_block_time,
+                                    return_Ticker_Universe,
+                                    kingdom__grace_to_find_a_Queen
                                     
                                     )
 
@@ -342,6 +346,9 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
     # revrec = qb.get('revrec') # qb.get('queen_revrec') # WORKERBEE but shouldn't we just use RevRec anyways?
     QUEENsHeart = qb.get('QUEENsHeart')
     portfolio = QUEENsHeart['heartbeat'].get('portfolio')
+    KING = kingdom__grace_to_find_a_Queen()
+    ACTIVE_SYMBOLS = list(KING['alpaca_symbols_dict'].keys()) + crypto_currency_symbols
+    ACTIVE_SYMBOLS = list(return_Ticker_Universe().get('alpaca_symbols_dict')) + crypto_currency_symbols if api else ACTIVE_SYMBOLS
 
     buy_package = create_AppRequest_package(request_name='buy_orders')
 
@@ -453,7 +460,8 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
                         order_type=blessing.get('order_type'),
                         side=blessing.get('order_side'),
                         limit_price=blessing.get('limit_price'),
-                        crypto=crypto
+                        crypto=crypto,
+                        ACTIVE_SYMBOLS=ACTIVE_SYMBOLS,
                         )
 
         if exx.get('executed'):
@@ -537,7 +545,8 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
                       order_type=blessing.get('order_type'),
                       side=blessing.get('order_side'),
                       limit_price=blessing.get('limit_price'),
-                      crypto=crypto
+                      crypto=crypto,
+                      ACTIVE_SYMBOLS=ACTIVE_SYMBOLS,
                       )
 
       if exx.get('executed'):

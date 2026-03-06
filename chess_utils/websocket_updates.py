@@ -8,7 +8,7 @@ async def send_story_grid_update(
     client_user: str,
     prod: bool,
     revrec: dict,
-    toggle_view_selection: str = 'queen',
+    toggle_view_selection: str = 'Portfolio',
     # qk_chessboard: dict = None
 ) -> bool:
     """
@@ -54,7 +54,7 @@ async def send_story_grid_update(
         logging.info(f"📤 Sending {len(row_updates)} updates to {client_user}...")
         
         # Send via WebSocket manager
-        success = await manager.send_to_user(client_user, message, prod)
+        success = await manager.send_to_user(client_user, message, prod, grid_type=toggle_view_selection)
         
         if success:
             logging.info(f"✅ Successfully sent {len(row_updates)} updates to {client_user}")
@@ -68,3 +68,28 @@ async def send_story_grid_update(
         import traceback
         traceback.print_exc()
         return False
+
+
+async def _send_grid_update(client_user, prod, rows, row_id_field, grid_type='Portfolio'):
+    try:
+        row_updates = []
+        for idx, row in enumerate(rows):
+            rid = row.get(row_id_field, idx)
+            row_updates.append({"row_id": str(rid), "updates": row})
+
+        message = json.dumps(row_updates, cls=PollenJsonEncoder)
+        message = message.replace(': NaN,', ': null,').replace(': NaN}', ': null}')
+        message = message.replace(': Infinity,', ': null,').replace(': Infinity}', ': null}')
+        message = message.replace(': -Infinity,', ': null,').replace(': -Infinity}', ': null}')
+        return await manager.send_to_user(client_user, message, prod, grid_type=grid_type)
+    except Exception as e:
+        logging.error(f"❌ Error in _send_grid_update: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+# async def send_story_grid_update(client_user, prod, revrec, toggle_view_selection='queen'):
+#     rows = revrec.get('storygauge', [])
+#     return await _send_grid_update(client_user, prod, rows, row_id_field='symbol')
+
+async def send_account_header_update(client_user, prod, account_rows, row_id_field='broker',toggle_view_selection='Account'):
+    return await _send_grid_update(client_user, prod, rows=account_rows, row_id_field=row_id_field, grid_type=toggle_view_selection)

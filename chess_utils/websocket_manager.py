@@ -31,7 +31,7 @@ class ConnectionManager:
                 del self.active_connections[websocket]
                 logging.info(f"❌ WebSocket disconnected: {client_user} | Remaining: {len(self.active_connections)}")
     
-    async def send_to_user(self, client_user: str, message, prod: bool):
+    async def send_to_user(self, client_user: str, message, prod: bool, grid_type: str):
         """Send message to specific user by username."""
         to_remove = set()
         sent = False
@@ -39,6 +39,9 @@ class ConnectionManager:
         for connection, initial_data in self.active_connections.items():
             if (initial_data.get("username") == client_user and initial_data.get("prod") == prod):
                 try:
+                    subscribed = initial_data.get("toggle_view_selection")  # existing key
+                    if grid_type and subscribed != grid_type:
+                        continue
                     # ✅ Ensure message is a string
                     # ✅ Message should already be a JSON string from websocket_updates.py
                     if not isinstance(message, str):

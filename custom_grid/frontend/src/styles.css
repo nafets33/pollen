@@ -1,7 +1,5 @@
 #myGrid {
     width: 100%;
-    /* Use this variable to change the single default flash color if not using up/down logic */
-    --ag-value-change-value-highlight-background-color: rgba(76, 175, 80, 0.5); 
 }
 
 .ag-header-cell {
@@ -25,16 +23,26 @@
     color: #1a3556 !important;
 }
 
-/* --- FLASH WITHOUT DELTA --- */
-/* Target the standard flash classes used by 'enableCellChangeFlash: true' */
-
-/* Initial flash state (active for ~500ms) */
-.ag-theme-material .ag-cell-data-changed {
-    background-color: rgba(76, 175, 80, 0.7) !important; /* Change to your preferred color */
+/* Custom delta flash - green for increases, red for decreases */
+@keyframes flash-positive {
+  0% { background-color: rgba(76, 175, 80, 0.7); }
+  100% { background-color: transparent; }
 }
 
-/* Fade-out state (active for ~1000ms) */
-.ag-theme-material .ag-cell-data-changed-animation {
-    background-color: transparent !important;
-    transition: background-color 1s ease-out !important;
+@keyframes flash-negative {
+  0% { background-color: rgba(244, 67, 54, 0.7); }
+  100% { background-color: transparent; }
 }
+
+.ag-cell.flash-positive {
+  animation: flash-positive 3s ease-out forwards;
+}
+
+.ag-cell.flash-negative {
+  animation: flash-negative 3s ease-out forwards;
+}
+
+.ag-cell-data-changed {
+  background-color: transparent !important;
+}
+
