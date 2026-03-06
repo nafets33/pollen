@@ -25,21 +25,25 @@
 
 /* Custom delta flash - green for increases, red for decreases */
 @keyframes flash-positive {
-  0% { background-color: rgba(76, 175, 80, 0.7); }
+  0% { background-color: transparent; }
+  20% { background-color: rgba(140, 205, 142, 0.7); }
+  80% { background-color: rgba(122, 183, 124, 0.7); }
   100% { background-color: transparent; }
 }
 
 @keyframes flash-negative {
-  0% { background-color: rgba(244, 67, 54, 0.7); }
+  0% { background-color: transparent; }
+  20% { background-color: rgba(244, 67, 54, 0.7); }
+  80% { background-color: rgba(244, 67, 54, 0.7); }
   100% { background-color: transparent; }
 }
 
 .ag-cell.flash-positive {
-  animation: flash-positive 3s ease-out forwards;
+  animation: flash-positive 6s ease-in-out forwards;
 }
 
 .ag-cell.flash-negative {
-  animation: flash-negative 3s ease-out forwards;
+  animation: flash-negative 6s ease-in-out forwards;
 }
 
 .ag-cell-data-changed {

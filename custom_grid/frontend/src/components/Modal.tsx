@@ -787,17 +787,17 @@ const MyModal: React.FC<MyModalProps> = ({
                               flexDirection: "column",
                               alignItems: "center",
                               justifyContent: "center",
-                              borderRadius: main ? "12px" : "8px",
-                              padding: main ? "10px 18px 8px" : "6px 6px 4px",
+                              borderRadius: main ? "10px" : "6px",
+                              padding: main ? "8px 12px 6px" : "4px 4px 3px",
                               background: bgColor,
                               border: `1px solid #222`,
                               boxShadow: main ? "0 1px 8px rgba(166, 196, 190, 0.19)" : "0 1px 4px rgba(0,0,0,0.05)",
-                              minWidth: main ? "110px" : "80px",
+                              minWidth: main ? "90px" : "65px",
                             }}
                           >
                             <div
                               style={{
-                                fontSize: main ? "2rem" : "1.4rem",
+                                fontSize: main ? "1.6rem" : "1.1rem",
                                 fontWeight: main ? "900" : "700",
                                 lineHeight: 1.1,
                                 color: "#222", // dark text
@@ -810,11 +810,11 @@ const MyModal: React.FC<MyModalProps> = ({
                             </div>
                             <div
                               style={{
-                                fontSize: main ? "0.8rem" : "0.7rem",
+                                fontSize: main ? "0.68rem" : "0.62rem",
                                 color: "#222", // dark text
                                 textTransform: "uppercase",
-                                letterSpacing: main ? "2.5px" : "1.5px",
-                                marginTop: "4px",
+                                letterSpacing: main ? "2.3px" : "1.3px",
+                                marginTop: "3px",
                                 textAlign: "center",
                               }}
                             >

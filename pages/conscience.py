@@ -782,7 +782,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
         
         go = gb.build()
         # go['pinnedBottomRowData'] = [subtotal_row]
-        grid_height = '200px' if st.session_state.get('sneak_peak') else '133px'
+        grid_height = '210px' if st.session_state.get('sneak_peak') else '140px'
         
         st_custom_grid(
             client_user=client_user,
@@ -1111,7 +1111,7 @@ def story_grid(prod, client_user,
                                         { 
                                             'col_header': "ignore_allocation_budget", 
                                             'dtype': "checkbox", 
-                                            "display_name": "Ignore Allocation Deploy",
+                                            "display_name": "Ignore Auto Pilot Allocation",
                                             # 'backgroundColor': "#ffebee",  # ✅ Light red warning
                                         },
                                         { 
@@ -1888,7 +1888,6 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         print('queensconscience', print_line_of_error(e))
 
 if __name__ == '__main__':
-    PollenDatabase.init_connection_pool(minconn=3, maxconn=15)
 
 
     signin_main(page="pollenq")

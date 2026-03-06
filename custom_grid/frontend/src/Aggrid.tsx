@@ -341,87 +341,97 @@ const AgGrid = (props: Props) => {
             }
 
             // Handle array of updates (batch)
-if (Array.isArray(data) && data.length > 0) {
-  const rowsToUpdate: any[] = [];
-  const deltaFlashInfo: Record<string, Record<string, { direction: 'positive' | 'negative' }>> = {};
-  
-  data.forEach(({ row_id, updates }) => {
-    const existingNode = gridRef.current?.api.getRowNode(row_id);
-    if (existingNode && existingNode.data) {
-      // Start with existing data to preserve everything
-      const updatedRow = { ...existingNode.data };
+            if (Array.isArray(data) && data.length > 0) {
+              const rowsToUpdate: any[] = [];
+              const deltaFlashInfo: Record<string, Record<string, { direction: 'positive' | 'negative' }>> = {};
 
-      // Track changes for flash animation
-      if (!deltaFlashInfo[row_id]) {
-        deltaFlashInfo[row_id] = {};
-      }
+              data.forEach(({ row_id, updates }) => {
+                const existingNode = gridRef.current?.api.getRowNode(row_id);
+                if (existingNode && existingNode.data) {
+                  // Start with existing data to preserve everything
+                  const updatedRow = { ...existingNode.data };
 
-      // Apply only the updates from WebSocket
-      Object.keys(updates).forEach(key => {
-        const oldValue = existingNode.data[key];
-        const newValue = updates[key];
-        
-        // Detect numeric changes for flash animation
-        const oldNum = parseFloat(oldValue);
-        const newNum = parseFloat(newValue);
-        
-        if (!isNaN(oldNum) && !isNaN(newNum) && oldNum !== newNum) {
-          deltaFlashInfo[row_id][key] = {
-            direction: newNum > oldNum ? 'positive' : 'negative'
-          };
-        }
-        
-        updatedRow[key] = newValue;
-      });
+                  // Track changes for flash animation
+                  if (!deltaFlashInfo[row_id]) {
+                    deltaFlashInfo[row_id] = {};
+                  }
 
-      // Ensure index is preserved
-      updatedRow[index] = row_id;
+                  // Apply only the updates from WebSocket
+                  Object.keys(updates).forEach(key => {
+                    const oldValue = existingNode.data[key];
+                    const newValue = updates[key];
 
-      rowsToUpdate.push(updatedRow);
-    } else {
-      log("⚠️  Row not found for update:", row_id);
-    }
-  });
+                    // ✅ Only flash if enableCellChangeFlash is true AND agAnimateShowChangeCellRenderer is NOT used
+                    const columnDef = gridRef.current?.api.getColumnDef(key);
+                    const flashEnabled = columnDef?.enableCellChangeFlash === true;
+                    const hasAgAnimate = columnDef?.cellRenderer === 'agAnimateShowChangeCellRenderer';
 
-  // Apply all updates in ONE transaction
-  if (rowsToUpdate.length > 0) {
-    gridRef.current?.api.applyTransaction({
-      update: rowsToUpdate
-    });
-    log(`✅ Updated ${rowsToUpdate.length} rows`);
+                    // Detect numeric changes for flash animation (only if custom flash is enabled and AG Grid animator not present)
+                    if (flashEnabled && !hasAgAnimate) {
+                      const oldNum = parseFloat(oldValue);
+                      const newNum = parseFloat(newValue);
 
-    // ✅ Apply flash animation to changed cells
-    requestAnimationFrame(() => {
-      Object.keys(deltaFlashInfo).forEach(rowId => {
-        Object.keys(deltaFlashInfo[rowId]).forEach(field => {
-          const { direction } = deltaFlashInfo[rowId][field];
-          
-          let cellElement: Element | null = null;
-          cellElement = document.querySelector(
-            `.ag-row[row-id="${rowId}"] .ag-cell[col-id="${field}"]`
-          );
+                      if (!isNaN(oldNum) && !isNaN(newNum) && oldNum !== newNum) {
+                        deltaFlashInfo[row_id][key] = {
+                          direction: newNum > oldNum ? 'positive' : 'negative'
+                        };
+                      }
+                    }
 
-          if (cellElement) {
-            const flashClass = `flash-${direction}`;
-            cellElement.classList.remove('flash-positive', 'flash-negative');
-            void (cellElement as HTMLElement).offsetWidth; // Force reflow
-            cellElement.classList.add(flashClass);
-            
-            setTimeout(() => {
-              cellElement!.classList.remove(flashClass);
-            }, 1000);
+                    updatedRow[key] = newValue;
+                  });
+
+                  // Ensure index is preserved
+                  updatedRow[index] = row_id;
+
+                  rowsToUpdate.push(updatedRow);
+                } else {
+                  log("⚠️  Row not found for update:", row_id);
+                }
+              });
+
+              // ✅ Apply updates in batches for smoother visual effect
+              if (rowsToUpdate.length > 0) {
+                // First, apply the transaction to update the grid
+                gridRef.current?.api.applyTransaction({
+                  update: rowsToUpdate
+                });
+
+                // Then apply custom flash animations (only for columns with enableCellChangeFlash but no agAnimate)
+                requestAnimationFrame(() => {
+                  rowsToUpdate.forEach(row => {
+                    const rowId = row[index];
+                    if (deltaFlashInfo[rowId]) {
+                      Object.keys(deltaFlashInfo[rowId]).forEach(field => {
+                        const { direction } = deltaFlashInfo[rowId][field];
+
+                        const cellElement = document.querySelector(
+                          `.ag-row[row-id="${rowId}"] .ag-cell[col-id="${field}"]`
+                        );
+
+                        if (cellElement) {
+                          cellElement.classList.remove('flash-positive', 'flash-negative');
+                          void (cellElement as HTMLElement).offsetWidth;
+                          cellElement.classList.add(`flash-${direction}`);
+
+                          setTimeout(() => {
+                            cellElement.classList.remove(`flash-${direction}`);
+                          }, 1000);
+                        }
+                      });
+                    }
+                  });
+                });
+
+                log(`✅ Updated ${rowsToUpdate.length} rows at once`);
+
+                if (gridRef.current?.api) {
+                  calculateAndUpdateSubtotals(gridRef.current.api);
+                }
+              }
+            }
+
           }
-        });
-      });
-    });
-
-    // ✅ Recalculate and update pinned bottom row
-    if (gridRef.current?.api) {
-      calculateAndUpdateSubtotals(gridRef.current.api);
-    }
-  }
-}
-}
           catch (error) {
             console.error("❌ Error processing WebSocket message:", error);
           }
@@ -776,21 +786,21 @@ if (Array.isArray(data) && data.length > 0) {
 
 
 
-const autoSizeAll = useCallback((skipHeader: boolean) => {
-  const allColumnIds: string[] = [];
-  const columnApi = gridRef.current!.columnApi;
-  
-  columnApi.getColumns()!.forEach((column: any) => {
-    const actualColDef = column.getColDef(); // Get actual column def from AG Grid
-    
-    // Only autosize columns that don't have an explicit width set
-    if (!actualColDef.width && !actualColDef.initialWidth && !actualColDef.suppressSizeToFit) {
-      allColumnIds.push(column.getId());
-    }
-  });
-  
-  columnApi.autoSizeColumns(allColumnIds, skipHeader);
-}, []);
+  const autoSizeAll = useCallback((skipHeader: boolean) => {
+    const allColumnIds: string[] = [];
+    const columnApi = gridRef.current!.columnApi;
+
+    columnApi.getColumns()!.forEach((column: any) => {
+      const actualColDef = column.getColDef(); // Get actual column def from AG Grid
+
+      // Only autosize columns that don't have an explicit width set
+      if (!actualColDef.width && !actualColDef.initialWidth && !actualColDef.suppressSizeToFit) {
+        allColumnIds.push(column.getId());
+      }
+    });
+
+    columnApi.autoSizeColumns(allColumnIds, skipHeader);
+  }, []);
 
   const sizeToFit = useCallback(() => {
     gridRef.current!.api.sizeColumnsToFit({
@@ -1360,38 +1370,38 @@ const autoSizeAll = useCallback((skipHeader: boolean) => {
       )}
 
 
-{kwargs.api_ozz && (
-  <div style={{
-    marginBottom: "10px",
-    maxWidth: "100%",
-  }}>
-    <Ozz
-      username={username}
-      kwargs={kwargs}
-      api={api}
-      prod={prod}
-      onSendMessage={async (msg, history) => {
-        if (!kwargs.api_ozz) {
-          return `🧪 Test Mode: You said "${msg}". Configure kwargs.api_ozz to connect to your backend.`;
-        }
-        
-        try {
-          const res = await axios.post(kwargs.api_ozz, { 
-            message: msg,
-            conversation_history: history,
-            client_user: username,
-            prod: kwargs.prod,
-            api_key: kwargs.api_key,
-          });
-          return res.data.content;
-        } catch (error: any) {
-          console.error("Ozz API error:", error);
-          return `⚠️ API Error: ${error.message || "Could not reach Pollen API"}. Test response for: "${msg}"`;
-        }
-      }}
-    />
-  </div>
-)}
+      {kwargs.api_ozz && (
+        <div style={{
+          marginBottom: "10px",
+          maxWidth: "100%",
+        }}>
+          <Ozz
+            username={username}
+            kwargs={kwargs}
+            api={api}
+            prod={prod}
+            onSendMessage={async (msg, history) => {
+              if (!kwargs.api_ozz) {
+                return `🧪 Test Mode: You said "${msg}". Configure kwargs.api_ozz to connect to your backend.`;
+              }
+
+              try {
+                const res = await axios.post(kwargs.api_ozz, {
+                  message: msg,
+                  conversation_history: history,
+                  client_user: username,
+                  prod: kwargs.prod,
+                  api_key: kwargs.api_key,
+                });
+                return res.data.content;
+              } catch (error: any) {
+                console.error("Ozz API error:", error);
+                return `⚠️ API Error: ${error.message || "Could not reach Pollen API"}. Test response for: "${msg}"`;
+              }
+            }}
+          />
+        </div>
+      )}
 
 
       <MyModal
