@@ -198,7 +198,7 @@ def story_grid_update(prod, QUEEN_KING, revrec, client_user, API_KEY, API_URL, u
         )
         
         if response.status_code == 200:
-            print(f"✅ Story grid update triggered successfully for {client_user}")
+            # print(f"✅ Story grid update triggered successfully for {client_user}")
             result = response.json()
             if result.get('status') == 'success':
                 return True
@@ -346,7 +346,7 @@ def account_header_update(
         )
 
         if response.status_code == 200:
-            print(f"✅ Account header update triggered successfully for {client_user}")
+            # print(f"✅ Account header update triggered successfully for {client_user}")
             result = response.json()
             return result.get('status') == 'success'
 
@@ -1146,7 +1146,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         if float(origin_order["filled_qty"]) == closing_filled: 
             print("# FINAL CYCLE of QUEEN ORDER: running order has been fully sold out and now we can archive", origin_idx)
             QUEEN['queen_orders'].at[origin_idx, 'queen_order_state'] = 'final'
-            # save_queen_order(QUEEN, QUEEN['prod'], origin_idx, upsert_to_main_server)
+            save_queen_order(QUEEN, QUEEN['prod'], origin_idx, upsert_to_main_server)
             return True
         else:
             return False

@@ -62,7 +62,7 @@ def call_bishop_bees(prod=prod, upsert_to_main_server=False):
                     upsert_to_main_server=upsert_to_main_server
                         )
     print("BISHOP COMPLETE", datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-    send_email(subject="BISHOP COMPLETE")
+    # send_email(subject="BISHOP COMPLETE")
 
 def copy_pollen_store_by_symbol_to_MAIN_server():
     try:
@@ -87,7 +87,7 @@ def copy_pollen_store_by_symbol_to_MAIN_server():
         MigratePostgres.upsert_multiple('pollen_store', bulk_data, console=True)
 
         time_delta = (datetime.now() - s).total_seconds()
-        send_email(subject=f"Pollen Store Server Sync COMPLETED {round(time_delta)} seconds", body=f"Migrated {len(symbols)} symbols in {round(time_delta)} seconds.")
+        # send_email(subject=f"Pollen Store Server Sync COMPLETED {round(time_delta)} seconds", body=f"Migrated {len(symbols)} symbols in {round(time_delta)} seconds.")
     except Exception as e:
         print(e)
         send_email(subject=f"Pollen Store Server Sync FAILED", body=str(e))

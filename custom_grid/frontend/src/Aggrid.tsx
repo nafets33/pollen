@@ -23,6 +23,7 @@ import { duration } from "moment"
 import "./styles.css"
 import axios from "axios"
 import Ozz from "./components/VoiceChatModal";
+import TickerSearchModal from "./components/TickerSearchModal";
 
 import {
   ComponentProps,
@@ -161,37 +162,152 @@ toastr.options = {
 
 
 // On Filter Headers Add right section for Quant AI form Handle full screen with chat session Can we lanuch custom_VoiceGPT to it? Import ...
+function interpolateHexColor(minColor: string, maxColor: string, ratio: number): string {
+  const parseHex = (hex: string) => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+  const [r1, g1, b1] = parseHex(minColor);
+  const [r2, g2, b2] = parseHex(maxColor);
+  const r = Math.round(r1 + (r2 - r1) * ratio);
+  const g = Math.round(g1 + (g2 - g1) * ratio);
+  const b = Math.round(b1 + (b2 - b1) * ratio);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 
 const AgGrid = (props: Props) => {
-  const BtnCellRenderer = (props: any) => {
-    const btnClickedHandler = () => {
-      props.clicked(props.node.id)
-    };
-    if (!props || !props.node) return null;
-    if (props.node.rowPinned === 'bottom') {
-      return <span>{props.value}</span>;
+const BtnCellRenderer = (props: any) => {
+  const btnClickedHandler = () => {
+    props.clicked(props.node.id)
+  };
+  if (!props || !props.node) return null;
+  if (props.node.rowPinned === 'bottom') {
+    return <span>{props.value}</span>;
+  }
+
+  // ✅ Original subtotalStyle — unchanged, used for all non-wave buttons
+  const subtotalStyle =
+    props.data && props.col_header && props.data[`${props.col_header}_cellStyle`]
+      ? props.data[`${props.col_header}_cellStyle`]
+      : props.cellStyle;
+
+  // Detect wave format: "buy(4) $19,690" or "sell(3) $5,000"
+  const waveMatch = typeof props.value === 'string'
+    ? props.value.match(/^(buy|sell)\((\d+)\)\s*\$([0-9,.\-]+)/i)
+    : null;
+
+  if (waveMatch) {
+    const action = waveMatch[1];
+    const length = waveMatch[2];
+    const amount = waveMatch[3];
+    const amountNum = parseFloat(amount.replace(/,/g, ''));
+    const actionDisplay = action.charAt(0).toUpperCase() + action.slice(1);
+    const isBuy = action.toLowerCase().includes('buy');
+
+    // ✅ Find max position value across ALL rows in this column
+    let maxAmount = 0;
+    if (props.api && props.colDef?.field) {
+      props.api.forEachNode((node: any) => {
+        if (node.data) {
+          const val = node.data[props.colDef.field];
+          if (typeof val === 'string') {
+            const m = val.match(/^(?:buy|sell)\(\d+\)\s*\$([0-9,.\-]+)/i);
+            if (m && m[1]) {
+              const n = parseFloat(m[1].replace(/,/g, ''));
+              if (!isNaN(n) && n > maxAmount) maxAmount = n;
+            }
+          }
+        }
+      });
     }
-    // Use subtotal row style if present
-    const subtotalStyle =
-      props.data && props.col_header && props.data[`${props.col_header}_cellStyle`]
-        ? props.data[`${props.col_header}_cellStyle`]
-        : props.cellStyle;
+
+    const ratio = maxAmount > 0 ? Math.min(amountNum / maxAmount, 1) : 0;
+
+// ✅ Get colors from kwargs.wave_color_rules or use defaults
+const waveColorRules = kwargs.wave_color_rules || {
+  buy: {
+    textColor: '#0a6e1f',
+    borderColor: '#0a9d25',
+    bgColorMin: '#f3f3f0',
+    bgColorMax: '#656560',
+  },
+  sell: {
+    textColor: '#a00000',
+    borderColor: '#ed370f',
+    bgColorMin: '#f9f9f7',
+    bgColorMax: '#474742',
+  },
+  position: {
+    textColor: '#000000'
+  }
+};
+
+const colorSet = isBuy ? waveColorRules.buy : waveColorRules.sell;
+
+// ✅ Text color: from kwargs or fixed green/red based on action
+const borderColor = colorSet.borderColor;
+
+const textColorWave = colorSet.textColor;   // green/red for Wave line
+const textColorPosition = waveColorRules.position?.textColor || '#121111cc';  // black for Position line
+
+// ✅ Background: light blue → darker blue heat map
+const bgColor = interpolateHexColor(
+  colorSet.bgColorMin || 'rgb(161, 228, 139)', 
+  colorSet.bgColorMax || 'rgb(201, 182, 31)', 
+  ratio
+);
 
     return (
       <button
         onClick={btnClickedHandler}
         style={{
-          background: "transparent",
-          border: subtotalStyle?.border || "none",
-          width: props.width ? props.width : "100%",
-          color: subtotalStyle?.color || "inherit",
-          ...subtotalStyle,
+          background: `radial-gradient(ellipse at center, #ffffff 65%, ${bgColor} 85%)`,
+          border: "2px solid " + borderColor,
+          borderRadius: "0",
+          width: "100%",
+          height: "100%",
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          lineHeight: "1.3",
+          padding: "1px 2px",
+          boxSizing: "border-box",
+          outline: "none",
         }}
       >
-        {props.col_header ? props.value : props.buttonName}
+        <div style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
+          <span style={{ fontWeight: "bold", color: textColorWave }}></span>
+          <span style={{ fontWeight: "normal", color: textColorWave }}>{actionDisplay}({length})</span>
+        </div>
+        <div style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
+          <span style={{ fontWeight: "bold", color: textColorPosition }}>$: </span>
+          <span style={{ fontWeight: "normal", color: textColorPosition }}>{amount}</span>
+        </div>
       </button>
     );
-  };
+  }
+
+  // ✅ All other buttons — exactly as original
+  return (
+    <button
+      onClick={btnClickedHandler}
+      style={{
+        background: "transparent",
+        border: subtotalStyle?.border || "none",
+        width: props.width ? props.width : "100%",
+        color: subtotalStyle?.color || "inherit",
+        ...subtotalStyle,
+      }}
+    >
+      {props.col_header ? props.value : props.buttonName}
+    </button>
+  );
+};
+
   function buildDetailGridOptions(detailGridOptions: any, level: number): any {
     const options = { ...detailGridOptions, masterDetail: true };
 
@@ -262,7 +378,6 @@ const AgGrid = (props: Props) => {
   if (enable_JsCode) {
     grid_options = deepMap(grid_options, parseJsCodeFromPython, ["rowData"])
   }
-
   let { buttons, toggle_views, api_key, api_lastmod_key = null, columnOrder = [],
     refresh_success = null, filter_button = '' } = kwargs
   const [rowData, setRowData] = useState<any[]>([])
@@ -272,10 +387,9 @@ const AgGrid = (props: Props) => {
   const [viewId, setViewId] = useState(0)
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [previousViewId, setpreviousViewId] = useState(89)
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [selectedColumnSetKey, setSelectedColumnSetKey] = useState<string | null>(null);
+const [activeFilter, setActiveFilter] = useState<Record<string, string | null>>({});  const [selectedColumnSetKey, setSelectedColumnSetKey] = useState<string | null>(null);
   const [initialColumnState, setInitialColumnState] = useState<any>(null);
-
+const [tickerSearchModalShow, setTickerSearchModalShow] = useState(false);
   const [selectedCellContent, setSelectedCellContent] = useState<string | null>(null);
   const onCellClicked = (event: any) => {
     if (event.value) {
@@ -1153,28 +1267,21 @@ const AgGrid = (props: Props) => {
   };
   // let filter_button = "piece_name";
 
-  const uniqueValues = useMemo(
-    () => getUniqueColumnValues(filter_button, rowData),
-    [rowData, filter_button]
-  );
+const filterButtons: string[] = Array.isArray(filter_button) ? filter_button : [];
 
-  const handleButtonFilter = (value: string | null) => {
-    setActiveFilter(value);
-
-    if (gridRef.current && gridRef.current.api) {
-      const api = gridRef.current.api;
-      if (value) {
-        api.setFilterModel({
-          ...api.getFilterModel(),
-          [filter_button]: { filterType: "set", values: [value] }
-        });
-      } else {
-        const model = api.getFilterModel();
-        delete model[filter_button];
-        api.setFilterModel(model);
-      }
+const handleButtonFilter = (column: string, value: string | null) => {
+  setActiveFilter(prev => ({ ...prev, [column]: value }));
+  if (gridRef.current && gridRef.current.api) {
+    const api = gridRef.current.api;
+    if (value) {
+      api.setFilterModel({ ...api.getFilterModel(), [column]: { filterType: "set", values: [value] } });
+    } else {
+      const model = api.getFilterModel();
+      delete model[column];
+      api.setFilterModel(model);
     }
-  };
+  }
+};
 
 
 
@@ -1229,8 +1336,8 @@ const AgGrid = (props: Props) => {
             style={{
               fontWeight: "bold",
               color: "#055A6E",
-              marginBottom: "4px",
-              fontSize: "15px",
+              marginBottom: "3px",
+              fontSize: "14px",
             }}
           >
             {kwargs.toggle_header ? kwargs.toggle_header : ""}
@@ -1370,10 +1477,14 @@ const AgGrid = (props: Props) => {
       )}
 
 
+
+
+
       {kwargs.api_ozz && (
         <div style={{
-          marginBottom: "10px",
-          maxWidth: "100%",
+marginBottom: "5px",
+display: "flex",
+justifyContent: "flex-end",
         }}>
           <Ozz
             username={username}
@@ -1402,6 +1513,51 @@ const AgGrid = (props: Props) => {
           />
         </div>
       )}
+
+      {/* ── Ticker Search Button ───────────────────────────────────────── */}
+      {kwargs.show_ticker_search_btn && (
+        <div style={{ marginBottom: "5px", display: "flex", justifyContent: "flex-start" }}>
+          <button
+            onClick={() => setTickerSearchModalShow(true)}
+            style={{
+              background: "linear-gradient(135deg, #1b4a1aff 0%, #0f3314ff 100%)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              padding: "7px 16px",
+              fontWeight: 700,
+              fontSize: "0.88rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+              transition: "opacity 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            title="Search & add a ticker to your chessboard"
+          >
+            Search Edit Portfolio Board
+          </button>
+        </div>
+      )}
+
+
+<TickerSearchModal
+  isOpen={tickerSearchModalShow}
+  closeModal={() => setTickerSearchModalShow(false)}
+  username={username}
+  prod={prod}
+  kwargs={kwargs}
+  api={api}
+  toastr={toastr}
+  chessboard={kwargs.chessboard}  // ✅ Add this line
+  ticker_buying_powers={kwargs.ticker_buying_powers}  // ✅ Add this line
+  cash_position={kwargs.cash_position}
+  accountInfo={kwargs.accountInfo}
+
+/>
 
 
       <MyModal
@@ -1505,111 +1661,159 @@ const AgGrid = (props: Props) => {
           }}
         >
 
-          {kwargs.column_sets && (
+{/* Column Sets — own wrapper */}
+{kwargs.column_sets && (
+  <div style={{
+    display: "flex",
+    flexDirection: "column",
+    marginBottom: 4,
+    // border: "1.5px solid #e5eff6ff",
+    // borderRadius: "8px",
+    background: "transparent", //"#f3f4f5ff",
+    overflow: "hidden",
+  }}>
+    <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", overflowX: "auto", padding: "4px 6px", gap: "0" }}>
+      <button
+        onClick={() => {
+          setSelectedColumnSetKey(null);
+          setTimeout(() => {
+            const columnApi = gridRef.current?.columnApi;
+            if (columnApi && initialColumnState) {
+              columnApi.applyColumnState({ state: initialColumnState, applyOrder: true });
+            }
+          }, 0);
+        }}
+        style={{
+          background: "rgba(225, 246, 221, 1)", color: "black",
+          border: "1.5px solid rgb(180, 210, 180)", borderRadius: "5px",
+          fontWeight: "bold", fontSize: "12px", padding: "3px 8px",
+          flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(100,180,100,0.3)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+      >
+        Reset View
+      </button>
 
-            <div style={{ marginBottom: 12, display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+<div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8dcccff", margin: "0 6px", flexShrink: 0 }} />
+      {Object.keys(kwargs.column_sets).map(key => (
+        <button
+          key={key}
+          onClick={() => {
+            const newKey = selectedColumnSetKey === key ? null : key;
+            setSelectedColumnSetKey(newKey);
+            setTimeout(() => {
+              const columnApi = gridRef.current?.columnApi;
+              if (!newKey) {
+                if (columnApi && initialColumnState) columnApi.applyColumnState({ state: initialColumnState, applyOrder: true });
+              } else {
+                const columnsToShow = kwargs.column_sets[newKey];
+                if (columnApi && Array.isArray(grid_options.columnDefs)) {
+                  grid_options.columnDefs.forEach((col: any) => columnApi.setColumnVisible(col.field, false));
+                  columnsToShow.forEach((field: string, idx: number) => { columnApi.setColumnVisible(field, true); columnApi.moveColumn(field, idx); });
+                }
+              }
+            }, 0);
+          }}
+          style={{
+            background: selectedColumnSetKey === key ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff",
+            color: selectedColumnSetKey === key ? "white" : "#4a5568",
+            border: selectedColumnSetKey === key ? "1.5px solid #3a9050" : "1.5px solid #8dc789ff",
+            borderRadius: "12px", fontWeight: selectedColumnSetKey === key ? "700" : "500",
+            fontSize: "12px", padding: "3px 9px", marginRight: "4px", flexShrink: 0, whiteSpace: "nowrap",
+            boxShadow: selectedColumnSetKey === key ? "0 2px 8px rgba(75,162,98,0.35)" : "none",
+            transition: "all 0.15s ease", cursor: "pointer",
+            transform: selectedColumnSetKey === key ? "translateY(-1px)" : "translateY(0)",
+          }}
+          onMouseEnter={(e) => { if (selectedColumnSetKey !== key) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+          onMouseLeave={(e) => { if (selectedColumnSetKey !== key) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+        >
+          {key}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
 
-              <button
-                onClick={() => {
-                  setSelectedColumnSetKey(null);
-                  setTimeout(() => {
-                    const columnApi = gridRef.current?.columnApi;
-                    if (columnApi && initialColumnState) {
-                      columnApi.applyColumnState({
-                        state: initialColumnState,
-                        applyOrder: true,
-                      });
-                    }
-                  }, 0);
-                }}
-                style={{
-                  background: "rgba(225, 246, 221, 1)",
-                  color: "black",
-                  border: "1.5px solid rgb(213, 213, 213)",
-                  borderRadius: "6px",
-                  fontWeight: "bold",
-                  fontSize: "12px",
-                  padding: "5px 10px",
-                  margin: "0 4px 4px 0",
-                  boxShadow: "0 2px 6px rgb(216, 216, 216)",
-                  transition: "all 0.15s",
-                  cursor: "pointer",
-                }}
-              >
-                Reset View
-              </button>
+{/* Filter Buttons — own wrapper */}
+{filterButtons.length > 0 && (
+  <div style={{
+    display: "flex",
+    flexDirection: "column",
+    marginBottom: 6,
+    border: "1.5px solid #e5eff6ff",
+    borderRadius: "8px",
+    background: "#f5f8f6ff",
+    overflow: "visible",
+  }}>
+    {filterButtons.map((col, rowIdx) => (
+      <div key={col} style={{
+        display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: "4px",
+        padding: "4px 6px",
+        borderTop: rowIdx > 0 ? "1.5px solid #c8d4dc" : "none",
+      }}>
 
+        {/* Column label */}
+        <span style={{ fontSize: "9px", color: "#8a9bb0", fontWeight: "600", flexShrink: 0, marginRight: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          {col}
+        </span>
+        <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px 0 0", flexShrink: 0 }} />
 
-              {Object.keys(kwargs.column_sets).map(key => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    const newKey = selectedColumnSetKey === key ? null : key;
-                    setSelectedColumnSetKey(newKey);
+        {/* Clear this row's filter */}
+        {kwargs['show_clear_all_filters'] && (
+          <>
+            <button
+              onClick={() => {
+                handleButtonFilter(col, null);
+                if (gridRef.current && gridRef.current.api) {
+                  const model = gridRef.current.api.getFilterModel();
+                  delete model[col];
+                  gridRef.current.api.setFilterModel(model);
+                }
+              }}
+              style={{
+                background: "rgba(183, 136, 129, 1)", color: "white",
+                border: "1.5px solid rgba(150, 80, 70, 1)", borderRadius: "5px",
+                fontWeight: "bold", fontSize: "10px", padding: "3px 8px",
+                flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(239,83,80,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+            >
+              Clear
+            </button>
+            <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px", flexShrink: 0 }} />
+          </>
+        )}
 
-                    setTimeout(() => {
-                      const columnApi = gridRef.current?.columnApi;
+        {/* Filter value buttons for this column */}
+        {getUniqueColumnValues(col, rowData).map(val => (
+          <button
+            key={val}
+            onClick={() => handleButtonFilter(col, val)}
+            style={{
+              background: activeFilter[col] === val ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff",
+              color: activeFilter[col] === val ? "white" : "#4a5568",
+              border: activeFilter[col] === val ? "1.5px solid #3a9050" : "1.5px solid #c8d0d8",
+              borderRadius: "12px", fontWeight: activeFilter[col] === val ? "700" : "500",
+              fontSize: "11px", padding: "3px 9px", marginRight: "4px", whiteSpace: "nowrap",
+              boxShadow: activeFilter[col] === val ? "0 2px 8px rgba(75,162,98,0.35)" : "none",
+              transition: "all 0.15s ease", cursor: "pointer",
+              transform: activeFilter[col] === val ? "translateY(-1px)" : "translateY(0)",
+            }}
+            onMouseEnter={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+            onMouseLeave={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+          >
+            {val}
+          </button>
+        ))}
+      </div>
+    ))}
+  </div>
+)}
 
-                      if (!newKey) {
-                        if (columnApi && initialColumnState) {
-                          columnApi.applyColumnState({
-                            state: initialColumnState,
-                            applyOrder: true,
-                          });
-                        }
-                      } else {
-                        const columnsToShow = kwargs.column_sets[newKey];
-
-                        if (columnApi && Array.isArray(grid_options.columnDefs)) {
-                          grid_options.columnDefs.forEach((col: any) => {
-                            columnApi.setColumnVisible(col.field, false);
-                          });
-
-                          columnsToShow.forEach((field: string, idx: number) => {
-                            columnApi.setColumnVisible(field, true);
-                            columnApi.moveColumn(field, idx);
-                          });
-                        }
-                      }
-                    }, 0);
-                  }}
-                  style={{
-                    background: selectedColumnSetKey === key
-                      ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)"
-                      : "#ffffff",
-                    color: selectedColumnSetKey === key ? "white" : "#4a5568",
-                    border: selectedColumnSetKey === key ? "none" : "2px solid #e2e8f0",
-                    borderRadius: "20px",
-                    fontWeight: selectedColumnSetKey === key ? "700" : "600",
-                    fontSize: "13px",
-                    padding: "8px 16px",
-                    margin: "0 6px 6px 0",
-                    boxShadow: selectedColumnSetKey === key
-                      ? "0 4px 15px rgba(102, 126, 234, 0.4)"
-                      : "0 2px 4px rgba(0,0,0,0.08)",
-                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    cursor: "pointer",
-                    transform: selectedColumnSetKey === key ? "translateY(-1px)" : "translateY(0)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedColumnSetKey !== key) {
-                      e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.12)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedColumnSetKey !== key) {
-                      e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.08)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }
-                  }}
-                >
-                  {key}
-                </button>
-              ))}
-
-            </div>
-          )}
+        
+          
           {/* Streamer for streaming_list_text if present */}
           {kwargs.streaming_list_text && Array.isArray(kwargs.streaming_list_text) && (
             <div
@@ -1658,87 +1862,6 @@ const AgGrid = (props: Props) => {
                 `}
                 </style>
               </div>
-            </div>
-          )}
-
-          {kwargs['filter_button'] && kwargs['filter_button'] !== '' && (
-            <div style={{ marginBottom: 8 }}>
-
-
-              {kwargs['show_clear_all_filters'] && (
-                <button
-                  onClick={() => {
-                    if (gridRef.current && gridRef.current.api) {
-                      gridRef.current.api.setFilterModel({});
-                    }
-                    setActiveFilter(null);
-                  }}
-                  style={{
-                    background: "rgba(183, 136, 129, 1)",
-                    color: "white",
-                    border: "1.5px solid rgba(239, 255, 235, 1)",
-                    borderRadius: "6px",
-                    fontWeight: "bold",
-                    fontSize: "11px",
-                    padding: "5px 10px",
-                    margin: "0 4px 4px 0",
-                    boxShadow: "0 2px 6px rgba(241, 255, 240, 1)",
-                    transition: "all 0.15s",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(239, 83, 80, 0.5)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = "0 4px 15px rgba(239, 83, 80, 0.4)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  Clear Filters
-                </button>
-              )}
-
-
-              {uniqueValues.map(val => (
-                <button
-                  key={val}
-                  onClick={() => handleButtonFilter(val)}
-                  style={{
-                    background: activeFilter === val
-                      ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)"
-                      : "#ffffff",
-                    color: activeFilter === val ? "white" : "#4a5568",
-                    border: activeFilter === val ? "none" : "2px solid #e2e8f0",
-                    borderRadius: "15px",
-                    fontWeight: activeFilter === val ? "700" : "600",
-                    fontSize: "12px",
-                    padding: "5px 10px",
-                    margin: "0 6px 6px 0",
-                    boxShadow: activeFilter === val
-                      ? "0 4px 15px rgba(102, 126, 234, 0.4)"
-                      : "0 2px 4px rgba(0,0,0,0.08)",
-                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    cursor: "pointer",
-                    transform: activeFilter === val ? "translateY(-1px)" : "translateY(0)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (activeFilter !== val) {
-                      e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.12)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeFilter !== val) {
-                      e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.08)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }
-                  }}
-                >
-                  {val}
-                </button>
-              ))}
-
             </div>
           )}
 

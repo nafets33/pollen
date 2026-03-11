@@ -120,6 +120,7 @@ def generate_cell_style(flash_state_variable='Day_state'):
         }}
     """)
 
+
 def generate_cell_style_range(max_number=40):
     """
     Generates a JS cell style function that colors the cell based on the 'length' value,
@@ -222,6 +223,7 @@ def generate_cell_style_range(max_number=40):
         }}
     """)
 
+
 def generate_shaded_cell_style(flash_state_variable='trinity_w_L', fontSize='13'):
     return JsCode(f"""
         function(p) {{
@@ -273,6 +275,70 @@ def generate_shaded_cell_style(flash_state_variable='trinity_w_L', fontSize='13'
             return null;
         }}
     """)      
+
+
+def generate_symbol_button_style(flash_state_variable='trinity_w_L', border_color='#888'):
+    return JsCode(f"""
+        function(p) {{
+            var value = p.data.{flash_state_variable};
+            var color = '';
+            // Gradient coloring logic
+            if (value !== null && !isNaN(value)) {{
+                if (value > 0) {{
+                    if (value <= 25) {{
+                        color = '#e6f9e9';
+                    }} else if (value <= 50) {{
+                        color = '#bff0c7';
+                    }} else if (value <= 75) {{
+                        color = '#80df97';
+                    }} else if (value <= 90) {{
+                        color = '#4cb96d';
+                    }} else if (value <= 100) {{
+                        color = '#2e8948';
+                    }}
+                }} else if (value < 0) {{
+                    if (value >= -25) {{
+                        color = '#fdecec';
+                    }} else if (value >= -50) {{
+                        color = '#f8c6c6';
+                    }} else if (value >= -75) {{
+                        color = '#f09494';
+                    }} else if (value >= -90) {{
+                        color = '#e06363';
+                    }} else if (value >= -100) {{
+                        color = '#c23d3d';
+                    }}
+                }}
+                return {{
+                    backgroundColor: color,
+                    color: '#000',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    border: '2px solid {border_color}',
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    padding: '7px 16px',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                }};
+            }}
+            // Default style for unhandled cases
+            return {{
+                backgroundColor: '#f5f5f5',
+                color: '#000',
+                border: '2px solid {border_color}',
+                borderRadius: '10px',
+                textAlign: 'center',
+                padding: '7px 16px',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+            }};
+        }}
+    """)
 
 
 def generate_threshold_background_color_style(column_name, threshold_value, color_above="#ff3939", color_below="#fdfdfd"):
@@ -361,70 +427,6 @@ function(p) {{
     }}
 }}
 """)
-
-
-def generate_symbol_button_style(flash_state_variable='trinity_w_L', border_color='#888'):
-    return JsCode(f"""
-        function(p) {{
-            var value = p.data.{flash_state_variable};
-            var color = '';
-            // Gradient coloring logic
-            if (value !== null && !isNaN(value)) {{
-                if (value > 0) {{
-                    if (value <= 25) {{
-                        color = '#e6f9e9';
-                    }} else if (value <= 50) {{
-                        color = '#bff0c7';
-                    }} else if (value <= 75) {{
-                        color = '#80df97';
-                    }} else if (value <= 90) {{
-                        color = '#4cb96d';
-                    }} else if (value <= 100) {{
-                        color = '#2e8948';
-                    }}
-                }} else if (value < 0) {{
-                    if (value >= -25) {{
-                        color = '#fdecec';
-                    }} else if (value >= -50) {{
-                        color = '#f8c6c6';
-                    }} else if (value >= -75) {{
-                        color = '#f09494';
-                    }} else if (value >= -90) {{
-                        color = '#e06363';
-                    }} else if (value >= -100) {{
-                        color = '#c23d3d';
-                    }}
-                }}
-                return {{
-                    backgroundColor: color,
-                    color: '#000',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    border: '2px solid {border_color}',
-                    borderRadius: '10px',
-                    textAlign: 'center',
-                    padding: '7px 16px',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                }};
-            }}
-            // Default style for unhandled cases
-            return {{
-                backgroundColor: '#f5f5f5',
-                color: '#000',
-                border: '2px solid {border_color}',
-                borderRadius: '10px',
-                textAlign: 'center',
-                padding: '7px 16px',
-                fontWeight: 'bold',
-                fontSize: '14px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-            }};
-        }}
-    """)
 
 
 honey_colors = JsCode("""
@@ -874,16 +876,38 @@ def calculate_subtotal_row(df, subtotal_cols, label="Totals", label_col="symbol"
     
     return subtotal_row
 
-def story_grid(prod, client_user, 
+
+def get_ticker_buying_powers(QUEEN_KING, symbols=[]):
+    """
+    Extract buying power for each ticker from trading models.
+    Returns dict: {ticker: buying_power_value}
+    """
+    ticker_buying_powers = {}
+    if not symbols:
+        symbols = return_queenking_board_symbols(QUEEN_KING)
+        
+    for symbol in symbols:
+        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol, {})
+        # if trading_model:
+        buying_power = trading_model.get('buyingpower_allocation_LongTerm', 0)
+        margin_power = trading_model.get('buyingpower_allocation_ShortTerm', 0)
+        ticker_buying_powers[symbol] = {"buying_power": buying_power, "margin_power": margin_power}
+
+    return ticker_buying_powers
+
+
+def story_grid(QUEEN_KING,
+        prod, client_user, 
                ip_address, revrec, symbols, 
                refresh_sec=8, paginationOn=False, 
                key='default', tab_view=None, 
                api_ws=None,
                seconds_to_market_close=300,
                k_colors={},
-               ui_refresh_sec=60
+               ui_refresh_sec=60,
+               broker_info=None
                ):
-
+    ticker_buying_powers = get_ticker_buying_powers(QUEEN_KING, symbols)
     king_G = kingdom__global_vars()
     try:
         gb = GridOptionsBuilder.create()
@@ -1264,7 +1288,7 @@ def story_grid(prod, client_user,
                             'col_width':135,
                             # 'pinned': 'right',
                             'prompt_order_rules': [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
-                            'cellStyle': cellStyle,
+                            # 'cellStyle': cellStyle,
                             }
                     buttons.append(temp)
             # except Exception as e:
@@ -1320,7 +1344,7 @@ def story_grid(prod, client_user,
                             'cellRenderer': 'agAnimateShowChangeCellRenderer', 
                             'cellStyle': generate_shaded_cell_style('trinity_w_L', '11'), 
                             'valueFormatter': value_format_pct,
-                            'pinned': 'left',
+                            # 'pinned': 'left',
                             },
             'trinity_w_15': {'headerName': 'Trinity Weights Day-Week','sortable': True, 
                                 'initialWidth': 89, 'enableCellChangeFlash': True, 
@@ -1539,11 +1563,8 @@ def story_grid(prod, client_user,
         # # go['pivotMode'] = True
         if api_ws:
             api_ws = f"{ip_address}{api_ws}"
-        # api_ws = None # DEBUGGING
-        if api_ws:
             refresh_sec = None
-        print("prod", prod)
-        print("STORY GRID refresh_sec", refresh_sec)
+
         st_custom_grid(
             key=f'{prod}{tab_view}story_grid{ui_refresh_sec}',
             client_user=client_user,
@@ -1564,7 +1585,7 @@ def story_grid(prod, client_user,
             api_key=os.environ.get("fastAPI_key"),
             symbols=symbols,
             buttons=g_buttons,
-            grid_height='550px',
+            grid_height='489px',
             toggle_views = toggle_views,
             allow_unsafe_jscode=True,
             columnOrder=story_col_order,
@@ -1572,11 +1593,10 @@ def story_grid(prod, client_user,
             total_col="symbol", # where total is located
             subtotal_cols=subtotal_cols,
             filter_apply=False,
-            filter_button='piece_name',
+            filter_button=["piece_name", "symbol"],
             show_clear_all_filters=True,
             column_sets = {
 "Trinity - Waves": [
-    "symbol",
     "trinity_w_L",
     "trinity_w_15",
     "trinity_w_30",
@@ -1607,24 +1627,24 @@ def story_grid(prod, client_user,
     "star_buys_at_play",
 ],
 
-# "Performance Analysis": [
-#     "symbol",
-#     "pct_portfolio",
-#     "money",
-#     "honey",
-#     "unrealized_pl",
-#     "unrealized_plpc",
-#     "current_from_yesterday",
-#     "1Day_1Year_change",
-#     "30Minute_1Month_change",
-#     "5Minute_5Day_change"
-# ],
+"Symbols Performance": [
+    "current_from_yesterday",
+    "5Minute_5Day_change",
+    "30Minute_1Month_change",
+    "1Hour_3Month_change",
+    "2Hour_6Month_change",
+    "1Day_1Year_change",
+],
 
 
 
 },
 show_cell_content=True,
-
+show_ticker_search_btn=True,
+chessboard=QUEEN_KING['chess_board'],
+ticker_buying_powers=ticker_buying_powers,
+cash_position = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'],
+accountInfo=broker_info,
 #                 nestedGridEnabled=True,
 # detailGridOptions = {
 #     'columnDefs': [{'field': 'count_on_me', 'cellRenderer': "agGroupCellRenderer"}],
@@ -1648,7 +1668,7 @@ show_cell_content=True,
 
 
 
-def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=True, show_acct=True):
+def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, show_graph_s=True, show_graph_t=True, show_acct=True, broker_info=False, api_ws='/api/data/ws_grid'):
     run_times = {}
     s = datetime.now()
     # with st.sidebar:
@@ -1739,14 +1759,16 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         #     ozz(st.session_state['authentication_status'])
         #     st.stop()
 
-        story_grid(prod, client_user=client_user, ip_address=ip_address, 
+        story_grid(QUEEN_KING,
+            prod, client_user=client_user, ip_address=ip_address, 
                    revrec=revrec, symbols=symbols, 
                    refresh_sec=refresh_sec, 
                    tab_view=tab_view,
                    ui_refresh_sec=ui_refresh_sec,
                    k_colors=k_colors,
                    seconds_to_market_close=seconds_to_market_close,
-                   api_ws='/api/data/ws_grid'
+                   api_ws='/api/data/ws_grid',
+                   broker_info=broker_info,
                    )
           
         if st.sidebar.toggle("Show Wave Grid"):
@@ -1809,7 +1831,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
 
         def trinity_graph():
             with st.sidebar:
-                graph_qcps = st.multiselect('graph qcps', options=QUEEN_KING.get('chess_board'), default=['bishop', 'castle', 'knight'])
+                graph_qcps = st.multiselect('graph qcps', options=QUEEN_KING.get('chess_board'), default=[qcp for qcp, data in QUEEN_KING['chess_board'].items() if data.get('tickers') and len(data.get('tickers')) > 0])
             refresh_sec = 23 if seconds_to_market_close > 0 and mkhrs == 'open' else 0
             refresh_sec = None if 'sneak_peak' in st.session_state and st.session_state['sneak_peak'] else refresh_sec
             refresh_sec = None if refresh_grids == False else refresh_sec
@@ -1903,9 +1925,10 @@ if __name__ == '__main__':
         main_server = True
     else:
         main_server = False
-    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, revrec=True, main_server=main_server)
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, broker_info=True, init=True, revrec=True, main_server=main_server)
     QUEEN_KING = qb.get('QUEEN_KING')
     # st.write({data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() })
     api = qb.get('api')
-    revrec = qb.get('revrec') 
-    queens_conscience(prod, revrec, KING, QUEEN_KING, api)
+    revrec = qb.get('revrec')
+    broker_info = qb.get('broker_info')
+    queens_conscience(prod, revrec, KING, QUEEN_KING, api, broker_info=broker_info)

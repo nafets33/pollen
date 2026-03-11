@@ -380,16 +380,18 @@ def load_story_json(client_user: str=Body(...), toggle_view_selection: str=Body(
     except Exception as e:
         print(e)
 
-@router.post("/chessboard", status_code=status.HTTP_200_OK)
-def load_chessboard_view_json(client_user: str=Body(...), toggle_view_selection: str=Body(...), symbols: list=Body(...), prod: bool=Body(...), api_key = Body(...)):
+
+@router.post("/get_chessboard", status_code=status.HTTP_200_OK)
+def load_chessboard_view_json(client_user: str=Body(...), prod: bool=Body(...), api_key = Body(...)):
     try:
         if api_key != os.environ.get("fastAPI_key"): # fastapi_pollenq_key
             print("Auth Failed", api_key)
             return "NOTAUTH"
-        json_data = chessboard_view(client_user, prod, symbols, toggle_view_selection,)
+        json_data = chessboard_view(client_user, prod)
         return JSONResponse(content=json_data)
     except Exception as e:
         print(e)
+
 
 @router.post("/account_header", status_code=status.HTTP_200_OK)
 def load_account_header(client_user: str=Body(...),prod: bool=Body(...), api_key = Body(...)):
@@ -595,7 +597,6 @@ async def buy_order(request: Request, client_user: str=Body(...), prod: bool=Bod
 
 ### MAIN 3 BUTTON CALLS ###
 
-
 @router.post("/ttf_buy_orders", status_code=status.HTTP_200_OK) # WORKERBEE HANDLE NEW KORS
 async def buy_order(request: Request, client_user: str=Body(...), username: str=Body(...), prod: bool=Body(...), selected_row=Body(...), default_value=Body(...), api_key=Body(...)):
     if not check_authKey(api_key):
@@ -685,33 +686,224 @@ async def load_ozz_call(request: Request):
     # json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
     # return JSONResponse(content=json_data)
 
+@router.post("/update_cash_position", status_code=status.HTTP_200_OK)
+async def update_cash_position(
+    client_user: str = Body(...),
+    prod: bool = Body(...),
+    api_key: str = Body(...),
+    cash_position: float = Body(...),
+):
+    if not check_authKey(api_key):
+        return JSONResponse(content=grid_row_button_resp(status="error", description="NOTAUTH"))
+    try:
+        pq = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration)
+        QUEEN_KING = pq['QUEEN_KING']
+        QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_position
+        if pg_migration:
+            PollenDatabase.upsert_data(QUEEN_KING.get("table_name"), QUEEN_KING.get("key"), QUEEN_KING)
+        else:
+            from chess_piece.king import PickleData
+            PickleData(QUEEN_KING.get("source"), QUEEN_KING)
+        return JSONResponse(content=grid_row_button_resp(
+            status="success",
+            description="Cash position saved",
+            cash_position=cash_position,
+        ))
+    except Exception as e:
+        logging.error(f"update_cash_position error: {e}")
+        return JSONResponse(content=grid_row_button_resp(status="error", description=str(e)))
 
-# @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
-# async def load_ozz_voice(request: Request, api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
-#     # Print the entire body of the POST request
-#     body = await request.json()
-#     print("Full Request Body:", body)
-#     selected_actions = body.get('selected_actions', [])
-#     use_embeddings = body.get('use_embeddings', [])
 
-#     print(f'trig TYPE: {tigger_type} {before_trigger_vars}')
-    
-#     if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
-#         print("Auth Failed", api_key)
-#         return "NOTAUTH"
+@router.post("/update_chess_piece", status_code=status.HTTP_200_OK)
+async def update_chess_piece(
+    request: Request,
+    client_user: str = Body(...),
+    prod: bool = Body(...),
+    api_key: str = Body(...),
+    action: str = Body(...),  # "save" | "delete"
+    piece_name: str = Body(...),
+    original_piece_name: str = Body(None),
+    tickers: list = Body([]),
+    ticker_allocations: dict = Body({}),  # {ticker: {buying_power, margin_power}}
+    model: str = Body(...),
+    theme: str = Body(...),
+    buying_power: float = Body(...),
+    borrow_power: float = Body(...),
+    cash_position: float = Body(...),
+    # margin_power: float = Body(0.0),  # If you want group-level margin
+):
+    """
+    Add, update, or delete a chess piece with multiple tickers and per-ticker allocations.
+    """
 
-#     json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars, selected_actions, use_embeddings)
-#     return JSONResponse(content=json_data)
+    def get_ticker_buying_powers(QUEEN_KING, symbols=[]):
+        """
+        Extract buying power for each ticker from trading models.
+        Returns dict: {ticker: buying_power_value}
+        """
+        ticker_buying_powers = {}
+        if not symbols:
+            symbols = return_queenking_board_symbols(QUEEN_KING)
+            
+        for symbol in symbols:
+            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol, {})
+            # if trading_model:
+            buying_power = trading_model.get('buyingpower_allocation_LongTerm', 0)
+            margin_power = trading_model.get('buyingpower_allocation_ShortTerm', 0)
+            ticker_buying_powers[symbol] = {"buying_power": buying_power, "margin_power": margin_power}
 
-# @router.post("/voiceGPT", status_code=status.HTTP_200_OK)
-# def load_ozz_voice(api_key=Body(...), text=Body(...), self_image=Body(...), refresh_ask=Body(...), face_data=Body(...), client_user=Body(...), force_db_root=Body(...), session_listen=Body(...), before_trigger_vars=Body(...), tigger_type=Body(...)):
-#     # print(f'face data {face_data}')
-#     print(f'trig TYPE: {tigger_type}')
-    
-#     if api_key != os.environ.get("ozz_key"): # fastapi_pollenq_key
-#         print("Auth Failed", api_key)
-#         # Log the trader WORKERBEE
-#         return "NOTAUTH"
+        return ticker_buying_powers
 
-#     json_data = ozz_query(text, self_image, refresh_ask, client_user, force_db_root, session_listen, before_trigger_vars)
-#     return JSONResponse(content=json_data)
+    if not check_authKey(api_key):
+        return JSONResponse(content=grid_row_button_resp(status="error", description="NOTAUTH"))
+    if action not in ["save", "delete"]:
+        return JSONResponse(content=grid_row_button_resp(status="error", description=f"Invalid action: {action}"))
+    try:
+        # import ipdb
+        # lets make sure all key names match
+        pq = init_queenbee(client_user, prod, queen_king=True, broker_info=True, pg_migration=pg_migration)
+        QUEEN_KING = pq['QUEEN_KING']
+        broker_info = pq['broker_info']
+        chess_board = QUEEN_KING.get("chess_board", {})
+
+
+
+        if action == "delete":
+            # Remove the piece
+            if piece_name in chess_board:
+                del chess_board[piece_name]
+                QUEEN_KING["chess_board"] = chess_board
+                # Persist
+                print(f"Deleted piece '{piece_name}' from chess board.")
+                if pg_migration:
+                    PollenDatabase.upsert_data(QUEEN_KING.get("table_name"), QUEEN_KING.get("key"), QUEEN_KING)
+                else:
+                    from chess_piece.king import PickleData
+                    PickleData(QUEEN_KING.get("source"), QUEEN_KING)
+                return JSONResponse(content=grid_row_button_resp(status="success", description=f"Deleted '{piece_name}'", payload=chess_board))
+            else:
+                return JSONResponse(content=grid_row_button_resp(status="error", description=f"Piece '{piece_name}' not found"))
+
+        # For "save" (add or update)
+
+        # Set latest cash position
+        QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_position
+
+
+        # If renaming, remove the old key
+        if original_piece_name and original_piece_name != piece_name and original_piece_name in chess_board:
+            del chess_board[original_piece_name]
+
+        # Build the piece dict
+        piece = init_qcp(
+            init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
+            ticker_list=tickers,
+            theme=theme,
+            model=model,
+            piece_name=piece_name,
+            buying_power=buying_power,
+            borrow_power=borrow_power,
+            picture="queen_png",
+            # margin_power=margin_power,  # Uncomment if needed
+            ticker_allocations=ticker_allocations,
+        )
+
+        chess_board[piece_name] = piece
+
+        # Remove Any Keys that share the same tickers (case-insensitive), except for the current piece
+        def normalize_ticker(ticker):
+            return ticker.strip().lower()
+
+        def tickers_equal(t1, t2):
+            return sorted(normalize_ticker(t) for t in t1) == sorted(normalize_ticker(t) for t in t2)
+
+        # Filter out duplicates except for the current piece
+        filtered = {
+            k: v for k, v in chess_board.items()
+            if not tickers_equal(v.get("tickers", []), tickers) or k == piece_name
+        }
+        # Reorder so piece_name is first
+        chess_board = {piece_name: filtered[piece_name], **{k: v for k, v in filtered.items() if k != piece_name}}
+
+        QUEEN_KING["chess_board"] = chess_board
+        # Ensure trading models exist for all tickers
+        trading_models = QUEEN_KING.get("king_controls_queen", {}).get("symbols_stars_TradingModel", {})
+        for qcp, data in chess_board.items():
+            for ticker in data.get("tickers", []):
+                if ticker not in trading_models:
+                    QUEEN_KING = add_trading_model(QUEEN_KING=QUEEN_KING, ticker=ticker, model=model, theme=theme)
+                if 'ticker_allocations' not in data:
+                    tic_allocations = {}
+                else:
+                    tic_allocations = data['ticker_allocations']
+                
+                QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker]['buyingpower_allocation_LongTerm'] = tic_allocations.get(ticker, {}).get('buying_power', 0)
+                QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'][ticker]['buyingpower_allocation_ShortTerm'] = tic_allocations.get(ticker, {}).get('margin_power', 0)
+                ticker_allocations[ticker] = {
+                    "buying_power": tic_allocations.get(ticker, {}).get('buying_power', 0),
+                    "margin_power": tic_allocations.get(ticker, {}).get('margin_power', 0)
+                }
+        ticker_allocations = get_ticker_buying_powers(QUEEN_KING)
+
+        # chessboard, df_qcp, df_ticker, df_stars = refresh_chess_board__revrec(
+        # acct_info=broker_info, 
+        # QUEEN={}, 
+        # QUEEN_KING=QUEEN_KING, 
+        # STORY_bee=['dummy'],
+        # return_chessboard=True,
+        # )
+
+        # Persist
+        if pg_migration:
+            PollenDatabase.upsert_data(QUEEN_KING.get("table_name"), QUEEN_KING.get("key"), QUEEN_KING)
+        else:
+            from chess_piece.king import PickleData
+            PickleData(QUEEN_KING.get("source"), QUEEN_KING)
+
+        return JSONResponse(
+            content=grid_row_button_resp(status=f"success", 
+                                         description=f"Piece '{piece_name}' saved", 
+                                         payload=chess_board, 
+                                         payload_2=ticker_allocations,
+                                         cash_position=cash_position,))
+
+    except Exception as e:
+        logging.error(f"update_chess_piece error: {e}")
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(content=grid_row_button_resp(status="error", description=str(e)))  
+
+
+@router.post("/ticker_search_query", status_code=status.HTTP_200_OK)
+async def ticker_search_query(
+    client_user: str = Body(...),
+    query: str = Body(...),
+    prod: bool = Body(...),
+    api_key: str = Body(...),
+):
+    """
+    Returns a filtered list of tradeable ticker symbols matching `query`.
+    Used by the TickerSearchModal autocomplete.
+    """
+    if not check_authKey(api_key):
+        return JSONResponse(content={"tickers": []}, status_code=401)
+
+    try:
+        crypto_symbols = ["BTC/USD", "ETH/USD"]
+        KING = kingdom__grace_to_find_a_Queen()
+        all_symbols = list(KING['alpaca_symbols_dict'].keys()) + crypto_symbols
+
+        # ticker_universe = return_Ticker_Universe()
+        # all_symbols: list = list(ticker_universe.get("alpaca_symbols_dict", {}).keys()) + crypto_symbols
+
+        q = query.strip().upper()
+        # Prioritise exact prefix matches, then contains
+        prefix_matches = [s for s in all_symbols if s.upper().startswith(q)]
+        contains_matches = [s for s in all_symbols if q in s.upper() and s not in prefix_matches]
+        results = (prefix_matches + contains_matches)[:40]
+
+        return JSONResponse(content={"tickers": results})
+    except Exception as e:
+        logging.error(f"ticker_search_query error: {e}")
+        return JSONResponse(content={"tickers": [], "error": str(e)})
+

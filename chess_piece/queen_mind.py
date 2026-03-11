@@ -52,8 +52,9 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
              picture='knight_png', 
              margin_power=0, 
              trade_only_margin=False, 
-             refresh_star='1Minute_1Day',
+             refresh_star='1Minute_1Day', #Deprecated WORKERBEE REMOVE
              max_budget_allowed=None, # if int use in logic
+             ticker_allocations={},
              ):
     return {
         "picture": picture,
@@ -69,6 +70,7 @@ def init_qcp(init_macd_vars={"fast": 12, "slow": 26, "smooth": 9},
         "trade_only_margin": trade_only_margin,
         'refresh_star': refresh_star, # anchor to use as reallocation # WORKERBEE..chess_board not Saving correclty or being overwritten?
         'max_budget_allowed': max_budget_allowed,
+        'ticker_allocations': ticker_allocations, # Optional dict of ticker to allocation % for that ticker in the piece, if not set, equal allocation will be assumed
     }
 
 
@@ -1023,6 +1025,8 @@ def to_iso_datetime(val):
         # If already in ISO or invalid, return as-is or blank
         return str(val) if "T" in str(val) else ''
 
+# def setup_qcp_on_chessboard():
+
 def refresh_chess_board__revrec( 
         acct_info, 
         QUEEN, 
@@ -1034,19 +1038,13 @@ def refresh_chess_board__revrec(
         chess_board='chess_board', 
         wash_sale_rule=None, 
         ticker_trinity=False, 
-        exit_early=False
+        return_chessboard=False
         ):
     # WORKERBEE move out QUEEN_KING and only bring in chess_board *
     try:
         if not STORY_bee:
             print("REVREC STORY_BEE is empty, Fetching from PollenDatabase")
-            symbols = return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)
-            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(symbols).get('STORY_bee')
-        
-        price_info_symbols = QUEEN.get('price_info_symbols')
-        if isinstance(price_info_symbols, pd.DataFrame):
-            price_info_symbols = price_info_symbols.to_dict(orient='index')
-
+            STORY_bee = PollenDatabase.retrieve_all_story_bee_data(return_QUEEN_KING_symbols(QUEEN_KING, QUEEN)).get('STORY_bee')
 
         rr_starttime = datetime.now()
         s = datetime.now()
@@ -1269,7 +1267,7 @@ def refresh_chess_board__revrec(
                     msg=(f'{qcp} out of balance by {deltaa} ${round(deltaa * qcp_tb)} Allocation At Risk')
                     print(msg) 
         
-    def revrec_allocation(waveview, wave_blocktime):
+    def revrec_allocation(STORY_bee, waveview, wave_blocktime):
         
         
         """ WORK ON
@@ -1715,15 +1713,6 @@ def refresh_chess_board__revrec(
         rr_run_cycle.update({'load': (datetime.now() - s).total_seconds()})
         s = datetime.now()
 
-        # % Change per Star
-        storybee_pct_change = {}
-        STORY_bee_keys = STORY_bee.keys()
-        for symbol in symbols:
-            for star in stars().keys():
-                if f'{symbol}_{star}' in STORY_bee_keys:
-                    pct_change = STORY_bee[f'{symbol}_{star}']['story'].get('last_close_price')
-                    storybee_pct_change[f'{symbol}{star}_change'] = pct_change
-
         # Initialize RevRec Structures
         chessboard = QUEEN_KING[chess_board]
     
@@ -1811,6 +1800,9 @@ def refresh_chess_board__revrec(
         df_ticker['symbol'] = df_ticker.index
         df_stars['symbol'] = df_stars['ticker']
 
+        if return_chessboard:
+            return chessboard, df_qcp, df_ticker, df_stars
+
 
         validate_qcp_balance(df_qcp)
         rr_run_cycle.update({'shape': (datetime.now() - s).total_seconds()})
@@ -1896,7 +1888,7 @@ def refresh_chess_board__revrec(
                 continue
 
         s = datetime.now()
-        waveview = revrec_allocation(waveview, wave_blocktime)
+        waveview = revrec_allocation(STORY_bee, waveview, wave_blocktime)
         ttf_current_macd = dict(zip(waveview.index, waveview['macd_state']))
         rr_run_cycle.update({'revrec allocation': (datetime.now() - s).total_seconds()})
         
@@ -2050,6 +2042,23 @@ def refresh_chess_board__revrec(
             # No autopilot data or wrong type, set defaults
             storygauge['buy_autopilot'] = False
             storygauge['sell_autopilot'] = False
+
+
+
+        # % Change per Star
+        storybee_pct_change = {}
+        STORY_bee_keys = STORY_bee.keys()
+        for symbol in symbols:
+            for star in stars().keys():
+                if f'{symbol}_{star}' in STORY_bee_keys:
+                    pct_change = STORY_bee[f'{symbol}_{star}']['story'].get('last_close_price')
+                    storybee_pct_change[f'{symbol}{star}_change'] = pct_change
+
+
+        # Price Info Data
+        price_info_symbols = QUEEN.get('price_info_symbols')
+        if isinstance(price_info_symbols, pd.DataFrame):
+            price_info_symbols = price_info_symbols.to_dict(orient='index')
 
         story_data = []
         story_symbol_errors = []

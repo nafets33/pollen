@@ -562,13 +562,14 @@ def pollenq(sandbox=False, demo=False):
                            prod=prod, 
                            queen_king=True, 
                            api=True, 
-                           init=True, 
+                           init=True,
+                           broker_info=True,
                            revrec=True, 
                            pg_migration=pg_migration,
                            demo=demo,
                            )
         api = qb.get('api')
-        # st.write(vars(api))
+        broker_info = qb.get('broker_info')
         revrec = qb.get('revrec')
         # QUEEN = qb.get('QUEEN')
         QUEEN_KING = qb.get('QUEEN_KING')
@@ -586,7 +587,7 @@ def pollenq(sandbox=False, demo=False):
                     st.success("KING Saved")
 
 
-
+        # WORKERBEE FIX THIS IN MAIN GRID TO SEND NOT SETUP TO FORCE POPUP !!!
         if 'chess_board__revrec' not in QUEEN_KING.keys():
             print("SETUP QUEEN KING")
             st.session_state['chessboard_setup'] = True
@@ -687,22 +688,21 @@ def pollenq(sandbox=False, demo=False):
 
 
     if menu_id in ['pollen', 'demo']:
-        tabs = st.tabs(["Trading Grids", "Portfolio Allocations"])
         st.divider()
-        cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
-        cash = max(min(cash, 1), -1)
-        QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
-        with tabs[0]:
-            queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=st.session_state.get('sneak_peak'))
+        # cash = QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation']
+        # cash = max(min(cash, 1), -1)
+        # QUEEN_KING['king_controls_queen']['buying_powers']['Jq']['total_longTrade_allocation'] = cash_slider(QUEEN_KING)
+        # with tabs[0]:
+        queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=st.session_state.get('sneak_peak'), broker_info=broker_info)
     
-    # if menu_id == 'Portfolio Allocations':
-        st.subheader("Portfolio Allocations")
-        st.divider()
-        crypto_symbols__tickers_avail = ['BTC/USD', 'ETH/USD']
-        themes = list(pollen_themes(KING).keys())
-        ticker_allowed = KING['alpaca_symbols_df'].index.tolist() + crypto_symbols__tickers_avail
-        with tabs[1]:
-            chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=admin_pq)
+    # # if menu_id == 'Portfolio Allocations':
+    #     st.subheader("Portfolio Allocations")
+    #     st.divider()
+    #     crypto_symbols__tickers_avail = ['BTC/USD', 'ETH/USD']
+    #     themes = list(pollen_themes(KING).keys())
+    #     ticker_allowed = KING['alpaca_symbols_df'].index.tolist() + crypto_symbols__tickers_avail
+    #     with tabs[1]:
+    #         chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=admin_pq)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')

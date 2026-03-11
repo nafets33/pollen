@@ -907,6 +907,23 @@ def return_queenking_board_symbols(QUEEN_KING, active=True):
     return return_qcp_tickers
 
 
+def ensure_chessboard_ticker_allocation(QUEEN_KING):
+    if 'chess_board' not in QUEEN_KING.keys():
+        print("No chess board in QUEEN_KING... this should never happen")
+        return QUEEN_KING
+    for qcp, data in QUEEN_KING['chess_board'].items():
+        QUEEN_KING['chess_board'][qcp]['ticker_allocations'] = {} # always recreate from index # WORKERBEE THIS NEEDS TO BE FIXED temp solution due to powers in trading model
+        tickers = data.get('tickers')
+        for symbol in tickers:
+            trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol, {})
+            buying_power = trading_model.get('buyingpower_allocation_LongTerm', 0)
+            margin_power = trading_model.get('buyingpower_allocation_ShortTerm', 0)
+            buying_power_data = {'buying_power': buying_power, 'margin_power': margin_power}
+            QUEEN_KING['chess_board'][qcp]['ticker_allocations'][symbol] = buying_power_data
+    
+    return QUEEN_KING
+
+
 ### QUEEN UTILS
 def star_ticker_WaveAnalysis(STORY_bee, ticker_time_frame, trigbee=False): # buy/sell cross
     """ Waves: Current Wave, answer questions about proir waves """
@@ -3624,6 +3641,7 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         queens_charlie_bee, CHARLIE_BEE = init_charlie_bee(main_db_root) if charlie_bee else {}, {}
 
     if QUEEN_KING:
+        QUEEN_KING = ensure_chessboard_ticker_allocation(QUEEN_KING)
         QUEEN_KING['dbs'] = init_pollen
         if pg_migration:
             QUEEN_KING['prod'] = prod

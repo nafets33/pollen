@@ -36,7 +36,8 @@ from chess_piece.queen_hive import (return_symbol_from_ttf,
                                     init_swarm_dbs,
                                     assign_block_time,
                                     return_Ticker_Universe,
-                                    kingdom__grace_to_find_a_Queen
+                                    kingdom__grace_to_find_a_Queen,
+                                    return_queenking_board_symbols,
                                     
                                     )
 
@@ -87,15 +88,18 @@ def parse_date(date_str):
     return None
 
 # WORKERBEE Update all ROUTERS to use fun resp return vs function
-def grid_row_button_resp(status='success', description='success', message_type='fade', close_modal=True, color_text='red', error=False):
+def grid_row_button_resp(status='success', description='success', message_type='fade', close_modal=True, color_text='red', error=False, **kwargs):
     return {'status': status, # success
             'description': description,
             'error': error,
             'data':{
                 'close_modal': close_modal, # T/F
                 'color_text': color_text, #? test if it works
-                'message_type': message_type # click / fade
+                'message_type': message_type, # click / fade
+                # 'payload': payload,
+                # 'payload_2': payload_2, # additional data to send back to frontend for processing (e.g., updated ticker allocations)
             },
+            **kwargs
             }
 
 def get_revrec_lastmod_time(client_user, prod, api_lastmod_key='REVREC'):
@@ -327,7 +331,8 @@ def return_startime_from_ttf(ticker_time_frame):
 def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False, story=False, trigbee='buy_cross-0', long_short='long', wave_buy_orders=[], wave_buys=False, buy_amount_field="allocation_long"): # index & wave_amount
   try:
     #WORKERBEE Handling Crypto, # workerbee add check for buying amount allowed
-    
+    crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
+
     df_wave_buys = pd.DataFrame(wave_buy_orders)
     if wave_buys:
       if len(df_wave_buys) > 0:
@@ -412,7 +417,6 @@ def app_buy_order_request(client_user, prod, selected_row, kors, ready_buy=False
         king_order_rules = copy.deepcopy(trading_model['stars_kings_order_rules'][star_time]['trigbees'][tm_trig][wave_blocktime])
         
         # Other Misc
-        crypto_currency_symbols = ['BTCUSD', 'ETHUSD', 'BTC/USD', 'ETH/USD']
         crypto = True if symbol in crypto_currency_symbols else False
         maker_middle = False
         current_wave = {} # deprecate revrec['waveview'].get('current_wave')
@@ -1189,23 +1193,46 @@ def get_storygauge_waveview_json(client_user, prod, symbols, toggle_view_selecti
         #     }]
 
         json_data = df.to_json(orient='records')
-        print("story runtime: ", (datetime.now() - s).total_seconds())
+        print(f"Story: {client_user} ", (datetime.now() - s).total_seconds())
         return json_data
     
     except Exception as e:
       print_line_of_error(e)
 
 
-def chessboard_view(client_user, prod, symbols, toggle_view_selection):
-  QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
-  df = shape_chess_board(QUEEN_KING['chess_board'])
-  df['refresh_star'] = 'Day'
-  kors_dict = chessboard_button_dict_items()
-  # df['kors'] = [kors_dict for _ in range(df.shape[0])]
-  # for idx in df.index:
-  #    df.at[idx, 'kors'] = kors_dict
-  return df.to_json(orient='records')
+# def chessboard_view(client_user, prod, symbols, toggle_view_selection):
+#   QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+#   df = shape_chess_board(QUEEN_KING['chess_board'])
+#   df['refresh_star'] = 'Day'
+#   kors_dict = chessboard_button_dict_items()
+#   # df['kors'] = [kors_dict for _ in range(df.shape[0])]
+#   # for idx in df.index:
+#   #    df.at[idx, 'kors'] = kors_dict
+#   return df.to_json(orient='records')
 
+def get_ticker_buying_powers(QUEEN_KING, symbols=[]):
+    """
+    Extract buying power for each ticker from trading models.
+    Returns dict: {ticker: buying_power_value}
+    """
+    ticker_buying_powers = {}
+    if not symbols:
+        symbols = return_queenking_board_symbols(QUEEN_KING)
+        
+    for symbol in symbols:
+        trading_model = QUEEN_KING['king_controls_queen']['symbols_stars_TradingModel'].get(symbol, {})
+        if trading_model:
+            buying_power = trading_model.get('buyingpower_allocation_LongTerm', 0)
+            margin_power = trading_model.get('buyingpower_allocation_ShortTerm', 0)
+            ticker_buying_powers[symbol] = {"buying_power": buying_power, "margin_power": margin_power}
+
+    
+    return ticker_buying_powers
+
+
+def chessboard_view(client_user, prod):
+    QUEEN_KING = init_queenbee(client_user, prod, queen_king=True, pg_migration=pg_migration).get('QUEEN_KING')
+    return QUEEN_KING['chess_board']
 
 def update_buy_autopilot(client_user, prod, selected_row, default_value, status='-'):
     print(client_user, default_value) 
