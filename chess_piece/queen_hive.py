@@ -3580,7 +3580,7 @@ def setup_instance(client_username, switch_env, force_db_root, queenKING, prod=N
 
 
 
-def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False, main_server=server, orders_v2=False):
+def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False, api=False, init=False, broker=False, queens_chess_piece="queen", broker_info=False, revrec=False, init_pollen_ONLY=False, queen_heart=False, orders_final=False, charlie_bee=False, pg_migration=pg_migration, demo=False, main_server=server, orders_v2=False, active_orders_only=False, active_queen_order_states=None):
     db_root = init_clientUser_dbroot(client_username=client_user, pg_migration=pg_migration)    
 
     if demo:
@@ -3598,12 +3598,15 @@ def init_queenbee(client_user, prod, queen=False, queen_king=False, orders=False
         if orders_v2:
             s = datetime.now()
             client_order_store = "queen_orders" if prod else 'queen_orders_sandbox'
-            order_rows = PollenDatabase.get_keys_by_db_root(client_order_store, db_root, server=main_server)
+            order_rows = PollenDatabase.get_keys_containing_batch(client_order_store, db_root, server=main_server)
             print("ORDER ROWS", len(order_rows))
             if len(order_rows) == 0:
                 print("No Orders Found for", db_root)
                 order_rows = [create_QueenOrderBee(queen_init=True)]
             df = pd.DataFrame(order_rows).set_index('client_order_id', drop=False)
+            if active_orders_only:
+                df = df[df['queen_order_state'].isin(active_queen_order_states)]
+            
             ORDERS = {'queen_orders': df, 
                       'db_root': db_root, 
                       'table_name': table_name, 
@@ -4933,7 +4936,7 @@ def live_sandbox__setup_switch(pq_env, switch_env=False, pg_migration=False, db_
                 PollenDatabase.upsert_data('client_user_env', key=save_key, value=pq_env)
             else:    
                 pq_env.update({'env': prod})
-                print(pq_env)
+                print("ENV", pq_env)
                 PickleData(pq_env.get('source'), pq_env, console=True)
             
             # switch_page('pollen')

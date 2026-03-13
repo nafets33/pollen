@@ -224,9 +224,45 @@ def copy_data_between_tables(source_table, target_table):
         if target_con:
             target_con.close()
 
+def clean_old_queen_orders_gauges(client_user, prod):
+    qb = init_queenbee(client_user, prod)
+    db_root = qb['db_root']
+    # for gather all keys that have db_root in name
+    # for ever key, read the order, del out the hone_gauge column and save back to PG
+    table_name = 'queen_orders' if prod else 'queen_orders_sandbox'
+    dbs = dict(PollenDatabase.get_all_keys_with_timestamps(table_name, db_root))
+    # filter out by contains db_root
+    dbs = {k: v for k,v in dbs.items() if db_root in k}
+    st.write(table_name, len(dbs))
+    container = st.empty()
+    num = 0
+    for queen_order_key in dbs.keys():
+        data =  PollenDatabase.retrieve_data(table_name, queen_order_key, main_server=os.getenv('server'))
+        # if data and 'honey_gauge' in data:
+        # st.write("DEL Honey Gauge", queen_order_key)
+        data['honey_gauge'] = []
+        PollenDatabase.upsert_data(table_name, queen_order_key, data, main_server=os.getenv('server'))
+        num += 1
+        container.write(f"Cleaned {num} / {len(dbs)}")
+    
+    st.write("COMPLETED CLEAN")
+    return True
 
 if __name__ == '__main__':
     print("POSTGRES", pg_migration)
+
+    if 'authorized_user' not in st.session_state:
+        signin_main()
+
+    if st.session_state["authorized_user"] != True:
+        st.error("you do not have permissions young fellow")
+        st.stop()
+
+    client_user = st.session_state['username']
+    prod = st.session_state['prod']
+    
+    if st.sidebar.button("clean order gauge"):
+        clean_old_queen_orders_gauges(client_user, prod)
 
     admin = st.session_state['admin']
 

@@ -232,7 +232,7 @@ else:
     QUEENBEE = ReadPickleData(master_swarm_QUEENBEE(prod=prod))
 
 KING = kingdom__grace_to_find_a_Queen()
-qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, pg_migration=pg_migration)
+qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, init=True, pg_migration=pg_migration, main_server=os.getenv('server'))
 # QUEEN = qb.get('QUEEN')
 QUEEN_KING = qb.get('QUEEN_KING')
 api = qb.get('api')

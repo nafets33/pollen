@@ -11,6 +11,8 @@ import psycopg2
 from psycopg2 import sql
 from psycopg2 import extras
 from psycopg2 import pool
+from tqdm import tqdm
+
 
 server = os.getenv("server", False)
 
@@ -589,7 +591,6 @@ class PollenDatabase:
         # Get all keys from the source table
         keys = PollenDatabase.get_all_keys(source_table)
         if show_progress:
-            from tqdm import tqdm
             keys_iter = tqdm(keys, desc=f"Copying {source_table} → {target_table}")
         else:
             keys_iter = keys
@@ -770,30 +771,32 @@ class PollenDatabase:
                 return []
 
     @staticmethod
-    def get_keys_by_db_root(table_name, db_root, server=server):
-        with PollenDatabase.get_connection(server) as conn, conn.cursor() as cur:
+    def get_keys_containing_batch(table_name, pattern, server=server, batch_size=250):
+        with PollenDatabase.get_connection(server) as conn:
             try:
-                query = f"SELECT key, data FROM {table_name} WHERE key LIKE %s;"
-                cur.execute(query, (f"{db_root}___%",))
-                results = cur.fetchall()
-                decoded_data = []
-                for key, serialized_data in results:
-                    if isinstance(serialized_data, str):
-                        serialized_data = serialized_data
-                    elif isinstance(serialized_data, dict):
-                        serialized_data = json.dumps(serialized_data)
-                    else:
-                        print(f"ERROR Unexpected data type for key {key}: {type(serialized_data)}")
-                        continue  # skip if data is not valid
-                    
-                    # Always deserialize using custom decoder
-                    data = json.loads(serialized_data, cls=PollenJsonDecoder)
-
-                    data['key'] = key
-                    data['table_name'] = table_name
-                    data['db_root'] = db_root
-                    decoded_data.append(data)
-                return decoded_data
+                with conn.cursor(name='get_keys_by_pattern_cursor') as cur:
+                    cur.itersize = batch_size
+                    query = f"SELECT key, data FROM {table_name} WHERE key LIKE %s;"
+                    cur.execute(query, (f"{pattern}___%",))
+                    decoded_data = []
+                    while True:
+                        rows = cur.fetchmany(batch_size)
+                        print(f"fetching batch of keys for pattern {pattern} from table {table_name}, batch size: {len(rows)}")
+                        if not rows:
+                            break
+                        for key, serialized_data in rows:
+                            if isinstance(serialized_data, str):
+                                pass
+                            elif isinstance(serialized_data, dict):
+                                serialized_data = json.dumps(serialized_data)
+                            else:
+                                print(f"ERROR Unexpected data type for key {key}: {type(serialized_data)}")
+                                continue
+                            data = json.loads(serialized_data, cls=PollenJsonDecoder)
+                            data['key'] = key
+                            data['table_name'] = table_name
+                            decoded_data.append(data)
+                    return decoded_data
             except Exception as e:
                 print(f"Error: {e}")
                 return []

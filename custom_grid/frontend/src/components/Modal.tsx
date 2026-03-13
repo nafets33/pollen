@@ -260,23 +260,23 @@ const MyModal: React.FC<MyModalProps> = ({
     <ReactModal
       isOpen={isOpen}
       onRequestClose={closeModal}
-  style={{
-    overlay: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      zIndex: 1000,
-    },
-    content: {
-      overflow: 'visible',
-      padding: 0,
-      inset: 'auto',
-      position: 'relative',
-      border: 'none',
-      background: 'transparent',
-    }
-  }}
+      style={{
+        overlay: {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          zIndex: 1000,
+        },
+        content: {
+          overflow: 'visible',
+          padding: 0,
+          inset: 'auto',
+          position: 'relative',
+          border: 'none',
+          background: 'transparent',
+        }
+      }}
       ariaHideApp={false}
     >
       <div className="my-modal-content">
@@ -461,10 +461,10 @@ const MyModal: React.FC<MyModalProps> = ({
 
                     return (
                       <div style={{
-                        // maxHeight: "800px",      // ✅ Set a max height
-                        // overflowY: "auto",       // ✅ Enable vertical scrolling
-                        // overflowX: "auto",       // ✅ Keep horizontal scrolling
-                        border: "1px solid #ddd" // Optional: visual boundary
+                        maxHeight: "400px",
+                        overflowY: "auto",
+                        overflowX: "auto",
+                        border: "1px solid #ddd",
                       }}>
                         <table className="table table-bordered table-sm" style={{ fontSize: "0.6rem" }}>
                           <thead>
@@ -485,7 +485,8 @@ const MyModal: React.FC<MyModalProps> = ({
                                       color: "black",
                                       textAlign: "center",
                                       position: "sticky",
-                                      top: 0,
+                                      top: -1,
+                                      paddingTop: "1px",
                                       left: editableCol?.pinned ? `${getPinnedColumnLeftPosition(colIndex)}px` : "auto",
                                       zIndex: editableCol?.pinned ? 20 : 15,
                                       minWidth: `${colWidth}px`,
@@ -902,25 +903,25 @@ const MyModal: React.FC<MyModalProps> = ({
                   const isSliderRule = sliderRules.includes(rule);
 
                   return (
-<div
-  key={index}
-  className="d-flex flex-column"
-  style={{
-    flex: "1 1 40%",
-    minWidth: "120px",
-    marginBottom: "4px",
-    padding: "2px 0",
-  }}
->
-  <label
-    className="mb-1"
-    style={{
-      fontSize: "0.8rem",
-      fontWeight: "bold",
-      textTransform: "capitalize",
-      marginBottom: "2px",
-    }}
-  >
+                    <div
+                      key={index}
+                      className="d-flex flex-column"
+                      style={{
+                        flex: "1 1 40%",
+                        minWidth: "120px",
+                        marginBottom: "4px",
+                        padding: "2px 0",
+                      }}
+                    >
+                      <label
+                        className="mb-1"
+                        style={{
+                          fontSize: "0.8rem",
+                          fontWeight: "bold",
+                          textTransform: "capitalize",
+                          marginBottom: "2px",
+                        }}
+                      >
                         {rule.replace(/_/g, " ")}:
                         {rule === "sell_amount" && (
                           <span

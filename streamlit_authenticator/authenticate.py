@@ -248,7 +248,6 @@ class Authenticate:
 
                 self._check_cookie()
                 time.sleep(1)
-                print(st.session_state["authentication_status"])
                 if st.session_state["authentication_status"] != True:
 
                     if location == "main":

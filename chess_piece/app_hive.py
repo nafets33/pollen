@@ -168,7 +168,7 @@ def sac_menu_buttons(main='pollen'):
     if main=='pollen':
         menu_buttons = sac.buttons([
             sac.ButtonsItem(label=main, icon='bi bi-activity'),
-            sac.ButtonsItem(label='Portfolio Allocations', icon='pie-chart'),
+            # sac.ButtonsItem(label='Portfolio Allocations', icon='pie-chart'),
             sac.ButtonsItem(label='Orders', icon='backpack4-fill'),
             # sac.ButtonsItem(label='PlayGround', icon='fire'),
             # sac.ButtonsItem(label='Ozz', icon='wechat', href=f'{st.session_state["streamlit_ip"]}/ozz'),
@@ -176,7 +176,7 @@ def sac_menu_buttons(main='pollen'):
             # sac.ButtonsItem(label='Waves', icon='share-fill'),
             # sac.ButtonsItem(label='Engine', icon='gem'),
             # sac.ButtonsItem(label='Account', icon='share-fill'),
-        ], format_func='title', align='right', color='#E6C93B')
+        ], format_func='title', align='center', color='#E6C93B')
     elif main == 'Account':
         menu_buttons = sac.buttons([
             sac.ButtonsItem(label='account', icon='key'),
@@ -197,7 +197,22 @@ def sac_menu_buttons(main='pollen'):
             # sac.ButtonsItem(label='Engine', icon='gem'),
             sac.ButtonsItem(label='Account', icon='share-fill'),
             ],
-            format_func='title', align='left', color='#E6C93B')
+            format_func='title', align='left', color='#E6C93B'
+            )
+    
+    elif type(main) == dict: # == 'Story Header':
+        print("UAT")
+        menu_buttons = sac.buttons([
+            sac.ButtonsItem(label=i, icon=v.get('icon', 'share-fill'))
+            
+            for i, v in main.items()
+        ],
+            
+        format_func='title', align='left', color="#09D617"
+        )
+
+    print(menu_buttons)
+    
     return menu_buttons
 
 def sac_tabs(tab_names=["Tab 1", "Tab 2", "Tab 3"], key="tabs"):
@@ -345,106 +360,6 @@ def update_queencontrol_theme(QUEEN_KING, theme_list):
             PickleData(pickle_file=QUEEN_KING["source"], data_to_store=QUEEN_KING)
             st.success("Theme Saved")
 
-
-# # WORKERBEE
-# def king_grid(chess_board, client_user, ip_address, refresh_sec=0, paginationOn=True, key='king_grid', seconds_to_market_close=0):
-
-    
-#     try:
-#         gb = GridOptionsBuilder.create()
-#         gb.configure_default_column(column_width=100, 
-#                                     resizable=True,wrapText=False, wrapHeaderText=True, sortable=True, autoHeaderHeight=True, autoHeight=True, 
-#                                     suppress_menu=False, filterable=True,)            
-#         gb.configure_index('users')
-#         gb.configure_theme('ag-theme-material')
-#         if paginationOn:
-#             gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
-
-#         def story_grid_buttons():
-#             # exclude_buy_kors = ['reverse_buy', 'sell_trigbee_trigger_timeduration']
-#             buttons=[
-#                         # {'button_name': None,
-#                         # 'button_api': f'{ip_address}/api/data/chessboard',
-#                         # 'prompt_message': 'Edit Board',
-#                         # 'prompt_field': 'kors',
-#                         # 'col_headername': 'Update',
-#                         # "col_header": "chessboard_update_button",
-#                         # # "border_color": "green",
-#                         # 'col_width':100,
-#                         # 'sortable': True,
-#                         # 'pinned': 'left',
-#                         # 'prompt_order_rules': [] # [i for i in buy_button_dict_items().keys() if i not in exclude_buy_kors],
-#                         # # 'cellStyle': button_suggestedallocation_style,
-#                         # },
-#                     ]
-#             return buttons
-
-#         def config_cols(cols):
-#             values_list = list(star_names().keys())
-#             status = ['Active', 'Not Active']
-#             return  {
-#             # for col in cols:
-#             'ticker': {'headerName':'Symbol', 'initialWidth':89, 'pinned': 'left', 'sortable':'true',},
-#             'picture': {}, # image selection,
-#             'piece_name': {"cellEditorParams": {"editable":True, "cellEditor":"agSelectCellEditor",}, #editable,
-#             'model': {'headerName':'Model',
-#                       "cellEditorParams": {"values": model_list},
-#                                                                 "editable":True,
-#                                                                 "cellEditor":"agSelectCellEditor",
-#                                                                 },
-#             },
-#             # 'theme': {'headerName':'Theme', },
-#             'total_buyng_power_allocation': {'headerName':'Buying Power Allocation', 'sortable':'true', },
-#             'total_borrow_power_allocation': {'headerName': 'Margin Power Allocation', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
-#             'margin_power': {'headerName': 'Margin Power % Use', 'sortable':'true', "type": ["customNumberFormat", "numericColumn", "numberColumnFilter", ]},
-#             'refresh_star': {'headerName': 'Re Allocate Every', 
-#                              "cellEditorParams": {"values": values_list},
-#                                                                 "editable":True,
-#                                                                 "cellEditor":"agSelectCellEditor",
-#                                                                 },
-
-#             }
-
-#         df = shape_chess_board(chess_board)
-#         chess_pieces = [v.get('piece_name') for i, v in chess_board.items()]
-#         story_col = df.columns.tolist()
-#         config_cols_ = config_cols(story_col)
-#         for col, config_values in config_cols_.items():
-#             config = config_values
-#             gb.configure_column(col, config)
-
-#         mmissing = [i for i in story_col if i not in config_cols_.keys()]
-#         if len(mmissing) > 0:
-#             print('cols missing', mmissing)
-#             for col in mmissing:
-#                 gb.configure_column(col) #{'hide': True})
-
-#         g_buttons = story_grid_buttons()
-
-#         go = gb.build()
-#         # with st.expander("default build check"):
-#         #     st.write(go)
-#         st_custom_grid(
-#             client_user=client_user,
-#             username=client_user, 
-#             api=f"{ip_address}/api/data/chessboard",
-#             api_update=f"{ip_address}/api/data/update_queenking_chessboard",
-#             refresh_sec=refresh_sec, 
-#             refresh_cutoff_sec=seconds_to_market_close, 
-#             prod=st.session_state['prod'],
-#             grid_options=go,
-#             key=key,
-#             api_key=os.environ.get("fastAPI_key"),
-#             symbols=symbols,
-#             buttons=g_buttons,
-#             grid_height='450px',
-#             toggle_views = chess_pieces,
-#             allow_unsafe_jscode=True,
-
-#         ) 
-
-#     except Exception as e:
-#         print_line_of_error(e)
 
 
 def admin_queens_active(KING, all_users, pg_migration=False):

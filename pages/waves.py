@@ -45,7 +45,7 @@ def cash_slider(QUEEN_KING, key='cash_slider'):
 
 
 def queen_data(client_user, prod):
-    qb = init_queenbee(client_user, prod, queen=True, orders_v2=True, queen_king=True, api=True, pg_migration=pg_migration)
+    qb = init_queenbee(client_user, prod, queen=True, orders_v2=True, queen_king=True, api=True, pg_migration=pg_migration, main_server=os.getenv('server'))
     QUEEN = qb.get('QUEEN')
     QUEEN_KING = qb.get('QUEEN_KING')
     api = qb.get('api')

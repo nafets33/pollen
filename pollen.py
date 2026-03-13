@@ -463,8 +463,8 @@ def pollenq(sandbox=False, demo=False):
  
     # HEADER
     cols = st.columns((4,2))
-    with cols[0]:
-        menu_id = sac_menu_buttons(pollen)
+    # with cols[0]:
+    menu_id = sac_menu_buttons(pollen)
     st.divider()
     
     cols = st.columns((1,2,2,4))
@@ -567,6 +567,7 @@ def pollenq(sandbox=False, demo=False):
                            revrec=True, 
                            pg_migration=pg_migration,
                            demo=demo,
+                           main_server=os.getenv('server')
                            )
         api = qb.get('api')
         broker_info = qb.get('broker_info')
@@ -592,10 +593,6 @@ def pollenq(sandbox=False, demo=False):
             print("SETUP QUEEN KING")
             st.session_state['chessboard_setup'] = True
             st.switch_page('pages/chessboard.py')
-
-        if st.sidebar.button("Clear App Requests"):
-            QUEEN = init_queenbee(client_user=client_user, prod=prod, queen=True).get('QUEEN')
-            clean_out_app_requests(QUEEN=QUEEN, QUEEN_KING=QUEEN_KING, request_buckets=['subconscious', 'sell_orders', 'queen_sleep', 'update_queen_order'], prod=prod)
 
         with st.sidebar:
             # with st.expander("admin"):
@@ -695,14 +692,6 @@ def pollenq(sandbox=False, demo=False):
         # with tabs[0]:
         queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=st.session_state.get('sneak_peak'), broker_info=broker_info)
     
-    # # if menu_id == 'Portfolio Allocations':
-    #     st.subheader("Portfolio Allocations")
-    #     st.divider()
-    #     crypto_symbols__tickers_avail = ['BTC/USD', 'ETH/USD']
-    #     themes = list(pollen_themes(KING).keys())
-    #     ticker_allowed = KING['alpaca_symbols_df'].index.tolist() + crypto_symbols__tickers_avail
-    #     with tabs[1]:
-    #         chessboard(revrec=revrec, QUEEN_KING=QUEEN_KING, ticker_allowed=ticker_allowed, themes=themes, admin=admin_pq)
 
     st.session_state['refresh_times'] += 1
     page_line_seperator('5')

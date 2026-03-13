@@ -389,7 +389,7 @@ def signin_main(page='demo'):
         else:
             name, authentication_status, email = authenticator.login("Login", "main")
             if testing:
-                print(email, name)
+                print("TESTIG:", email, name)
             st.session_state['auth_email'] = email
             st.session_state['auth_name'] = name
         

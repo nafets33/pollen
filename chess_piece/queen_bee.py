@@ -172,50 +172,61 @@ def check_user_websocket_status(client_user, prod, API_URL, upsert_to_main_serve
         traceback.print_exc()
         return False
 
-def story_grid_update(prod, QUEEN_KING, revrec, client_user, API_KEY, API_URL, upsert_to_main_server=upsert_to_main_server):
+def story_grid_update(prod, QUEEN_KING, revrec, client_user, API_KEY, API_URL, upsert_to_main_server=upsert_to_main_server, batch_size=33):
     if upsert_to_main_server:
         API_URL = os.getenv('main_fastAPI_url')
-    
+
     endpoint = f"{API_URL}/api/data/trigger_story_grid_update"
     revrec_copy = copy.deepcopy(revrec)
     QUEEN_KING_copy = copy.deepcopy(QUEEN_KING)
     df_story = story_return(QUEEN_KING_copy, revrec_copy)
-    
-    payload = {
-        'client_user': client_user,
-        'api_key': API_KEY,
-        'prod': prod,
-        'revrec': {'storygauge': df_story.to_dict('records')},
-        'toggle_view_selection': 'Portfolio',
-    }
 
-    try:
-        response = requests.post(
-            endpoint,
-            data=json.dumps(payload, cls=PollenJsonEncoder),
-            headers={'Content-Type': 'application/json'},
-            timeout=.3
-        )
-        
-        if response.status_code == 200:
-            # print(f"✅ Story grid update triggered successfully for {client_user}")
-            result = response.json()
-            if result.get('status') == 'success':
-                return True
-        return False
-            
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, Exception):
-        # Silent fail - WebSocket update not critical
-        return False
+    records = df_story.to_dict('records')
+    
+    batches = [records[i:i + batch_size] for i in range(0, len(records), batch_size)]
+
+    # If the last batch is small, merge it with the previous one
+    if len(batches) > 1 and len(batches[-1]) <= 10:
+        batches[-2].extend(batches[-1])
+        batches = batches[:-1]
+
+    success = False
+    for i, batch in enumerate(batches):
+        payload = {
+            'client_user': client_user,
+            'api_key': API_KEY,
+            'prod': prod,
+            'revrec': {'storygauge': batch},
+            'toggle_view_selection': 'Portfolio',
+            'batch_index': i,
+            'total_batches': len(batches),
+        }
+        try:
+            response = requests.post(
+                endpoint,
+                data=json.dumps(payload, cls=PollenJsonEncoder),
+                headers={'Content-Type': 'application/json'},
+                timeout=5
+            )
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('status') == 'success':
+                    success = True
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, Exception):
+            # silent fail - websocket push is non-critical
+            pass
+
+    if success:
+        logging.info(f"✅ Story grid update triggered successfully for {client_user}")
+    return success
 
 # Account Header account_header
-def header_account(client_user, prod, QUEENsHeart=None, broker_info=None):
+def header_account(client_user, prod, demo, server, QUEENsHeart=None, broker_info=None):
   if not QUEENsHeart:
-    QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=pg_migration).get('QUEENsHeart')
+    QUEENsHeart = init_queenbee(client_user=client_user, prod=prod, queen_heart=True, pg_migration=pg_migration, main_server=server, demo=demo).get('QUEENsHeart')
   if not broker_info:
-    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
+    broker_info = init_queenbee(client_user=client_user, prod=prod, broker_info=True, pg_migration=pg_migration, main_server=server, demo=demo).get('broker_info') ## WORKERBEE, account_info is in heartbeat already, no need to read this file
 
-  demo = True if client_user == 'stapinskistefan@gmail.com' else False
 
   if 'charlie_bee' not in QUEENsHeart.keys():
     df = pd.DataFrame()
@@ -298,7 +309,6 @@ def header_account(client_user, prod, QUEENsHeart=None, broker_info=None):
     df_ = pd.concat([df_heart, df_accountinfo], axis=1)
 
     df = pd.concat([df, df_]).reset_index(drop=True)
-
     # for idx in df.index:
     #   df.at[idx, 'nestedRows'] = [{'count_on_me': 89, 'nestedRows': [{'count_on_her': 89}]}]
     # print("acoucnt", df)
@@ -2020,11 +2030,12 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             
 
             s_time = datetime.now(est)
+            
             price_info_missing = [s for s in symbols if s not in QUEEN['price_info_symbols'].index]
             broker = 'alpaca' # WORKERBEE HOW TO DECIDE Which BROKER? Need Manual switch (per ticker?)-- brokers joined linked orders... :()
 
+            ## Handling Triggers ###
             existing_orders_df = get_existing_trigrule_orders(symbols, active_orders) # these symbols only checking on Symbols with Budget
-
             triggers = {}
             trigger_symbols = []
             for symbol in storygauge.index.tolist(): ## Handling Triggers
@@ -2114,7 +2125,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
                         update_queens_priceinfo_symbols(QUEEN, df_priceinfo_symbols)
 
                         if symbol not in QUEEN['price_info_symbols'].index:
-                            logging.info(f"STILL MISSING PRICE INFO FOR {symbol} SKIPPING")
+                            logging.warning(f"STILL MISSING PRICE INFO FOR {symbol} SKIPPING")
                             continue
 
                     # trading model
@@ -3293,6 +3304,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         Always Bee Better
         """, timestamp_string()
         )
+
         if loglevel == 'info':
             print("Logging Level: INFO CONSOLE ONLY")
             console_only = True
@@ -3301,7 +3313,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
         init_logging(queens_chess_piece=queens_chess_piece, db_root=db_root, prod=prod, loglevel=loglevel, console_only=console_only)
 
         # init files needed
-        qb = init_queenbee(client_user, prod, queen=True, orders=False, orders_v2=True, queen_king=True, api=True, broker=True, init=True, pg_migration=pg_migration, main_server=server)
+        qb = init_queenbee(client_user, prod, queen=True, orders=False, orders_v2=True, queen_king=True, api=True, broker=True, init=True, pg_migration=pg_migration, main_server=server, active_queen_order_states=active_queen_order_states)
         QUEEN = qb.get('QUEEN')
         QUEEN['prod'] = prod
         QUEEN_KING = qb.get('QUEEN_KING')
@@ -3464,7 +3476,7 @@ def queenbee(client_user, prod, queens_chess_piece='queen', server=server, logle
             # WORKERBEE ONLY SEND NECESSARY DATA (Priceinfo, total budget, remaining balance...????)
             # if check_user_websocket_status(client_user, prod, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server):
             story_grid_update(prod, QUEEN_KING, QUEEN['revrec'], client_user, API_KEY=API_KEY, API_URL=API_URL, upsert_to_main_server=upsert_to_main_server)
-            account_header_rows = header_account(client_user=client_user, prod=prod, QUEENsHeart=QUEENsHeart, broker_info=QUEEN['account_info'])
+            account_header_rows = header_account(client_user=client_user, prod=prod, demo=demo, server=server, QUEENsHeart=QUEENsHeart, broker_info=QUEEN['account_info'])
             account_header_update(prod, account_header_rows, client_user, API_KEY, API_URL, upsert_to_main_server=upsert_to_main_server)
 
             # Process All Orders

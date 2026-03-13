@@ -64,7 +64,17 @@ def config_orders_cols(active_order_state_list):
                     }
 
 
-def order_grid(client_user, config_cols, missing_cols, ip_address):
+def order_grid(client_user, prod=None, config_cols={}, missing_cols=[], ip_address=None):
+    if not ip_address:
+        ip_address = st.session_state['ip_address']
+    if prod is None:
+        prod = st.session_state['prod']
+    if not config_cols:
+        print("No config_cols provided, fetching active_order_state_list from kingdom_G")
+        king_G = kingdom__global_vars()
+        active_order_state_list = king_G.get('active_order_state_list')
+        config_cols = config_orders_cols(active_order_state_list)
+
     gb = GridOptionsBuilder.create()
     gb.configure_grid_options(pagination=True, enableRangeSelection=True, copyHeadersToClipboard=False, sideBar=False)
     gb.configure_default_column(column_width=100, resizable=True, wrapText=False, wrapHeaderText=True, autoHeaderHeight=True, autoHeight=True, suppress_menu=False, filterable=True, sortable=True, ) # cellStyle= {"color": "white", "background-color": "gray"}   
@@ -93,7 +103,7 @@ def order_grid(client_user, config_cols, missing_cols, ip_address):
         api_update=f'{ip_address}/api/data/update_orders',
         refresh_sec=refresh_sec, 
         refresh_cutoff_sec=0, 
-        prod=st.session_state['prod'],
+        prod=prod,
         key='maingrid',
         grid_options=go,
         # kwargs from here
@@ -167,7 +177,7 @@ if __name__ == '__main__':
     config_cols = config_orders_cols(active_order_state_list)
     missing_cols = [i for i in queen_orders.iloc[-1].index.tolist() if i not in config_cols.keys()]
 
-    order_grid(client_user, config_cols, missing_cols, ip_address)
+    order_grid(client_user, prod, config_cols, missing_cols, ip_address)
 
     if st.toggle("Queen Orders"):
         ORDERS = init_queenbee(client_user, prod, orders_v2=True).get('ORDERS')

@@ -10,17 +10,31 @@
 #toast-container { margin-top: 1rem; }
 /* ... (rest of your toast css) ... */
 
-/* --- Keep your Header styles --- */
-.ag-theme-material .ag-header {
+/* --- Header styles (all themes) --- */
+.ag-header {
     background-color: #fafffa !important;
     color: #1a3556 !important;
+    top: -1px !important;
+    padding-top: 1px !important;
 }
-.ag-theme-material .ag-header-cell-label {
+
+.ag-header-cell-label {
     color: #0c3361 !important;
 }
-.ag-theme-material .ag-header-cell:hover {
+
+.ag-header-cell:hover {
     background-color: #c7ddf4 !important;
     color: #1a3556 !important;
+}
+
+/* Close gap between pinned-left columns and center columns */
+.ag-pinned-left-header,
+.ag-pinned-left-cols-container {
+  border-right: none !important;
+}
+
+.ag-cell.ag-cell-last-left-pinned {
+  border-right: 1px solid var(--ag-border-color, #68686e) !important;
 }
 
 /* Custom delta flash - green for increases, red for decreases */
@@ -49,4 +63,3 @@
 .ag-cell-data-changed {
   background-color: transparent !important;
 }
-

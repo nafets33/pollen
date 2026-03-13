@@ -178,135 +178,135 @@ function interpolateHexColor(minColor: string, maxColor: string, ratio: number):
 
 
 const AgGrid = (props: Props) => {
-const BtnCellRenderer = (props: any) => {
-  const btnClickedHandler = () => {
-    props.clicked(props.node.id)
-  };
-  if (!props || !props.node) return null;
-  if (props.node.rowPinned === 'bottom') {
-    return <span>{props.value}</span>;
-  }
-
-  // ✅ Original subtotalStyle — unchanged, used for all non-wave buttons
-  const subtotalStyle =
-    props.data && props.col_header && props.data[`${props.col_header}_cellStyle`]
-      ? props.data[`${props.col_header}_cellStyle`]
-      : props.cellStyle;
-
-  // Detect wave format: "buy(4) $19,690" or "sell(3) $5,000"
-  const waveMatch = typeof props.value === 'string'
-    ? props.value.match(/^(buy|sell)\((\d+)\)\s*\$([0-9,.\-]+)/i)
-    : null;
-
-  if (waveMatch) {
-    const action = waveMatch[1];
-    const length = waveMatch[2];
-    const amount = waveMatch[3];
-    const amountNum = parseFloat(amount.replace(/,/g, ''));
-    const actionDisplay = action.charAt(0).toUpperCase() + action.slice(1);
-    const isBuy = action.toLowerCase().includes('buy');
-
-    // ✅ Find max position value across ALL rows in this column
-    let maxAmount = 0;
-    if (props.api && props.colDef?.field) {
-      props.api.forEachNode((node: any) => {
-        if (node.data) {
-          const val = node.data[props.colDef.field];
-          if (typeof val === 'string') {
-            const m = val.match(/^(?:buy|sell)\(\d+\)\s*\$([0-9,.\-]+)/i);
-            if (m && m[1]) {
-              const n = parseFloat(m[1].replace(/,/g, ''));
-              if (!isNaN(n) && n > maxAmount) maxAmount = n;
-            }
-          }
-        }
-      });
+  const BtnCellRenderer = (props: any) => {
+    const btnClickedHandler = () => {
+      props.clicked(props.node.id)
+    };
+    if (!props || !props.node) return null;
+    if (props.node.rowPinned === 'bottom') {
+      return <span>{props.value}</span>;
     }
 
-    const ratio = maxAmount > 0 ? Math.min(amountNum / maxAmount, 1) : 0;
+    // ✅ Original subtotalStyle — unchanged, used for all non-wave buttons
+    const subtotalStyle =
+      props.data && props.col_header && props.data[`${props.col_header}_cellStyle`]
+        ? props.data[`${props.col_header}_cellStyle`]
+        : props.cellStyle;
 
-// ✅ Get colors from kwargs.wave_color_rules or use defaults
-const waveColorRules = kwargs.wave_color_rules || {
-  buy: {
-    textColor: '#0a6e1f',
-    borderColor: '#0a9d25',
-    bgColorMin: '#f3f3f0',
-    bgColorMax: '#656560',
-  },
-  sell: {
-    textColor: '#a00000',
-    borderColor: '#ed370f',
-    bgColorMin: '#f9f9f7',
-    bgColorMax: '#474742',
-  },
-  position: {
-    textColor: '#000000'
-  }
-};
+    // Detect wave format: "buy(4) $19,690" or "sell(3) $5,000"
+    const waveMatch = typeof props.value === 'string'
+      ? props.value.match(/^(buy|sell)\((\d+)\)\s*\$([0-9,.\-]+)/i)
+      : null;
 
-const colorSet = isBuy ? waveColorRules.buy : waveColorRules.sell;
+    if (waveMatch) {
+      const action = waveMatch[1];
+      const length = waveMatch[2];
+      const amount = waveMatch[3];
+      const amountNum = parseFloat(amount.replace(/,/g, ''));
+      const actionDisplay = action.charAt(0).toUpperCase() + action.slice(1);
+      const isBuy = action.toLowerCase().includes('buy');
 
-// ✅ Text color: from kwargs or fixed green/red based on action
-const borderColor = colorSet.borderColor;
+      // ✅ Find max position value across ALL rows in this column
+      let maxAmount = 0;
+      if (props.api && props.colDef?.field) {
+        props.api.forEachNode((node: any) => {
+          if (node.data) {
+            const val = node.data[props.colDef.field];
+            if (typeof val === 'string') {
+              const m = val.match(/^(?:buy|sell)\(\d+\)\s*\$([0-9,.\-]+)/i);
+              if (m && m[1]) {
+                const n = parseFloat(m[1].replace(/,/g, ''));
+                if (!isNaN(n) && n > maxAmount) maxAmount = n;
+              }
+            }
+          }
+        });
+      }
 
-const textColorWave = colorSet.textColor;   // green/red for Wave line
-const textColorPosition = waveColorRules.position?.textColor || '#121111cc';  // black for Position line
+      const ratio = maxAmount > 0 ? Math.min(amountNum / maxAmount, 1) : 0;
 
-// ✅ Background: light blue → darker blue heat map
-const bgColor = interpolateHexColor(
-  colorSet.bgColorMin || 'rgb(161, 228, 139)', 
-  colorSet.bgColorMax || 'rgb(201, 182, 31)', 
-  ratio
-);
+      // ✅ Get colors from kwargs.wave_color_rules or use defaults
+      const waveColorRules = kwargs.wave_color_rules || {
+        buy: {
+          textColor: '#0a6e1f',
+          borderColor: '#0a9d25',
+          bgColorMin: '#f3f3f0',
+          bgColorMax: '#656560',
+        },
+        sell: {
+          textColor: '#a00000',
+          borderColor: '#ed370f',
+          bgColorMin: '#f9f9f7',
+          bgColorMax: '#474742',
+        },
+        position: {
+          textColor: '#000000'
+        }
+      };
 
+      const colorSet = isBuy ? waveColorRules.buy : waveColorRules.sell;
+
+      // ✅ Text color: from kwargs or fixed green/red based on action
+      const borderColor = colorSet.borderColor;
+
+      const textColorWave = colorSet.textColor;   // green/red for Wave line
+      const textColorPosition = waveColorRules.position?.textColor || '#121111cc';  // black for Position line
+
+      // ✅ Background: light blue → darker blue heat map
+      const bgColor = interpolateHexColor(
+        colorSet.bgColorMin || 'rgb(161, 228, 139)',
+        colorSet.bgColorMax || 'rgb(201, 182, 31)',
+        ratio
+      );
+
+      return (
+        <button
+          onClick={btnClickedHandler}
+          style={{
+            background: `radial-gradient(ellipse at center, #ffffff 65%, ${bgColor} 85%)`,
+            border: "2px solid " + borderColor,
+            borderRadius: "0",
+            width: "100%",
+            height: "100%",
+            cursor: "pointer",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            lineHeight: "1.3",
+            padding: "1px 2px",
+            boxSizing: "border-box",
+            outline: "none",
+          }}
+        >
+          <div style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
+            <span style={{ fontWeight: "bold", color: textColorWave }}></span>
+            <span style={{ fontWeight: "normal", color: textColorWave }}>{actionDisplay}({length})</span>
+          </div>
+          <div style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
+            <span style={{ fontWeight: "bold", color: textColorPosition }}>$: </span>
+            <span style={{ fontWeight: "normal", color: textColorPosition }}>{amount}</span>
+          </div>
+        </button>
+      );
+    }
+
+    // ✅ All other buttons — exactly as original
     return (
       <button
         onClick={btnClickedHandler}
         style={{
-          background: `radial-gradient(ellipse at center, #ffffff 65%, ${bgColor} 85%)`,
-          border: "2px solid " + borderColor,
-          borderRadius: "0",
-          width: "100%",
-          height: "100%",
-          cursor: "pointer",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          lineHeight: "1.3",
-          padding: "1px 2px",
-          boxSizing: "border-box",
-          outline: "none",
+          background: "transparent",
+          border: subtotalStyle?.border || "none",
+          width: props.width ? props.width : "100%",
+          color: subtotalStyle?.color || "inherit",
+          ...subtotalStyle,
         }}
       >
-        <div style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
-          <span style={{ fontWeight: "bold", color: textColorWave }}></span>
-          <span style={{ fontWeight: "normal", color: textColorWave }}>{actionDisplay}({length})</span>
-        </div>
-        <div style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
-          <span style={{ fontWeight: "bold", color: textColorPosition }}>$: </span>
-          <span style={{ fontWeight: "normal", color: textColorPosition }}>{amount}</span>
-        </div>
+        {props.col_header ? props.value : props.buttonName}
       </button>
     );
-  }
-
-  // ✅ All other buttons — exactly as original
-  return (
-    <button
-      onClick={btnClickedHandler}
-      style={{
-        background: "transparent",
-        border: subtotalStyle?.border || "none",
-        width: props.width ? props.width : "100%",
-        color: subtotalStyle?.color || "inherit",
-        ...subtotalStyle,
-      }}
-    >
-      {props.col_header ? props.value : props.buttonName}
-    </button>
-  );
-};
+  };
 
   function buildDetailGridOptions(detailGridOptions: any, level: number): any {
     const options = { ...detailGridOptions, masterDetail: true };
@@ -387,15 +387,20 @@ const bgColor = interpolateHexColor(
   const [viewId, setViewId] = useState(0)
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [previousViewId, setpreviousViewId] = useState(89)
-const [activeFilter, setActiveFilter] = useState<Record<string, string | null>>({});  const [selectedColumnSetKey, setSelectedColumnSetKey] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<Record<string, string[]>>({});
+  const [selectedColumnSetKey, setSelectedColumnSetKey] = useState<string | null>(null);
   const [initialColumnState, setInitialColumnState] = useState<any>(null);
-const [tickerSearchModalShow, setTickerSearchModalShow] = useState(false);
+  const [tickerSearchModalShow, setTickerSearchModalShow] = useState(false);
   const [selectedCellContent, setSelectedCellContent] = useState<string | null>(null);
   const onCellClicked = (event: any) => {
     if (event.value) {
       setSelectedCellContent(event.value); // Set the clicked cell's value
     }
   };
+
+  const [wsModalShow, setWsModalShow] = useState(false);
+  const [wsModalData, setWsModalData] = useState<any>({});
+
 
 
   useEffect(() => {
@@ -453,6 +458,24 @@ const [tickerSearchModalShow, setTickerSearchModalShow] = useState(false);
               log("Handshake confirmed:", data.message, prod);
               return;
             }
+
+            if (data.type === 'modal_list') {
+              log("📋 Received modal_list:", data);
+              const label = data.label || 'items';
+              setWsModalData({
+                prompt_message: data.title || 'Data',
+                button_api: kwargs.ws_modal_api || data.button_api || '',
+                username: username,
+                prod: prod,
+                kwargs: kwargs,
+                gridRef: gridRef,
+                index: index,
+                selectedRow: { [label]: data.rows || [] },
+                editableCols: { [label]: data.editable_cols || [] },
+              });
+              return;
+            }
+
 
             // Handle array of updates (batch)
             if (Array.isArray(data) && data.length > 0) {
@@ -1267,21 +1290,34 @@ const [tickerSearchModalShow, setTickerSearchModalShow] = useState(false);
   };
   // let filter_button = "piece_name";
 
-const filterButtons: string[] = Array.isArray(filter_button) ? filter_button : [];
 
-const handleButtonFilter = (column: string, value: string | null) => {
-  setActiveFilter(prev => ({ ...prev, [column]: value }));
-  if (gridRef.current && gridRef.current.api) {
-    const api = gridRef.current.api;
-    if (value) {
-      api.setFilterModel({ ...api.getFilterModel(), [column]: { filterType: "set", values: [value] } });
-    } else {
-      const model = api.getFilterModel();
-      delete model[column];
-      api.setFilterModel(model);
+  // NEW:
+  const filterButtonsIsDict = filter_button && !Array.isArray(filter_button) && typeof filter_button === "object";
+  const filterButtonsDict: Record<string, string[]> = filterButtonsIsDict ? filter_button as Record<string, string[]> : {};
+  const filterButtons: string[] = Array.isArray(filter_button) ? filter_button : [];
+
+  const handleButtonFilter = (column: string, value: string | null) => {
+    const api = gridRef.current?.api;
+    if (value === null) {
+      // Clear this column
+      setActiveFilter(prev => { const n = { ...prev }; delete n[column]; return n; });
+      if (api) { const m = api.getFilterModel(); delete m[column]; api.setFilterModel(m); }
+      return;
     }
-  }
-};
+    // Toggle value in/out of multi-select array
+    const existing = activeFilter[column] || [];
+    const newVals = existing.includes(value)
+      ? existing.filter(v => v !== value)
+      : [...existing, value];
+
+    if (newVals.length === 0) {
+      setActiveFilter(prev => { const n = { ...prev }; delete n[column]; return n; });
+      if (api) { const m = api.getFilterModel(); delete m[column]; api.setFilterModel(m); }
+    } else {
+      setActiveFilter(prev => ({ ...prev, [column]: newVals }));
+      if (api) { api.setFilterModel({ ...api.getFilterModel(), [column]: { filterType: "set", values: newVals } }); }
+    }
+  };
 
 
 
@@ -1482,9 +1518,9 @@ const handleButtonFilter = (column: string, value: string | null) => {
 
       {kwargs.api_ozz && (
         <div style={{
-marginBottom: "5px",
-display: "flex",
-justifyContent: "flex-end",
+          marginBottom: "5px",
+          display: "flex",
+          justifyContent: "flex-end",
         }}>
           <Ozz
             username={username}
@@ -1543,21 +1579,56 @@ justifyContent: "flex-end",
         </div>
       )}
 
+      {/* ── WS Modal Data Button ───────────────────────────────────────── */}
+      {wsModalData && Object.keys(wsModalData).length > 0 && (
+        <div style={{ marginBottom: "5px", display: "flex", justifyContent: "flex-start" }}>
+          <button
+            onClick={() => setWsModalShow((prev) => !prev)}
+            style={{
+              background: wsModalShow
+                ? "linear-gradient(135deg, #1a3d1c 0%, #2c5f2e 100%)"
+                : "linear-gradient(135deg, #2c5f2e 0%, #3a7d44 100%)",
+              color: "#fff",
+              border: "2px solid #2c5f2e",
+              borderRadius: "8px",
+              padding: "7px 16px",
+              fontWeight: 700,
+              fontSize: "0.88rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+              transition: "opacity 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            {wsModalShow ? "▼" : "▶"}{" "}
+            {wsModalData.prompt_message || "View Data"}
+            {(() => {
+              const key = Object.keys(wsModalData.selectedRow || {})[0];
+              const rows = wsModalData.selectedRow?.[key];
+              return Array.isArray(rows) ? ` (${rows.length})` : "";
+            })()}
+          </button>
+        </div>
+      )}
 
-<TickerSearchModal
-  isOpen={tickerSearchModalShow}
-  closeModal={() => setTickerSearchModalShow(false)}
-  username={username}
-  prod={prod}
-  kwargs={kwargs}
-  api={api}
-  toastr={toastr}
-  chessboard={kwargs.chessboard}  // ✅ Add this line
-  ticker_buying_powers={kwargs.ticker_buying_powers}  // ✅ Add this line
-  cash_position={kwargs.cash_position}
-  accountInfo={kwargs.accountInfo}
+      <TickerSearchModal
+        isOpen={tickerSearchModalShow}
+        closeModal={() => setTickerSearchModalShow(false)}
+        username={username}
+        prod={prod}
+        kwargs={kwargs}
+        api={api}
+        toastr={toastr}
+        chessboard={kwargs.chessboard}  // ✅ Add this line
+        ticker_buying_powers={kwargs.ticker_buying_powers}  // ✅ Add this line
+        cash_position={kwargs.cash_position}
+        accountInfo={kwargs.accountInfo}
 
-/>
+      />
 
 
       <MyModal
@@ -1577,6 +1648,15 @@ justifyContent: "flex-end",
         style={{ flexDirection: "row", height: "100%", width: "100%" }}
         id="myGrid"
       >
+
+        <MyModal
+          isOpen={wsModalShow}
+          closeModal={() => setWsModalShow(false)}
+          modalData={wsModalData ? { ...wsModalData, index, gridRef } : { selectedRow: {}, editableCols: {}, prompt_message: '' }}
+          promptText={{}}
+          setPromptText={() => { }}
+          toastr={toastr}
+        />
 
 
         <div className="d-flex justify-content-between align-items-center">
@@ -1661,159 +1741,356 @@ justifyContent: "flex-end",
           }}
         >
 
-{/* Column Sets — own wrapper */}
-{kwargs.column_sets && (
-  <div style={{
-    display: "flex",
-    flexDirection: "column",
-    marginBottom: 4,
-    // border: "1.5px solid #e5eff6ff",
-    // borderRadius: "8px",
-    background: "transparent", //"#f3f4f5ff",
-    overflow: "hidden",
-  }}>
-    <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", overflowX: "auto", padding: "4px 6px", gap: "0" }}>
-      <button
-        onClick={() => {
-          setSelectedColumnSetKey(null);
-          setTimeout(() => {
-            const columnApi = gridRef.current?.columnApi;
-            if (columnApi && initialColumnState) {
-              columnApi.applyColumnState({ state: initialColumnState, applyOrder: true });
-            }
-          }, 0);
-        }}
-        style={{
-          background: "rgba(225, 246, 221, 1)", color: "black",
-          border: "1.5px solid rgb(180, 210, 180)", borderRadius: "5px",
-          fontWeight: "bold", fontSize: "12px", padding: "3px 8px",
-          flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(100,180,100,0.3)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
-      >
-        Reset View
-      </button>
+          {/* Column Sets — own wrapper */}
+          {kwargs.column_sets && (
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              marginBottom: 4,
+              // border: "1.5px solid #e5eff6ff",
+              // borderRadius: "8px",
+              background: "transparent", //"#f3f4f5ff",
+              overflow: "hidden",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", overflowX: "auto", padding: "4px 6px", gap: "0" }}>
+                <button
+                  onClick={() => {
+                    setSelectedColumnSetKey(null);
+                    setTimeout(() => {
+                      const columnApi = gridRef.current?.columnApi;
+                      if (columnApi && initialColumnState) {
+                        columnApi.applyColumnState({ state: initialColumnState, applyOrder: true });
+                      }
+                    }, 0);
+                  }}
+                  style={{
+                    background: "rgba(225, 246, 221, 1)", color: "black",
+                    border: "1.5px solid rgb(180, 210, 180)", borderRadius: "5px",
+                    fontWeight: "bold", fontSize: "12px", padding: "3px 8px",
+                    flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(100,180,100,0.3)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+                >
+                  Reset View
+                </button>
 
-<div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8dcccff", margin: "0 6px", flexShrink: 0 }} />
-      {Object.keys(kwargs.column_sets).map(key => (
-        <button
-          key={key}
-          onClick={() => {
-            const newKey = selectedColumnSetKey === key ? null : key;
-            setSelectedColumnSetKey(newKey);
-            setTimeout(() => {
-              const columnApi = gridRef.current?.columnApi;
-              if (!newKey) {
-                if (columnApi && initialColumnState) columnApi.applyColumnState({ state: initialColumnState, applyOrder: true });
-              } else {
-                const columnsToShow = kwargs.column_sets[newKey];
-                if (columnApi && Array.isArray(grid_options.columnDefs)) {
-                  grid_options.columnDefs.forEach((col: any) => columnApi.setColumnVisible(col.field, false));
-                  columnsToShow.forEach((field: string, idx: number) => { columnApi.setColumnVisible(field, true); columnApi.moveColumn(field, idx); });
-                }
-              }
-            }, 0);
-          }}
-          style={{
-            background: selectedColumnSetKey === key ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff",
-            color: selectedColumnSetKey === key ? "white" : "#4a5568",
-            border: selectedColumnSetKey === key ? "1.5px solid #3a9050" : "1.5px solid #8dc789ff",
-            borderRadius: "12px", fontWeight: selectedColumnSetKey === key ? "700" : "500",
-            fontSize: "12px", padding: "3px 9px", marginRight: "4px", flexShrink: 0, whiteSpace: "nowrap",
-            boxShadow: selectedColumnSetKey === key ? "0 2px 8px rgba(75,162,98,0.35)" : "none",
-            transition: "all 0.15s ease", cursor: "pointer",
-            transform: selectedColumnSetKey === key ? "translateY(-1px)" : "translateY(0)",
-          }}
-          onMouseEnter={(e) => { if (selectedColumnSetKey !== key) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
-          onMouseLeave={(e) => { if (selectedColumnSetKey !== key) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
-        >
-          {key}
-        </button>
-      ))}
-    </div>
-  </div>
-)}
+                <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8dcccff", margin: "0 6px", flexShrink: 0 }} />
+                {Object.keys(kwargs.column_sets).map(key => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      const newKey = selectedColumnSetKey === key ? null : key;
+                      setSelectedColumnSetKey(newKey);
+                      setTimeout(() => {
+                        const columnApi = gridRef.current?.columnApi;
+                        if (!newKey) {
+                          if (columnApi && initialColumnState) columnApi.applyColumnState({ state: initialColumnState, applyOrder: true });
+                        } else {
+                          const columnsToShow = kwargs.column_sets[newKey];
+                          if (columnApi && Array.isArray(grid_options.columnDefs)) {
+                            grid_options.columnDefs.forEach((col: any) => columnApi.setColumnVisible(col.field, false));
+                            columnsToShow.forEach((field: string, idx: number) => { columnApi.setColumnVisible(field, true); columnApi.moveColumn(field, idx); });
+                          }
+                        }
+                      }, 0);
+                    }}
+                    style={{
+                      background: selectedColumnSetKey === key ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff",
+                      color: selectedColumnSetKey === key ? "white" : "#4a5568",
+                      border: selectedColumnSetKey === key ? "1.5px solid #3a9050" : "1.5px solid #8dc789ff",
+                      borderRadius: "12px", fontWeight: selectedColumnSetKey === key ? "700" : "500",
+                      fontSize: "12px", padding: "3px 9px", marginRight: "4px", flexShrink: 0, whiteSpace: "nowrap",
+                      boxShadow: selectedColumnSetKey === key ? "0 2px 8px rgba(75,162,98,0.35)" : "none",
+                      transition: "all 0.15s ease", cursor: "pointer",
+                      transform: selectedColumnSetKey === key ? "translateY(-1px)" : "translateY(0)",
+                    }}
+                    onMouseEnter={(e) => { if (selectedColumnSetKey !== key) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                    onMouseLeave={(e) => { if (selectedColumnSetKey !== key) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-{/* Filter Buttons — own wrapper */}
-{filterButtons.length > 0 && (
-  <div style={{
-    display: "flex",
-    flexDirection: "column",
-    marginBottom: 6,
-    border: "1.5px solid #e5eff6ff",
-    borderRadius: "8px",
-    background: "#f5f8f6ff",
-    overflow: "visible",
-  }}>
-    {filterButtons.map((col, rowIdx) => (
-      <div key={col} style={{
-        display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: "4px",
-        padding: "4px 6px",
-        borderTop: rowIdx > 0 ? "1.5px solid #c8d4dc" : "none",
-      }}>
+          {/* Clear All Filters */}
+          {(Object.keys(activeFilter).length > 0) && (
+            <div style={{ marginBottom: 4, display: "flex", justifyContent: "flex-start" }}>
+              <button
+                onClick={() => {
+                  setActiveFilter({});
+                  if (gridRef.current?.api) gridRef.current.api.setFilterModel({});
+                }}
+                style={{
+                  background: "rgba(183,136,129,1)", color: "white",
+                  border: "1.5px solid rgba(150,80,70,1)", borderRadius: "5px",
+                  fontWeight: "bold", fontSize: "11px", padding: "3px 12px",
+                  cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(239,83,80,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+              >
+                Clear All Filters
+              </button>
+            </div>
+          )}
 
-        {/* Column label */}
-        <span style={{ fontSize: "9px", color: "#8a9bb0", fontWeight: "600", flexShrink: 0, marginRight: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          {col}
-        </span>
-        <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px 0 0", flexShrink: 0 }} />
+{/* Hub-and-Spoke Filter Mode */}
+{kwargs.filter_main_key && rowData.length > 0 && (() => {
+  const mainKeys: string[] = Array.isArray(kwargs.filter_main_key)
+    ? kwargs.filter_main_key
+    : [kwargs.filter_main_key];
 
-        {/* Clear this row's filter */}
-        {kwargs['show_clear_all_filters'] && (
-          <>
-            <button
-              onClick={() => {
-                handleButtonFilter(col, null);
-                if (gridRef.current && gridRef.current.api) {
-                  const model = gridRef.current.api.getFilterModel();
-                  delete model[col];
-                  gridRef.current.api.setFilterModel(model);
-                }
-              }}
-              style={{
-                background: "rgba(183, 136, 129, 1)", color: "white",
-                border: "1.5px solid rgba(150, 80, 70, 1)", borderRadius: "5px",
-                fontWeight: "bold", fontSize: "10px", padding: "3px 8px",
-                flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(239,83,80,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
-            >
-              Clear
-            </button>
-            <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px", flexShrink: 0 }} />
-          </>
-        )}
+  return mainKeys.map((mainKey: string) => (
+    <div key={mainKey} style={{ marginBottom: 6 }}>
+      {/* Column name divider — only shown when multiple keys and no child key */}
+      {mainKeys.length > 1 && !kwargs.filter_child_key && (
+        <div style={{
+          fontSize: "9px", color: "#8a9bb0", fontWeight: "700",
+          textTransform: "uppercase", letterSpacing: "1px",
+          borderBottom: "1.5px solid #c8d4dc", paddingBottom: "2px", marginBottom: "4px",
+        }}>
+          {mainKey}
+        </div>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
+        {(Array.from(new Set(rowData.map((r: any) => r[mainKey]))).filter(Boolean) as any[]).map((mainVal: any) => {
+          const buttonStyles: Record<string, any> = kwargs.filter_button_styles || {};
+          const mainCustomStyle = buttonStyles[String(mainVal)] || {};
+          const isMainActive = (activeFilter[mainKey] || []).includes(mainVal);
 
-        {/* Filter value buttons for this column */}
-        {getUniqueColumnValues(col, rowData).map(val => (
-          <button
-            key={val}
-            onClick={() => handleButtonFilter(col, val)}
-            style={{
-              background: activeFilter[col] === val ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff",
-              color: activeFilter[col] === val ? "white" : "#4a5568",
-              border: activeFilter[col] === val ? "1.5px solid #3a9050" : "1.5px solid #c8d0d8",
-              borderRadius: "12px", fontWeight: activeFilter[col] === val ? "700" : "500",
-              fontSize: "11px", padding: "3px 9px", marginRight: "4px", whiteSpace: "nowrap",
-              boxShadow: activeFilter[col] === val ? "0 2px 8px rgba(75,162,98,0.35)" : "none",
-              transition: "all 0.15s ease", cursor: "pointer",
-              transform: activeFilter[col] === val ? "translateY(-1px)" : "translateY(0)",
-            }}
-            onMouseEnter={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
-            onMouseLeave={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
-          >
-            {val}
-          </button>
-        ))}
+          const mainButton = (
+            <>
+              {kwargs.main_key_string && kwargs.main_key_string[String(mainVal)] && (
+                <span style={{ fontSize: "10px", color: "#29442f", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  {kwargs.main_key_string[String(mainVal)]}
+                </span>
+              )}
+              <button
+                onClick={() => handleButtonFilter(mainKey, mainVal)}
+                style={{
+                  ...(isMainActive
+                    ? { background: "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)", color: "white", border: "1.5px solid #3a9050", boxShadow: "0 2px 8px rgba(75,162,98,0.35)" }
+                    : { background: mainCustomStyle.background || "#eef2ee", color: mainCustomStyle.color || "#055A6E", border: "1.5px solid " + (mainCustomStyle.borderColor || "#8dc0d4"), boxShadow: "none" }
+                  ),
+                  borderRadius: mainCustomStyle.borderRadius || "7px",
+                  fontWeight: mainCustomStyle.fontWeight || "700",
+                  fontSize: mainCustomStyle.fontSize || "13px",
+                  padding: mainCustomStyle.padding || "4px 12px",
+                  cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s ease",
+                  transform: isMainActive ? "translateY(-1px)" : "translateY(0)",
+                }}
+                onMouseEnter={(e) => { if (!isMainActive) { e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.12)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                onMouseLeave={(e) => { if (!isMainActive) { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+              >
+                {mainVal}
+              </button>
+            </>
+          );
+
+          if (!kwargs.filter_child_key) {
+            return (
+              <div key={String(mainVal)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                {mainButton}
+              </div>
+            );
+          }
+
+          const childRows = rowData.filter((r: any) => r[mainKey] === mainVal);
+          const childVals: any[] = Array.from(new Set(childRows.map((r: any) => r[kwargs.filter_child_key]))).filter(Boolean);
+
+          return (
+            <div key={String(mainVal)} style={{
+              border: "1.5px solid #f4f8fa", borderRadius: "10px", background: "#f0f9f3",
+              padding: "5px 7px 6px 7px", display: "flex", flexDirection: "column",
+              alignItems: "center", gap: "4px", minWidth: "70px",
+            }}>
+              {mainButton}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "3px", justifyContent: "center" }}>
+                {childVals.map((childVal: any) => {
+                  const childStyleKey = `${mainVal}__${childVal}`;
+                  const childCustomStyle = buttonStyles[childStyleKey] || {};
+                  const isChildActive = (activeFilter[kwargs.filter_child_key] || []).includes(childVal);
+                  return (
+                    <button
+                      key={String(childVal)}
+                      onClick={() => handleButtonFilter(kwargs.filter_child_key, childVal)}
+                      style={{
+                        ...(isChildActive
+                          ? { background: "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)", color: "white", border: "1.5px solid #3a9050", boxShadow: "0 2px 8px rgba(75,162,98,0.35)" }
+                          : { background: childCustomStyle.background || "#ffffff", color: childCustomStyle.color || "#4a5568", border: "1.5px solid " + (childCustomStyle.borderColor || "#c8d0d8"), boxShadow: "none" }
+                        ),
+                        borderRadius: childCustomStyle.borderRadius || "10px",
+                        fontWeight: isChildActive ? "700" : (childCustomStyle.fontWeight || "500"),
+                        fontSize: childCustomStyle.fontSize || "10px",
+                        padding: childCustomStyle.padding || "2px 7px",
+                        cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s ease",
+                        transform: isChildActive ? "translateY(-1px)" : "translateY(0)",
+                      }}
+                      onMouseEnter={(e) => { if (!isChildActive) { e.currentTarget.style.borderColor = "#f1faf0"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                      onMouseLeave={(e) => { if (!isChildActive) { e.currentTarget.style.borderColor = childCustomStyle.borderColor || "#e4f1e3"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+                    >
+                      {childVal}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
-    ))}
-  </div>
-)}
+    </div>
+  ));
+})()}
 
-        
-          
+          {/* Filter Buttons — own wrapper (dict and array modes) */}
+          {(filterButtonsIsDict ? Object.keys(filterButtonsDict).length > 0 : filterButtons.length > 0) && (
+            filterButtonsIsDict ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: 6 }}>
+                {Object.entries(filterButtonsDict).map(([groupName, cols]) => (
+                  <div key={groupName} style={{
+                    border: "1.5px solid #b0c8d4", borderRadius: "8px", background: "#f5f8f6ff",
+                    overflow: "visible", padding: "4px 8px 6px 8px",
+                  }}>
+                    <div style={{ fontSize: "13px", fontWeight: "700", color: "#055A6E", marginBottom: "4px", letterSpacing: "0.3px" }}>
+                      {groupName}
+                    </div>
+                    {cols.map((col, rowIdx) => (
+                      <div key={col} style={{
+                        display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: "4px",
+                        padding: "3px 0", borderTop: rowIdx > 0 ? "1px solid #d0dde4" : "none",
+                      }}>
+                        <span style={{ fontSize: "9px", color: "#8a9bb0", fontWeight: "600", flexShrink: 0, marginRight: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{col}</span>
+                        <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px 0 0", flexShrink: 0 }} />
+                        {kwargs['show_clear_all_filters'] && (
+                          <>
+                            <button onClick={() => handleButtonFilter(col, null)}
+                              style={{ background: "rgba(183,136,129,1)", color: "white", border: "1.5px solid rgba(150,80,70,1)", borderRadius: "5px", fontWeight: "bold", fontSize: "10px", padding: "3px 8px", flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(239,83,80,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+                            >Clear</button>
+                            <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px", flexShrink: 0 }} />
+                          </>
+                        )}
+                        {getUniqueColumnValues(col, rowData).map((val: any) => (
+                          <button key={val} onClick={() => handleButtonFilter(col, val)}
+                            style={{ background: (activeFilter[col] || []).includes(val) ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff", color: (activeFilter[col] || []).includes(val) ? "white" : "#4a5568", border: (activeFilter[col] || []).includes(val) ? "1.5px solid #3a9050" : "1.5px solid #c8d0d8", borderRadius: "12px", fontWeight: (activeFilter[col] || []).includes(val) ? "700" : "500", fontSize: "11px", padding: "3px 9px", marginRight: "4px", whiteSpace: "nowrap", boxShadow: (activeFilter[col] || []).includes(val) ? "0 2px 8px rgba(75,162,98,0.35)" : "none", transition: "all 0.15s ease", cursor: "pointer", transform: (activeFilter[col] || []).includes(val) ? "translateY(-1px)" : "translateY(0)" }}
+                            onMouseEnter={(e) => { if (!(activeFilter[col] || []).includes(val)) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                            onMouseLeave={(e) => { if (!(activeFilter[col] || []).includes(val)) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+                          >{val}</button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", marginBottom: 6, border: "1.5px solid #e5eff6ff", borderRadius: "8px", background: "#f5f8f6ff", overflow: "visible" }}>
+                {filterButtons.map((col, rowIdx) => (
+                  <div key={col} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: "4px", padding: "4px 6px", borderTop: rowIdx > 0 ? "1.5px solid #c8d4dc" : "none" }}>
+                    <span style={{ fontSize: "9px", color: "#8a9bb0", fontWeight: "600", flexShrink: 0, marginRight: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{col}</span>
+                    <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px 0 0", flexShrink: 0 }} />
+                    {kwargs['show_clear_all_filters'] && (
+                      <>
+                        <button onClick={() => handleButtonFilter(col, null)}
+                          style={{ background: "rgba(183,136,129,1)", color: "white", border: "1.5px solid rgba(150,80,70,1)", borderRadius: "5px", fontWeight: "bold", fontSize: "10px", padding: "3px 8px", flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s" }}
+                          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(239,83,80,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+                        >Clear</button>
+                        <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px", flexShrink: 0 }} />
+                      </>
+                    )}
+                    {getUniqueColumnValues(col, rowData).map(val => (
+                      <button key={val} onClick={() => handleButtonFilter(col, val)}
+                        style={{ background: (activeFilter[col] || []).includes(val) ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff", color: (activeFilter[col] || []).includes(val) ? "white" : "#4a5568", border: (activeFilter[col] || []).includes(val) ? "1.5px solid #3a9050" : "1.5px solid #c8d0d8", borderRadius: "12px", fontWeight: (activeFilter[col] || []).includes(val) ? "700" : "500", fontSize: "11px", padding: "3px 9px", marginRight: "4px", whiteSpace: "nowrap", boxShadow: (activeFilter[col] || []).includes(val) ? "0 2px 8px rgba(75,162,98,0.35)" : "none", transition: "all 0.15s ease", cursor: "pointer", transform: (activeFilter[col] || []).includes(val) ? "translateY(-1px)" : "translateY(0)" }}
+                        onMouseEnter={(e) => { if (!(activeFilter[col] || []).includes(val)) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                        onMouseLeave={(e) => { if (!(activeFilter[col] || []).includes(val)) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+                      >{val}</button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {/* Filter Buttons — own wrapper (dict and array modes) */}
+          {(filterButtonsIsDict ? Object.keys(filterButtonsDict).length > 0 : filterButtons.length > 0) && (
+            filterButtonsIsDict ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: 6 }}>
+                {Object.entries(filterButtonsDict).map(([groupName, cols]) => (
+                  <div key={groupName} style={{
+                    border: "1.5px solid #b0c8d4", borderRadius: "8px", background: "#f5f8f6ff",
+                    overflow: "visible", padding: "4px 8px 6px 8px",
+                  }}>
+                    <div style={{ fontSize: "13px", fontWeight: "700", color: "#055A6E", marginBottom: "4px", letterSpacing: "0.3px" }}>
+                      {groupName}
+                    </div>
+                    {cols.map((col, rowIdx) => (
+                      <div key={col} style={{
+                        display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: "4px",
+                        padding: "3px 0", borderTop: rowIdx > 0 ? "1px solid #d0dde4" : "none",
+                      }}>
+                        <span style={{ fontSize: "9px", color: "#8a9bb0", fontWeight: "600", flexShrink: 0, marginRight: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          {col}
+                        </span>
+                        <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px 0 0", flexShrink: 0 }} />
+                        {kwargs['show_clear_all_filters'] && (
+                          <>
+                            <button
+                              onClick={() => { handleButtonFilter(col, null); if (gridRef.current?.api) { const m = gridRef.current.api.getFilterModel(); delete m[col]; gridRef.current.api.setFilterModel(m); } }}
+                              style={{ background: "rgba(183,136,129,1)", color: "white", border: "1.5px solid rgba(150,80,70,1)", borderRadius: "5px", fontWeight: "bold", fontSize: "10px", padding: "3px 8px", flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(239,83,80,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+                            >Clear</button>
+                            <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px", flexShrink: 0 }} />
+                          </>
+                        )}
+                        {getUniqueColumnValues(col, rowData).map((val: any) => (
+                          <button key={val} onClick={() => handleButtonFilter(col, val)}
+                            style={{ background: activeFilter[col] === val ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff", color: activeFilter[col] === val ? "white" : "#4a5568", border: activeFilter[col] === val ? "1.5px solid #3a9050" : "1.5px solid #c8d0d8", borderRadius: "12px", fontWeight: activeFilter[col] === val ? "700" : "500", fontSize: "11px", padding: "3px 9px", marginRight: "4px", whiteSpace: "nowrap", boxShadow: activeFilter[col] === val ? "0 2px 8px rgba(75,162,98,0.35)" : "none", transition: "all 0.15s ease", cursor: "pointer", transform: activeFilter[col] === val ? "translateY(-1px)" : "translateY(0)" }}
+                            onMouseEnter={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                            onMouseLeave={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+                          >{val}</button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", marginBottom: 6, border: "1.5px solid #e5eff6ff", borderRadius: "8px", background: "#f5f8f6ff", overflow: "visible" }}>
+                {filterButtons.map((col, rowIdx) => (
+                  <div key={col} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: "4px", padding: "4px 6px", borderTop: rowIdx > 0 ? "1.5px solid #c8d4dc" : "none" }}>
+                    <span style={{ fontSize: "9px", color: "#8a9bb0", fontWeight: "600", flexShrink: 0, marginRight: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{col}</span>
+                    <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px 0 0", flexShrink: 0 }} />
+                    {kwargs['show_clear_all_filters'] && (
+                      <>
+                        <button
+                          onClick={() => { handleButtonFilter(col, null); if (gridRef.current?.api) { const m = gridRef.current.api.getFilterModel(); delete m[col]; gridRef.current.api.setFilterModel(m); } }}
+                          style={{ background: "rgba(183,136,129,1)", color: "white", border: "1.5px solid rgba(150,80,70,1)", borderRadius: "5px", fontWeight: "bold", fontSize: "10px", padding: "3px 8px", flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer", transition: "all 0.15s" }}
+                          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 3px 10px rgba(239,83,80,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
+                        >Clear</button>
+                        <div style={{ width: "1.5px", alignSelf: "stretch", background: "#c8d4dc", margin: "0 6px", flexShrink: 0 }} />
+                      </>
+                    )}
+                    {getUniqueColumnValues(col, rowData).map(val => (
+                      <button key={val} onClick={() => handleButtonFilter(col, val)}
+                        style={{ background: activeFilter[col] === val ? "linear-gradient(135deg, #7cea66ff 0%, #4ba262ff 100%)" : "#ffffff", color: activeFilter[col] === val ? "white" : "#4a5568", border: activeFilter[col] === val ? "1.5px solid #3a9050" : "1.5px solid #c8d0d8", borderRadius: "12px", fontWeight: activeFilter[col] === val ? "700" : "500", fontSize: "11px", padding: "3px 9px", marginRight: "4px", whiteSpace: "nowrap", boxShadow: activeFilter[col] === val ? "0 2px 8px rgba(75,162,98,0.35)" : "none", transition: "all 0.15s ease", cursor: "pointer", transform: activeFilter[col] === val ? "translateY(-1px)" : "translateY(0)" }}
+                        onMouseEnter={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#8aa4b8"; e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                        onMouseLeave={(e) => { if (activeFilter[col] !== val) { e.currentTarget.style.borderColor = "#c8d0d8"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } }}
+                      >{val}</button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+
+
           {/* Streamer for streaming_list_text if present */}
           {kwargs.streaming_list_text && Array.isArray(kwargs.streaming_list_text) && (
             <div

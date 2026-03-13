@@ -792,7 +792,7 @@ def account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_m
             api=f"{ip_address}/api/data/account_header",
             api_ws= f"{ip_address}/api/data/ws_grid",
             api_update= None, #f"{ip_address}/api/data/update_queenking_chessboard",
-            refresh_sec=refresh_sec, 
+            refresh_sec=None, 
             refresh_cutoff_sec=seconds_to_market_close, 
             prod=prod,
             grid_options=go,
@@ -896,6 +896,57 @@ def get_ticker_buying_powers(QUEEN_KING, symbols=[]):
     return ticker_buying_powers
 
 
+def build_filter_button_styles(
+    storygauge,
+    green_shades=["#f5f6fdf7", "#e2e1f49f", "#b9bdf785", "#a3befa9e"],
+    text_colors=("#283829", "#0c2d0d"),  # (low_ratio, high_ratio)
+    min_font=11, max_font=18,
+    min_pad_v=3, max_pad_v=8,
+    min_pad_h=6, max_pad_h=18,
+    min_ratio=0.1,
+    border_radius="6px",
+):
+
+    def _color_for_ratio(ratio):
+        idx = min(3, int(ratio * 4))
+        bg = green_shades[min(idx, len(green_shades) - 1)]
+        text = text_colors[1] if idx >= 2 else text_colors[0]
+        return {"background": bg, "color": text, "borderColor": bg}
+
+    def _size_style(ratio):
+        r = min_ratio + ratio * (1 - min_ratio)
+        fs = round(min_font + r * (max_font - min_font))
+        pv = round(min_pad_v + r * (max_pad_v - min_pad_v))
+        ph = round(min_pad_h + r * (max_pad_h - min_pad_h))
+        return {
+            **_color_for_ratio(r),
+            "fontSize": f"{fs}px",
+            "padding": f"{pv}px {ph}px",
+            "borderRadius": border_radius,
+        }
+
+    styles = {}
+
+    # piece_name buttons — sized by total ticker_total_budget per group
+    if 'piece_name' in storygauge.columns and 'ticker_total_budget' in storygauge.columns:
+        piece_budgets = storygauge.groupby('piece_name')['ticker_total_budget'].sum()
+        max_piece_budget = piece_budgets.max() or 1
+        for pn, budget in piece_budgets.items():
+            styles[pn] = _size_style(budget / max_piece_budget)
+
+    # ticker buttons — sized by star_buys_at_play relative to max across ALL tickers
+    if 'piece_name' in storygauge.columns and 'star_buys_at_play' in storygauge.columns:
+        max_ticker_buys = storygauge['star_buys_at_play'].max() or 1
+        for _, row in storygauge.iterrows():
+            pn = row.get('piece_name')
+            symbol = row.name
+            buys = row.get('star_buys_at_play', 0) or 0
+            styles[f"{pn}__{symbol}"] = _size_style(buys / max_ticker_buys)
+
+    return styles
+
+
+
 def story_grid(QUEEN_KING,
         prod, client_user, 
                ip_address, revrec, symbols, 
@@ -907,8 +958,24 @@ def story_grid(QUEEN_KING,
                ui_refresh_sec=60,
                broker_info=None
                ):
+    ## ONLY needed revrec for button size and colors, which didn't seem to look good, maybe future use?
+    # revrec = init_queenbee(client_user, prod, revrec=True, main_server=os.getenv("server")).get('revrec')
+    # story = revrec['storygauge']
+    # st.write(story.columns)
+    # main_key_string = {
+    #     pn: f"Long: ${int(grp['star_buys_at_play'].sum()):,} / Budget ${int(grp['ticker_total_budget'].sum()):,}"
+    #     for pn, grp in story.groupby('piece_name')
+    #     if 'star_buys_at_play' in story.columns and 'ticker_total_budget' in story.columns
+    # }
+
     ticker_buying_powers = get_ticker_buying_powers(QUEEN_KING, symbols)
     king_G = kingdom__global_vars()
+
+# create the button sizes and colors based on the chessboard ... better if revrec ;)
+    # chessboard = QUEEN_KING['chess_board']
+
+    # filter_button_styles = build_filter_button_styles(story)
+    # st.write(filter_button_styles)
     try:
         gb = GridOptionsBuilder.create()
         gb.configure_grid_options(pagination=True, 
@@ -1593,7 +1660,11 @@ def story_grid(QUEEN_KING,
             total_col="symbol", # where total is located
             subtotal_cols=subtotal_cols,
             filter_apply=False,
-            filter_button=["piece_name", "symbol"],
+            main_key_string = None,
+            filter_main_key = ["piece_name"], # Main Filter
+            filter_child_key = "symbol", # Child Filter mapped to main
+            filter_button_styles = None, #filter_button_styles,
+
             show_clear_all_filters=True,
             column_sets = {
 "Trinity - Waves": [
@@ -1717,7 +1788,7 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         #                     mark_down_text(f'Portfolio')
 
         # Toggle View
-        tab_view = sac_tabs(["Portfolio", "AI Portfolio Manager", "Hedge Funds"])
+        tab_view = sac_tabs(["Portfolio", "Orders"])
         # tab_view = st.tabs(["Portfolio", "AI Portfolio Manager", "Hedge Funds"])
         # sac_menu_buttons({'Story': {'icon':'robot', }})
         if tab_view == 'Hedge Funds':
@@ -1750,7 +1821,6 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         # cols = st.columns((10,1))
         if show_acct and tab_view == 'Portfolio':
             # with cols[0]:
-            print("account_header_grid refresh_sec", refresh_sec)
             account_header_grid(client_user, prod, refresh_sec, ip_address, seconds_to_market_close)
         
         # if tab_view == 'AI Portfolio Manager':
@@ -1758,6 +1828,10 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
         #     print("AI Portfolio Manager")
         #     ozz(st.session_state['authentication_status'])
         #     st.stop()
+        if tab_view == 'Orders':
+            from pages.orders import order_grid
+            order_grid(client_user, prod, config_cols={})
+            st.stop()
 
         story_grid(QUEEN_KING,
             prod, client_user=client_user, ip_address=ip_address, 
@@ -1786,6 +1860,8 @@ def queens_conscience(prod, revrec, KING, QUEEN_KING, api, sneak_peak=False, sho
                               paginationOn=True, 
                               key='wave_grid')
                     # wave_grid(revrec=revrec, symbols=symbols, ip_address=ip_address, key=f'{"wb"}{symbols}{"orders"}', refresh_sec=False)
+
+        st.divider()
 
         cols = st.columns(2)
         
@@ -1921,11 +1997,7 @@ if __name__ == '__main__':
     client_user = st.session_state.get('client_user') # if st.session_state.get('client_user') else switch_page('pollen')
     prod = st.session_state['prod']
     KING = kingdom__grace_to_find_a_Queen()
-    if st.sidebar.toggle("Read Main Server"):
-        main_server = True
-    else:
-        main_server = False
-    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, broker_info=True, init=True, revrec=True, main_server=main_server)
+    qb = init_queenbee(client_user=client_user, prod=prod, queen_king=True, api=True, broker_info=True, init=True, revrec=True, main_server=os.getenv('server'))
     QUEEN_KING = qb.get('QUEEN_KING')
     # st.write({data.get('piece_name'): qcp for qcp, data in QUEEN_KING['chess_board'].items() })
     api = qb.get('api')
